@@ -38,7 +38,7 @@ def main():
 
     def Game_list_Sorted():
         c = game_list.cursor()
-        c.execute("SELECT game_name FROM games ORDER BY last_backup")
+        c.execute("SELECT game_name FROM games ORDER BY last_backup DESC")
         ordered_games = []
         for game_name in c.fetchall():
             ordered_games.append(game_name[0])
@@ -76,6 +76,7 @@ def main():
         var = dt.datetime.now()
         c.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
         {'game_name': game, 'last_backup': var})
+        game_list.commit()
         Delete_Oldest(game)
 
 
