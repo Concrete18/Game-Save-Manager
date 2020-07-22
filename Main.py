@@ -14,49 +14,39 @@ def main():
     save_location text,
     last_backup text
     )''')
+    script_root = os.getcwd()
+    backup_redundancy = 3 # Total previous backups to keep after each backup is made.
+    backup_storage = 'placeholder'
+    testing_storage = os.path.join(os.getcwd(), 'Testing Area\\Save Backup')
+    os.chdir(testing_storage)
 
 
     def Add_Game_to_DB():
+        c = game_list.cursor()
         game_name = input('What is the game name?')
         save_location = input('What is the game name?')
-        c.execute("INSERT INTO games VALUES (:game_name, :last, :pay)",
-        {'game_name': game_name, 'save_location': save_location})
+        c.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
+        {'game_name': game_name, 'save_location': save_location, 'last_backup': dt.datetime.now()})
         game_list.commit()
-        game_list.close()
 
 
-    def get_save_loc():
-        game_name = input('What Game Name do you want info for?')
+    def get_save_loc(game):
+        print(game)
         game_list = sqlite3.connect('game_list.db')
         c = game_list.cursor()
-        c.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
+        c.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game})
         save_location = c.fetchone()[0]
-        game_list.commit()
-        game_list.close()
         return save_location
 
 
     def Game_list_Sorted():
         c = game_list.cursor()
         c.execute("SELECT game_name FROM games ORDER BY last_backup")
+        ordered_games = []
+        for game_name in c.fetchall():
+            ordered_games.append(game_name[0])
         game_list.commit()
-        game_list.close()
-
-
-    get_save_loc()
-
-    # game_list.at['Hacknet', 'Last Backup'] = dt.datetime.now()
-    # last_backup = game_list.sort_values(by=['Last Backup'], axis=1, ascending=True, kind='quicksort', na_position='last', ignore_index=False)
-    # print(last_backup)
-    # print(game_list.columns)
-    # print(game_list.sort_index(axis=0, level='Last Backup', ascending=True))
-    # for game in os.listdir(TargetDir):
-
-    script_root = os.getcwd()
-    backup_redundancy = 3 # Total previous backups to keep after each backup is made.
-    backup_storage = 'placeholder'
-    testing_storage = os.path.join(os.getcwd(), 'Testing Area\\Save Backup')
-    os.chdir(testing_storage)
+        return ordered_games
 
 
     def Delete_Oldest(game):
@@ -76,11 +66,11 @@ def main():
             for i in range(backup_redundancy, len(saves_list)):
                 shutil.rmtree(sorted_list[i])
 
-    def Save_Backup(game, save_loc):
+    def Save_Backup(game):
         current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M")
         dest = f'{os.getcwd()}\\{game}\\{current_time}'
         dest = os.path.join(os.getcwd(), game, current_time)
-        save_loc = 'D:\My Documents\My Games\Hacknet\Accounts'
+        save_loc = get_save_loc(game)
         try:
             shutil.copytree(save_loc, dest)
         except FileNotFoundError:
@@ -96,36 +86,41 @@ def main():
     BoldBaseFont = "Arial Bold"
     BaseFont = "Arial"
 
-    # Main_GUI = Tk.Tk()
-    # Main_GUI.title('Game Save Manager')
-    # # Main_GUI.iconbitmap('Power.ico')
-    # Main_GUI.configure(bg=Background)
-    # # Main_GUI.resizable(width=False, height=False)
+    Main_GUI = Tk.Tk()
+    Main_GUI.title('Game Save Manager')
+    # Main_GUI.iconbitmap('Power.ico')
+    Main_GUI.configure(bg=Background)
+    # Main_GUI.resizable(width=False, height=False)
 
-    # Title_Frame = Tk.Frame(Main_GUI, bg=Background)
-    # Title_Frame.grid(columnspan=4, padx=(20, 20), pady=(5, 10))
+    Title_Frame = Tk.Frame(Main_GUI, bg=Background)
+    Title_Frame.grid(columnspan=4, padx=(20, 20), pady=(5, 10))
 
-    # Title = Tk.Label(Title_Frame, text='Game Save Manager', font=(BoldBaseFont, 20), bg=Background)
-    # Title.grid(column=0, row=0)
+    Title = Tk.Label(Title_Frame, text='Game Save Manager', font=(BoldBaseFont, 20), bg=Background)
+    Title.grid(column=0, row=0)
 
-    # # Create a Tkinter variable
-    # tkvar = Tk.StringVar(Main_GUI)
+    # Create a Tkinter variable
+    tkvar = Tk.StringVar(Main_GUI)
+    sorted_list = Game_list_Sorted()
 
-    # # Dictionary with options
-    # # tkvar.set(last_backup) # set the default option
+    popupMenu = Tk.OptionMenu(Main_GUI, tkvar, *sorted_list)
+    popupMenu.grid(row=2, column=1)
+    popupMenu["menu"].config(bg=Background)
+    tkvar.set(sorted_list[0]) # set the default option
+    # popupMenu.focus_set()
 
-    # popupMenu = Tk.OptionMenu(Main_GUI, tkvar, *games, bg=Background)
-    # popupMenu.grid(row=2, column=1)
+    # on change dropdown value
+    def change_dropdown(*args):
+        print( tkvar.get() )
 
-    # # on change dropdown value
-    # def change_dropdown(*args):
-    #     print( tkvar.get() )
+    # link function to change dropdown
+    tkvar.trace('w', change_dropdown)
 
-    # # link function to change dropdown
-    # tkvar.trace('w', change_dropdown)
+    BackupButton = Tk.Button(text='Backup', command=partial(Save_Backup, tkvar.get()))
+    BackupButton.grid(row=2, column=2)
 
-    # Main_GUI.mainloop()
+    Main_GUI.mainloop()
 
 
 if __name__ == '__main__':
     main()
+    game_list.close()
