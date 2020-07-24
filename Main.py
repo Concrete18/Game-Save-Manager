@@ -89,7 +89,7 @@ def main():
 
     Main_GUI = Tk.Tk()
     Main_GUI.title('Game Save Manager')
-    # Main_GUI.iconbitmap('Power.ico')
+    Main_GUI.iconbitmap('Save_Icon.ico')
     Main_GUI.configure()
     Main_GUI.resizable(width=False, height=False)
     Main_GUI.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
