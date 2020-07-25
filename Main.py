@@ -1,11 +1,20 @@
+from logging.handlers import RotatingFileHandler
 from tkinter import messagebox
 import datetime as dt
 import tkinter as Tk
+import logging as lg
 import sqlite3
 import shutil
 import os
 
 def main():
+    log_formatter = lg.Formatter('%(asctime)s %(levelname)s %(message)s', datefmt='%m-%d-%Y %I:%M:%S %p')
+    logger = lg.getLogger(__name__)
+    logger.setLevel(lg.DEBUG)
+    my_handler = RotatingFileHandler('Game_Backup.log', maxBytes=5*1024*1024, backupCount=2)
+    my_handler.setFormatter(log_formatter)
+    logger.addHandler(my_handler)
+
     game_list = sqlite3.connect('game_list.db')
     c = game_list.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS games (
@@ -15,19 +24,6 @@ def main():
     )''')
     backup_redundancy = 3 # Total previous backups to keep after each backup is made.
     backup_storage = 'Testing Area\\Save Backup'
-
-
-    def Add_Game_to_DB(game_name, save_location):
-        c = game_list.cursor()
-        c.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
-        {'game_name': game_name, 'save_location': save_location, 'last_backup': dt.datetime.now()})
-        game_list.commit()
-
-
-    def Delete_Game_from_DB(game_name):
-        c = game_list.cursor()
-        c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': game_name})
-        game_list.commit()
 
 
     def get_save_loc(game):
@@ -71,6 +67,7 @@ def main():
         save_loc = get_save_loc(game)
         try:
             shutil.copytree(save_loc, dest)
+            Delete_Oldest(game)
         except FileNotFoundError:
             print('No Action Completed - File location does not exist.')
         except FileExistsError:
@@ -79,7 +76,27 @@ def main():
         c.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
         {'game_name': game, 'last_backup': dt.datetime.now()})
         game_list.commit()
-        Delete_Oldest(game)
+        logger.debug(f'Backed-up Save for {game}.')
+
+
+    def Restore_Backup(game):
+        logger.debug(f'Restored Save for {game}.')
+        pass
+
+
+    def Add_Game_to_DB(game, save_location):
+        c = game_list.cursor()
+        c.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
+        {'game_name': game, 'save_location': save_location, 'last_backup': dt.datetime.now()})
+        game_list.commit()
+        logger.debug(f'Added {game} to database.')
+
+
+    def Delete_Game_from_DB(game):
+        c = game_list.cursor()
+        c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': game_name})
+        game_list.commit()
+        logger.debug(f'Deleted {game} from database.')
 
 
     # Defaults for Background and fonts
