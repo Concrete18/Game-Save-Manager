@@ -89,6 +89,14 @@ def main():
         logger.debug(f'Backed-up Save for {game}.')
 
 
+    def Refresh_Dropdown():
+        popupMenu['menu'].delete(0, 'end')
+        updated_list = Game_list_Sorted()
+        for game in updated_list:
+            popupMenu['menu'].add_command(label=game, command=Tk._setit(clicked, game))
+        clicked.set(updated_list[0])
+
+
     def Restore_Backup(game):
         '''Unfinished'''
         logger.debug(f'Restored Save for {game}.')
@@ -99,8 +107,9 @@ def main():
         c = game_list.cursor()
         c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': game})
         game_list.commit()
+        # Todo Update option menu here.
+        Refresh_Dropdown()
         logger.debug(f'Deleted {game} from database.')
-
 
 
     def Add_Game_Window():
@@ -108,6 +117,7 @@ def main():
         def Verify_New_Data(game, save_loc):
             # Todo
             '''Verifies that the game and save location are valid. The game name must work as a file name.'''
+            return True
             if x == 0:
                 return True
             else:
@@ -140,6 +150,7 @@ def main():
             {'game_name': game, 'save_location': save_location, 'last_backup': dt.datetime.now()})
             game_list.commit()
             logger.debug(f'Added {game} to database.')
+            Refresh_Dropdown()
             Add_Game_Window.destroy()
 
 
