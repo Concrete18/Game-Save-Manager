@@ -1,7 +1,8 @@
 from logging.handlers import RotatingFileHandler
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 import datetime as dt
 import tkinter as Tk
+from tkinter import ttk
 import logging as lg
 import sqlite3
 import shutil
@@ -84,19 +85,73 @@ def main():
         pass
 
 
-    def Add_Game_to_DB(game, save_location):
-        c = game_list.cursor()
-        c.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
-        {'game_name': game, 'save_location': save_location, 'last_backup': dt.datetime.now()})
-        game_list.commit()
-        logger.debug(f'Added {game} to database.')
-
-
     def Delete_Game_from_DB(game):
         c = game_list.cursor()
-        c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': game_name})
+        c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': game})
         game_list.commit()
         logger.debug(f'Deleted {game} from database.')
+
+
+    def Add_Game_Window():
+
+        def Add_Game_Pressed():
+            game_name = GameNameEntry.get()
+            save_location = GameSaveEntry.get()
+            GameSaveEntry.delete(0, Tk.END)
+            GameNameEntry.delete(0, Tk.END)
+            Add_Game_to_DB(game_name, save_location)
+
+
+        def Browse_Click():
+            save_dir = Tk.filedialog.askdirectory(initialdir="C:/", title="Select Save Directory")
+            GameSaveEntry.delete(0, Tk.END)
+            GameSaveEntry.insert(0, save_dir)
+
+
+        def On_Click(event):
+            event.widget.delete(0, Tk.END)
+
+
+        def Add_Game_to_DB(game, save_location):
+            c = game_list.cursor()
+            c.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
+            {'game_name': game, 'save_location': save_location, 'last_backup': dt.datetime.now()})
+            game_list.commit()
+            logger.debug(f'Added {game} to database.')
+            Add_Game_Window.destroy()
+
+
+        Add_Game_Window = Tk.Toplevel(takefocus=True)
+        Add_Game_Window.title('Game Save Manager - Add Game')
+        Add_Game_Window.iconbitmap('Save_Icon.ico')
+        Add_Game_Window.resizable(width=False, height=False)
+        Add_Game_Window.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
+        Add_Game_Window.unbind_class("Button", "<Key-space>")
+
+        EnterGameLabeL = ttk.Label(Add_Game_Window, text='Enter Game Name')
+        EnterGameLabeL.grid(row=0, column=0)
+
+        GameNameEntry = ttk.Entry(Add_Game_Window, width=50, exportselection=0)
+        GameNameEntry.grid(row=0, column=1, columnspan=2, pady=10, padx=5)
+        GameNameEntry.bind("<Button-1>", On_Click)
+
+        EnterSaveLabeL = ttk.Label(Add_Game_Window, text='Enter Save Location')
+        EnterSaveLabeL.grid(row=1, column=0)
+
+        GameSaveEntry = ttk.Entry(Add_Game_Window, width=50, exportselection=0)
+        GameSaveEntry.grid(row=1, column=1, columnspan=2, pady=5, padx=5)
+        GameSaveEntry.bind("<Button-1>", On_Click)
+
+        ConfirmButton = ttk.Button(Add_Game_Window, text='Confirm', command=Add_Game_Pressed, width=20)
+        ConfirmButton.grid(row=2, column=0, padx=5, pady= 5)
+
+        ClearButton = ttk.Button(Add_Game_Window, text='Clear', command=Add_Game_Pressed, width=20)
+        ClearButton.grid(row=2, column=1, padx=5, pady= 5)
+
+        BrowseButton = ttk.Button(Add_Game_Window, text='Browse', command=Browse_Click, width=20)
+        BrowseButton.grid(row=2, column=2, padx=5, pady= 5)
+
+        Add_Game_Window.mainloop()
 
 
     # Defaults for Background and fonts
@@ -107,7 +162,6 @@ def main():
     Main_GUI = Tk.Tk()
     Main_GUI.title('Game Save Manager')
     Main_GUI.iconbitmap('Save_Icon.ico')
-    Main_GUI.configure()
     Main_GUI.resizable(width=False, height=False)
     Main_GUI.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
     Main_GUI.unbind_class("Button", "<Key-space>")
@@ -119,12 +173,16 @@ def main():
     # Title = Tk.Label(Backup_Frame, text='Game Save Manager', font=(BoldBaseFont, 20))
     # Title.grid(column=0, row=0)
 
-    Guide = Tk.Label(Backup_Frame, text='Select the game that you want to backup.\n Ordered by last backup in dropdown.', font=(BaseFont, 10))
-    Guide.grid(columnspan=4, row=1)
+    Guide = Tk.Label(Backup_Frame, text='Selected Game:', font=(BoldBaseFont, 10))
+    Guide.grid(row=2, column=1, pady=10)
 
 
     def Clicked_Backup():
         Save_Backup(clicked.get())
+
+
+    def Clicked_Restore():
+        Restore_Backup(clicked.get())
 
 
     def Clicked_Delete():
@@ -137,50 +195,20 @@ def main():
     sorted_list = Game_list_Sorted()
     clicked.set(sorted_list[0]) # set the default option
 
-    popupMenu = Tk.OptionMenu(Backup_Frame, clicked, *sorted_list)
-    popupMenu.grid(row=2, columnspan=4, pady=10)
+    popupMenu = ttk.OptionMenu(Backup_Frame, clicked, *sorted_list)
+    popupMenu.grid(row=2, column=2, pady=10)
 
-    BackupButton = Tk.Button(Backup_Frame, text='Backup Game Save', command=Clicked_Backup)
-    BackupButton.grid(row=3, column=1, padx=5)
+    BackupButton = ttk.Button(Backup_Frame, text='Backup Game Save', command=Clicked_Backup, width=20)
+    BackupButton.grid(row=3, column=1, padx=5, pady= 5)
 
-    DeleteButton = Tk.Button(Backup_Frame, text='Delete Game From Database', command=Clicked_Delete)
-    DeleteButton.grid(row=3, column=2, padx=5)
+    RestoreButton = ttk.Button(Backup_Frame, text='Restore Game Save', command=Clicked_Restore, width=20)
+    RestoreButton.grid(row=3, column=2, padx=5, pady= 5)
 
-    Add_Game_Frame = Tk.Frame(Main_GUI)
-    Add_Game_Frame.grid(columnspan=4,row=1, padx=(20, 20), pady=(5, 10))
+    DeleteButton = ttk.Button(Backup_Frame, text='Delete Selected Game', command=Clicked_Delete, width=20)
+    DeleteButton.grid(row=4, column=1, padx=5, pady= 5)
 
-
-    def Add_Game_Pressed():
-        game_name = GameNameEntry.get()
-        save_location = GameSaveEntry.get()
-        GameSaveEntry.delete(0, Tk.END)
-        GameNameEntry.delete(0, Tk.END)
-        Add_Game_to_DB(game_name, save_location)
-
-
-    def On_Click(event):
-        event.widget.delete(0, Tk.END)
-
-
-    EnterGameLabeL = Tk.Label(Add_Game_Frame, text='Enter Game Name')
-    EnterGameLabeL.grid(row=0, column=0)
-
-    GameNameEntry = Tk.Entry(Add_Game_Frame, width=50, exportselection=0)
-    GameNameEntry.grid(row=0, column=1, pady=5, padx=5)
-    GameNameEntry.bind("<Button-1>", On_Click)
-
-    EnterSaveLabeL = Tk.Label(Add_Game_Frame, text='Enter Save Location')
-    EnterSaveLabeL.grid(row=1, column=0)
-
-    GameSaveEntry = Tk.Entry(Add_Game_Frame, width=50, exportselection=0)
-    GameSaveEntry.grid(row=1, column=1, pady=5, padx=5)
-    GameSaveEntry.bind("<Button-1>", On_Click)
-
-    AddGame = Tk.Button(Add_Game_Frame, text='Add Game to Database', command=Add_Game_Pressed)
-    AddGame.grid(row=3, columnspan=4)
-
-    Delete_Game_Frame = Tk.Frame(Main_GUI)
-    Delete_Game_Frame.grid(columnspan=4,row=2, padx=(20, 20), pady=(5, 10))
+    AddButton = ttk.Button(Backup_Frame, text='Add New Game', command=Add_Game_Window, width=20)
+    AddButton.grid(row=4, column=2, padx=5, pady= 5)
 
     Main_GUI.mainloop()
     game_list.close()
