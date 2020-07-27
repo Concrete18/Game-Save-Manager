@@ -15,7 +15,6 @@ Tkinter Interface for running through a SQLite Database that allows backing up g
 
 ## To Do
 
-* Configurable backup redundancy.
 * Add Restore backup function.
 * Auto Focus on dropdown menu.
 * Update list on add or delete of game saves.

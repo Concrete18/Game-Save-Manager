@@ -22,8 +22,6 @@ def main():
     Config.read('Config.ini')
     backup_dest = Config.get('Main', 'backup_dest')
     backup_redundancy = int(Config.get('Main', 'backup_redundancy'))
-    print(backup_dest)
-    print(backup_redundancy)
 
     game_list = sqlite3.connect('game_list.db')
     c = game_list.cursor()
@@ -58,16 +56,16 @@ def main():
     def Delete_Oldest(game):
         '''Deletest the oldest saves so only the the newest specified ammount is left.'''
         saves_list = []
-        dir = os.path.join(backup_storage, game)
+        dir = os.path.join(backup_dest, game)
         print(dir)
         for file in os.listdir(dir):
             file = os.path.join(dir, file)
             saves_list.append(file)
         if len(saves_list) < 4:
-            print('3 or Less Saves.')
+            print(f'{backup_redundancy} or Less Saves.')
             return
         else:
-            print('More then 3 Saves.')
+            print(f'More then {backup_redundancy} Saves.')
             sorted_list = sorted(saves_list, key=os.path.getctime, reverse=True)
             for i in range(backup_redundancy, len(saves_list)):
                 shutil.rmtree(sorted_list[i])
@@ -75,7 +73,7 @@ def main():
     def Save_Backup(game):
         '''Backups up the game entered based on SQLite save location data to the specified backup folder.'''
         current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M")
-        dest = os.path.join(backup_storage, game, current_time)
+        dest = os.path.join(backup_dest, game, current_time)
         save_loc = get_save_loc(game)
         try:
             shutil.copytree(save_loc, dest)
