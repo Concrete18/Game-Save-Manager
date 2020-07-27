@@ -1,11 +1,13 @@
 from logging.handlers import RotatingFileHandler
 from tkinter import messagebox, filedialog
+from tkinter import ttk
 import datetime as dt
 import tkinter as Tk
-from tkinter import ttk
 import logging as lg
+import configparser
 import sqlite3
 import shutil
+import math
 import os
 
 def main():
@@ -16,6 +18,13 @@ def main():
     my_handler.setFormatter(log_formatter)
     logger.addHandler(my_handler)
 
+    Config = configparser.ConfigParser()
+    Config.read('Config.ini')
+    backup_dest = Config.get('Main', 'backup_dest')
+    backup_redundancy = int(Config.get('Main', 'backup_redundancy'))
+    print(backup_dest)
+    print(backup_redundancy)
+
     game_list = sqlite3.connect('game_list.db')
     c = game_list.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS games (
@@ -23,11 +32,10 @@ def main():
     save_location text,
     last_backup text
     )''')
-    backup_redundancy = 3 # Total previous backups to keep after each backup is made.
-    backup_storage = 'Testing Area\\Save Backup'
 
 
     def get_save_loc(game):
+        '''Gets the save location of the entered game from the SQLite Database.'''
         print(f'Getting Save location for {game}.')
         game_list = sqlite3.connect('game_list.db')
         c = game_list.cursor()
@@ -37,6 +45,7 @@ def main():
 
 
     def Game_list_Sorted():
+        '''Sorts the game list from the SQLite database based on the last backup and then creates a list.'''
         c = game_list.cursor()
         c.execute("SELECT game_name FROM games ORDER BY last_backup DESC")
         ordered_games = []
@@ -47,6 +56,7 @@ def main():
 
 
     def Delete_Oldest(game):
+        '''Deletest the oldest saves so only the the newest specified ammount is left.'''
         saves_list = []
         dir = os.path.join(backup_storage, game)
         print(dir)
@@ -63,6 +73,7 @@ def main():
                 shutil.rmtree(sorted_list[i])
 
     def Save_Backup(game):
+        '''Backups up the game entered based on SQLite save location data to the specified backup folder.'''
         current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M")
         dest = os.path.join(backup_storage, game, current_time)
         save_loc = get_save_loc(game)
@@ -81,25 +92,37 @@ def main():
 
 
     def Restore_Backup(game):
+        '''Unfinished'''
         logger.debug(f'Restored Save for {game}.')
-        pass
-
+        # Todo
 
     def Delete_Game_from_DB(game):
+        '''Deletes selected game from SQLite Database.'''
         c = game_list.cursor()
         c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': game})
         game_list.commit()
         logger.debug(f'Deleted {game} from database.')
 
 
+
     def Add_Game_Window():
+
+        def Verify_New_Data(game, save_loc):
+            # Todo
+            '''Verifies that the game and save location are valid. The game name must work as a file name.'''
+            if x == 0:
+                return True
+            else:
+                return False
+
 
         def Add_Game_Pressed():
             game_name = GameNameEntry.get()
             save_location = GameSaveEntry.get()
-            GameSaveEntry.delete(0, Tk.END)
-            GameNameEntry.delete(0, Tk.END)
-            Add_Game_to_DB(game_name, save_location)
+            if Verify_New_Data(game_name, save_location):
+                GameSaveEntry.delete(0, Tk.END)
+                GameNameEntry.delete(0, Tk.END)
+                Add_Game_to_DB(game_name, save_location)
 
 
         def Browse_Click():
@@ -113,6 +136,7 @@ def main():
 
 
         def Add_Game_to_DB(game, save_location):
+            '''Adds game to SQLite Database.'''
             c = game_list.cursor()
             c.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
             {'game_name': game, 'save_location': save_location, 'last_backup': dt.datetime.now()})
@@ -166,12 +190,25 @@ def main():
     Main_GUI.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
     Main_GUI.unbind_class("Button", "<Key-space>")
 
-
     Backup_Frame = Tk.Frame(Main_GUI)
     Backup_Frame.grid(columnspan=4, row=0,  padx=(20, 20), pady=(5, 10))
 
-    # Title = Tk.Label(Backup_Frame, text='Game Save Manager', font=(BoldBaseFont, 20))
-    # Title.grid(column=0, row=0)
+
+    def convert_size(backup_dest):
+        '''Converts size of directory best fitting '''
+        size_bytes = os.path.getsize(backup_dest)
+        if size_bytes == 0:
+            return "0B"
+        size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+        i = int(math.floor(math.log(size_bytes, 1024)))
+        p = math.pow(1024, i)
+        s = round(size_bytes / p, 2)
+        return f'{s} {size_name[i]}'
+
+
+    info_text = f'Total Games in Database: {len(Game_list_Sorted())}\nSize of Backup: {convert_size(backup_dest)}'
+    Title = Tk.Label(Backup_Frame, text=info_text, font=(BoldBaseFont, 10))
+    Title.grid(columnspan=4, row=0, column=1)
 
     Guide = Tk.Label(Backup_Frame, text='Selected Game:', font=(BoldBaseFont, 10))
     Guide.grid(row=2, column=1, pady=10)
@@ -182,7 +219,10 @@ def main():
 
 
     def Clicked_Restore():
-        Restore_Backup(clicked.get())
+        box_info = 'Are you sure that you want to restore the game?\nThis will create a backup of the current save.'
+        Restore_Check = messagebox.askyesno(title='Game Save Manager', message=box_info)
+        if Restore_Check:
+            Restore_Backup(clicked.get())
 
 
     def Clicked_Delete():

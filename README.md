@@ -9,9 +9,9 @@ Tkinter Interface for running through a SQLite Database that allows backing up g
 
 ## Python Techniques Used
 
-* Tkinter messagebox
+* Tkinter messagebox and directory dialog
 * SQLite Database
-* File copying and other manipulations.
+* File copying and other manipulations
 
 ## To Do
 
