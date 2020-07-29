@@ -8,6 +8,7 @@ import configparser
 import sqlite3
 import shutil
 import math
+import re
 import os
 
 def main():
@@ -30,6 +31,13 @@ def main():
     save_location text,
     last_backup text
     )''')
+
+
+    def sanitize_for_filename(string):
+        '''Removes illegal characters from string so it can become a valid filename.'''
+        for char in ('<', '>', ':', '/', '\\', '|', '?', '*'):
+            string = string.replace(char,'')
+        return string
 
 
     def get_save_loc(game):
@@ -73,8 +81,9 @@ def main():
     def Save_Backup(game):
         '''Backups up the game entered based on SQLite save location data to the specified backup folder.'''
         current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M")
-        dest = os.path.join(backup_dest, game, current_time)
         save_loc = get_save_loc(game)
+        game = sanitize_for_filename(game)
+        dest = os.path.join(backup_dest, game, current_time)
         try:
             shutil.copytree(save_loc, dest)
             Delete_Oldest(game)
@@ -107,30 +116,21 @@ def main():
         c = game_list.cursor()
         c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': game})
         game_list.commit()
-        # Todo Update option menu here.
         Refresh_Dropdown()
         logger.debug(f'Deleted {game} from database.')
 
 
     def Add_Game_Window():
 
-        def Verify_New_Data(game, save_loc):
-            # Todo
-            '''Verifies that the game and save location are valid. The game name must work as a file name.'''
-            return True
-            if x == 0:
-                return True
-            else:
-                return False
-
-
         def Add_Game_Pressed():
             game_name = GameNameEntry.get()
             save_location = GameSaveEntry.get()
-            if Verify_New_Data(game_name, save_location):
+            if os.path.isdir(save_location):
                 GameSaveEntry.delete(0, Tk.END)
                 GameNameEntry.delete(0, Tk.END)
                 Add_Game_to_DB(game_name, save_location)
+            else:
+                messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
 
 
         def Browse_Click():
@@ -154,6 +154,10 @@ def main():
             Add_Game_Window.destroy()
 
 
+        def Cancel_Pressed():
+            Add_Game_Window.destroy()
+
+
         Add_Game_Window = Tk.Toplevel(takefocus=True)
         Add_Game_Window.title('Game Save Manager - Add Game')
         Add_Game_Window.iconbitmap('Save_Icon.ico')
@@ -164,15 +168,15 @@ def main():
         EnterGameLabeL = ttk.Label(Add_Game_Window, text='Enter Game Name')
         EnterGameLabeL.grid(row=0, column=0)
 
-        GameNameEntry = ttk.Entry(Add_Game_Window, width=50, exportselection=0)
-        GameNameEntry.grid(row=0, column=1, columnspan=2, pady=10, padx=5)
+        GameNameEntry = ttk.Entry(Add_Game_Window, width=70, exportselection=0)
+        GameNameEntry.grid(row=0, column=1, columnspan=3, pady=10, padx=5)
         GameNameEntry.bind("<Button-1>", On_Click)
 
         EnterSaveLabeL = ttk.Label(Add_Game_Window, text='Enter Save Location')
         EnterSaveLabeL.grid(row=1, column=0)
 
-        GameSaveEntry = ttk.Entry(Add_Game_Window, width=50, exportselection=0)
-        GameSaveEntry.grid(row=1, column=1, columnspan=2, pady=5, padx=5)
+        GameSaveEntry = ttk.Entry(Add_Game_Window, width=70, exportselection=0)
+        GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5, padx=5)
         GameSaveEntry.bind("<Button-1>", On_Click)
 
         ConfirmButton = ttk.Button(Add_Game_Window, text='Confirm', command=Add_Game_Pressed, width=20)
@@ -183,6 +187,9 @@ def main():
 
         BrowseButton = ttk.Button(Add_Game_Window, text='Browse', command=Browse_Click, width=20)
         BrowseButton.grid(row=2, column=2, padx=5, pady= 5)
+
+        CancelButton = ttk.Button(Add_Game_Window, text='Cancel', command=Cancel_Pressed, width=20)
+        CancelButton.grid(row=2, column=3, padx=5, pady= 5)
 
         Add_Game_Window.mainloop()
 
@@ -208,7 +215,7 @@ def main():
         size_bytes = os.path.getsize(backup_dest)
         if size_bytes == 0:
             return "0B"
-        size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+        size_name = ("B", "KB", "MB", "GB", "TB")
         i = int(math.floor(math.log(size_bytes, 1024)))
         p = math.pow(1024, i)
         s = round(size_bytes / p, 2)
@@ -220,7 +227,7 @@ def main():
     Title.grid(columnspan=4, row=0, column=1)
 
     Guide = Tk.Label(Backup_Frame, text='Selected Game:', font=(BoldBaseFont, 10))
-    Guide.grid(row=2, column=1, pady=10)
+    Guide.grid(columnspan=2, row=1, column=1, pady=(10,0))
 
 
     def Clicked_Backup():
@@ -245,7 +252,7 @@ def main():
     clicked.set(sorted_list[0]) # set the default option
 
     popupMenu = ttk.OptionMenu(Backup_Frame, clicked, *sorted_list)
-    popupMenu.grid(row=2, column=2, pady=10)
+    popupMenu.grid(columnspan=2, row=2, column=1, pady=(0,5))
 
     BackupButton = ttk.Button(Backup_Frame, text='Backup Game Save', command=Clicked_Backup, width=20)
     BackupButton.grid(row=3, column=1, padx=5, pady= 5)
