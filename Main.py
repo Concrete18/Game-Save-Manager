@@ -99,6 +99,7 @@ def main():
 
 
     def Refresh_Dropdown():
+        '''Refreshes dropdown contents in cases changes were made to its lists.'''
         popupMenu['menu'].delete(0, 'end')
         updated_list = Game_list_Sorted()
         for game in updated_list:
@@ -107,7 +108,10 @@ def main():
 
 
     def Restore_Backup(game):
-        '''Unfinished'''
+        '''Restores game save after moving current save to special backup folder.'''
+        dest = os.path.join(backup_dest, game, 'Pre-Restore Backup')
+        shutil.move(save_loc, dest)
+        shutil.copytree(save_loc, dest)
         logger.debug(f'Restored Save for {game}.')
         # Todo
 
@@ -139,10 +143,6 @@ def main():
             GameSaveEntry.insert(0, save_dir)
 
 
-        def On_Click(event):
-            event.widget.delete(0, Tk.END)
-
-
         def Add_Game_to_DB(game, save_location):
             '''Adds game to SQLite Database.'''
             c = game_list.cursor()
@@ -170,14 +170,12 @@ def main():
 
         GameNameEntry = ttk.Entry(Add_Game_Window, width=70, exportselection=0)
         GameNameEntry.grid(row=0, column=1, columnspan=3, pady=10, padx=5)
-        GameNameEntry.bind("<Button-1>", On_Click)
 
         EnterSaveLabeL = ttk.Label(Add_Game_Window, text='Enter Save Location')
         EnterSaveLabeL.grid(row=1, column=0)
 
         GameSaveEntry = ttk.Entry(Add_Game_Window, width=70, exportselection=0)
         GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5, padx=5)
-        GameSaveEntry.bind("<Button-1>", On_Click)
 
         ConfirmButton = ttk.Button(Add_Game_Window, text='Confirm', command=Add_Game_Pressed, width=20)
         ConfirmButton.grid(row=2, column=0, padx=5, pady= 5)
