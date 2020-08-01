@@ -17,3 +17,9 @@ Tkinter Interface for running through a SQLite Database that allows backing up g
 
 * Add Restore backup function.
 * Auto Focus on dropdown menu.
+
+## Module Download Requirements
+### Run within your normal console for pip.
+```
+pip install -r requirements.txt
+```
