@@ -113,7 +113,7 @@ def main():
         shutil.move(save_loc, dest)
         shutil.copytree(save_loc, dest)
         logger.debug(f'Restored Save for {game}.')
-        # Todo
+        # TODO Finish Restore
 
     def Delete_Game_from_DB(game):
         '''Deletes selected game from SQLite Database.'''
