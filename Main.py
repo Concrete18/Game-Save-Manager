@@ -61,6 +61,15 @@ def main():
         return ordered_games
 
 
+    def Database_Check():
+        C = game_list.cursor()
+        c.execute("SELECT save_location FROM games")
+        c.execute("SELECT game_name FROM games ORDER BY last_backup DESC")
+        ordered_games = []
+        for save_location in c.fetchall():
+            Exists
+
+
     def Delete_Oldest(game):
         '''Deletest the oldest saves so only the the newest specified ammount is left.'''
         saves_list = []
