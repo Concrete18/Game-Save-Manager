@@ -27,6 +27,8 @@ def main():
     backup_dest = Config.get('Main', 'backup_dest')
     backup_redundancy = int(Config.get('Main', 'backup_redundancy'))
 
+    # TODO Create function to give screen center for windows.
+
     game_list = sqlite3.connect('game_list.db')
     c = game_list.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS games (
@@ -134,14 +136,12 @@ def main():
         '''Restores game save after moving current save to special backup folder.'''
         dest = os.path.join(backup_dest, game, 'Pre-Restore Backup')
         save_loc = Get_Save_Loc(game)
-        # try:
-        #     shutil.move(save_loc, dest)
-        # except FileNotFoundError:
-        #     messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
-        Create_Restore_Game_Window(game)
-        to_restore = save_to_restore.get()
-        shutil.copytree(to_restore, save_loc)
-        logger.debug(f'Restored Save for {game}.')
+        try:
+            shutil.move(save_loc, dest)
+        except FileNotFoundError:
+            messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
+            return
+        Create_Restore_Game_Window(game, save_loc)
 
 
     def Delete_Game_from_DB(game):
@@ -225,8 +225,7 @@ def main():
 
         Add_Game_Window.mainloop()
 
-    def Create_Restore_Game_Window(game):
-
+    def Create_Restore_Game_Window(game, save_loc):
         backup_list =[]
         backup = os.path.join(backup_dest, game)
         for file in os.listdir(backup):
@@ -236,8 +235,10 @@ def main():
         def Cancel_Pressed():
             Restore_Game_Window.destroy()
 
-        def Restore_Game_Pressed():
-            save_to_restore = save_to_restore.get()
+        def Restore_Game_Pressed(save_to_restore):
+            source = os.path.join(backup_dest, game, save_to_restore)
+            shutil.copytree(source, save_loc)
+            logger.debug(f'Restored Save for {game}.')
 
 
         Restore_Game_Window = Tk.Toplevel(takefocus=True)
@@ -255,7 +256,7 @@ def main():
         popupMenu = ttk.OptionMenu(Restore_Game_Window, save_to_restore, *backup_list)
         popupMenu.grid(columnspan=2, row=1, column=0, pady=(0,5))
 
-        ConfirmButton = ttk.Button(Restore_Game_Window, text='Confirm', command=Restore_Game_Pressed, width=20)
+        ConfirmButton = ttk.Button(Restore_Game_Window, text='Confirm', command=partial(Restore_Game_Pressed, save_to_restore.get()), width=20)
         ConfirmButton.grid(row=2, column=0, padx=5, pady= 5)
 
         CancelButton = ttk.Button(Restore_Game_Window, text='Cancel', command=Cancel_Pressed, width=20)
