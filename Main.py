@@ -1,5 +1,6 @@
 from logging.handlers import RotatingFileHandler
 from tkinter import messagebox, filedialog
+from functools import partial
 from tkinter import ttk
 import datetime as dt
 import tkinter as Tk
@@ -62,7 +63,7 @@ def main():
         return string
 
 
-    def get_save_loc(game):
+    def Get_Save_Loc(game):
         '''Returns the save location of the entered game from the SQLite Database.'''
         print(f'Getting Save location for {game}.')
         game_list = sqlite3.connect('game_list.db')
@@ -103,7 +104,7 @@ def main():
     def Save_Backup(game):
         '''Backups up the game entered based on SQLite save location data to the specified backup folder.'''
         current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M")
-        save_loc = get_save_loc(game)
+        save_loc = Get_Save_Loc(game)
         game = sanitize_for_filename(game)
         dest = os.path.join(backup_dest, game, current_time)
         try:
@@ -132,13 +133,14 @@ def main():
     def Restore_Backup(game): # TODO Finish Restore
         '''Restores game save after moving current save to special backup folder.'''
         dest = os.path.join(backup_dest, game, 'Pre-Restore Backup')
-        save_loc = get_save_loc(game)
+        save_loc = Get_Save_Loc(game)
         # try:
         #     shutil.move(save_loc, dest)
         # except FileNotFoundError:
         #     messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
         Create_Restore_Game_Window(game)
-        shutil.copytree(save_loc, save_loc)
+        to_restore = save_to_restore.get()
+        shutil.copytree(to_restore, save_loc)
         logger.debug(f'Restored Save for {game}.')
 
 
@@ -230,12 +232,12 @@ def main():
         for file in os.listdir(backup):
             backup_list.append(file)
 
-        def Restore_Game_Pressed():
-            save_to_restore = s
-
 
         def Cancel_Pressed():
             Restore_Game_Window.destroy()
+
+        def Restore_Game_Pressed():
+            save_to_restore = save_to_restore.get()
 
 
         Restore_Game_Window = Tk.Toplevel(takefocus=True)
@@ -247,17 +249,19 @@ def main():
 
         save_to_restore = Tk.StringVar(Restore_Game_Window)
 
+        RestoreInfo = ttk.Label(Restore_Game_Window, text=f'Select save to restore for {game}.')
+        RestoreInfo.grid(columnspan=2, row=0, column=0)
+
         popupMenu = ttk.OptionMenu(Restore_Game_Window, save_to_restore, *backup_list)
-        popupMenu.grid(columnspan=2, row=2, column=1, pady=(0,5))
+        popupMenu.grid(columnspan=2, row=1, column=0, pady=(0,5))
 
         ConfirmButton = ttk.Button(Restore_Game_Window, text='Confirm', command=Restore_Game_Pressed, width=20)
         ConfirmButton.grid(row=2, column=0, padx=5, pady= 5)
 
         CancelButton = ttk.Button(Restore_Game_Window, text='Cancel', command=Cancel_Pressed, width=20)
-        CancelButton.grid(row=2, column=3, padx=5, pady= 5)
+        CancelButton.grid(row=2, column=1, padx=5, pady= 5)
 
-        Add_Game_Window.mainloop()
-        return save_to_restore
+        Restore_Game_Window.mainloop()
 
 
     # Defaults for Background and fonts
@@ -296,17 +300,6 @@ def main():
     Guide.grid(columnspan=2, row=1, column=1, pady=(10,0))
 
 
-    def Clicked_Backup():
-        Save_Backup(clicked.get())
-
-
-    def Clicked_Restore():
-        box_info = 'Are you sure that you want to restore the game?\nThis will create a backup of the current save.'
-        Restore_Check = messagebox.askyesno(title='Game Save Manager', message=box_info)
-        if Restore_Check:
-            Restore_Backup(clicked.get())
-
-
     def Clicked_Delete():
         msg = 'Are you sure that you want to delete the game?'
         Delete_Check = messagebox.askyesno(title='Game Save Manager', message=msg)
@@ -321,10 +314,10 @@ def main():
     popupMenu = ttk.OptionMenu(Backup_Frame, clicked, *sorted_list)
     popupMenu.grid(columnspan=2, row=2, column=1, pady=(0,5))
 
-    BackupButton = ttk.Button(Backup_Frame, text='Backup Game Save', command=Clicked_Backup, width=20)
+    BackupButton = ttk.Button(Backup_Frame, text='Backup Game Save', command=partial(Save_Backup, clicked.get()), width=20)
     BackupButton.grid(row=3, column=1, padx=5, pady= 5)
 
-    RestoreButton = ttk.Button(Backup_Frame, text='Restore Game Save', command=Clicked_Restore, width=20)
+    RestoreButton = ttk.Button(Backup_Frame, text='Restore Game Save', command=partial(Restore_Backup, clicked.get()), width=20)
     RestoreButton.grid(row=3, column=2, padx=5, pady= 5)
 
     DeleteButton = ttk.Button(Backup_Frame, text='Delete Selected Game', command=Clicked_Delete, width=20)
