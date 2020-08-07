@@ -5,9 +5,11 @@ import datetime as dt
 import tkinter as Tk
 import logging as lg
 import configparser
+import threading
 import sqlite3
 import shutil
 import math
+import time
 import re
 import os
 
@@ -31,6 +33,26 @@ def main():
     save_location text,
     last_backup text
     )''')
+
+
+    def Database_Check(): #  TODO Finish function to make sure save locations exist.
+        '''Checks for missing save directories from database.'''
+        c = game_list.cursor()
+        c.execute("SELECT save_location FROM games")
+        missing_save_loc = []
+        for save_location in c.fetchall():
+            if os.path.isdir(save_location[0]):
+                pass
+            else:
+                missing_save_loc.append(save_location[0])
+        missing_saves = len(missing_save_loc)
+        continue_var = 0
+        if missing_saves > 0 or missing_saves < 6:
+            continue_var = messagebox.showwarning(title='Game Save Manager', message=f'Save Locations for the following do not exist.\n{missing_save_loc}')
+        elif len(missing_save_loc) > 5:
+            continue_var = messagebox.showwarning(title='Game Save Manager', message='More then 5 save locations do not exist.')
+        else:
+            print('All save locations are accounted for.')
 
 
     def sanitize_for_filename(string):
@@ -59,15 +81,6 @@ def main():
             ordered_games.append(game_name[0])
         game_list.commit()
         return ordered_games
-
-
-    def Database_Check():
-        C = game_list.cursor()
-        c.execute("SELECT save_location FROM games")
-        c.execute("SELECT game_name FROM games ORDER BY last_backup DESC")
-        ordered_games = []
-        for save_location in c.fetchall():
-            Exists
 
 
     def Delete_Oldest(game):
@@ -116,13 +129,16 @@ def main():
         clicked.set(updated_list[0])
 
 
-    def Restore_Backup(game):
+    def Restore_Backup(game): # TODO Finish Restore
         '''Restores game save after moving current save to special backup folder.'''
         dest = os.path.join(backup_dest, game, 'Pre-Restore Backup')
-        shutil.move(save_loc, dest)
-        shutil.copytree(save_loc, dest)
+        save_loc = get_save_loc(game)
+        try:
+            shutil.move(save_loc, dest)
+        except FileNotFoundError:
+            messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
         logger.debug(f'Restored Save for {game}.')
-        # TODO Finish Restore
+
 
     def Delete_Game_from_DB(game):
         '''Deletes selected game from SQLite Database.'''
@@ -153,7 +169,7 @@ def main():
 
 
         def Add_Game_to_DB(game, save_location):
-            '''Adds game to SQLite Database.'''
+            '''Adds game to SQLite Database using entry box data.'''
             c = game_list.cursor()
             c.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
             {'game_name': game, 'save_location': save_location, 'last_backup': dt.datetime.now()})
@@ -161,6 +177,11 @@ def main():
             logger.debug(f'Added {game} to database.')
             Refresh_Dropdown()
             Add_Game_Window.destroy()
+
+
+        def Update_Game(): # TODO Add button to update game info.
+            '''Allows updating data for games in database.'''
+            pass
 
 
         def Cancel_Pressed():
@@ -273,9 +294,10 @@ def main():
     AddButton = ttk.Button(Backup_Frame, text='Add New Game', command=Add_Game_Window, width=20)
     AddButton.grid(row=4, column=2, padx=5, pady= 5)
 
+    Database_Check()
+
     Main_GUI.mainloop()
     game_list.close()
-
 
 if __name__ == '__main__':
     main()
