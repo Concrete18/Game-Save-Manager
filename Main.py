@@ -47,12 +47,12 @@ def main():
                 missing_save_loc.append(save_location[0])
         missing_saves = len(missing_save_loc)
         continue_var = 0
-        if missing_saves > 0 or missing_saves < 6:
-            continue_var = messagebox.showwarning(title='Game Save Manager', message=f'Save Locations for the following do not exist.\n{missing_save_loc}')
+        if missing_saves > 0 and missing_saves < 6:
+            msg = f'Save Locations for the following do not exist.\n{missing_save_loc}'
+            continue_var = messagebox.showwarning(title='Game Save Manager', message=msg)
         elif len(missing_save_loc) > 5:
-            continue_var = messagebox.showwarning(title='Game Save Manager', message='More then 5 save locations do not exist.')
-        else:
-            print('All save locations are accounted for.')
+            msg = 'More then 5 save locations do not exist.'
+            continue_var = messagebox.showwarning(title='Game Save Manager', message=msg)
 
 
     def sanitize_for_filename(string):
@@ -63,7 +63,7 @@ def main():
 
 
     def get_save_loc(game):
-        '''Gets the save location of the entered game from the SQLite Database.'''
+        '''Returns the save location of the entered game from the SQLite Database.'''
         print(f'Getting Save location for {game}.')
         game_list = sqlite3.connect('game_list.db')
         c = game_list.cursor()
@@ -73,7 +73,7 @@ def main():
 
 
     def Game_list_Sorted():
-        '''Sorts the game list from the SQLite database based on the last backup and then creates a list.'''
+        '''Sorts the game list from the SQLite database based on the last backup and then returns a list.'''
         c = game_list.cursor()
         c.execute("SELECT game_name FROM games ORDER BY last_backup DESC")
         ordered_games = []
@@ -133,10 +133,12 @@ def main():
         '''Restores game save after moving current save to special backup folder.'''
         dest = os.path.join(backup_dest, game, 'Pre-Restore Backup')
         save_loc = get_save_loc(game)
-        try:
-            shutil.move(save_loc, dest)
-        except FileNotFoundError:
-            messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
+        # try:
+        #     shutil.move(save_loc, dest)
+        # except FileNotFoundError:
+        #     messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
+        Create_Restore_Game_Window(game)
+        shutil.copytree(save_loc, save_loc)
         logger.debug(f'Restored Save for {game}.')
 
 
@@ -221,6 +223,42 @@ def main():
 
         Add_Game_Window.mainloop()
 
+    def Create_Restore_Game_Window(game):
+
+        backup_list =[]
+        backup = os.path.join(backup_dest, game)
+        for file in os.listdir(backup):
+            backup_list.append(file)
+
+        def Restore_Game_Pressed():
+            save_to_restore = s
+
+
+        def Cancel_Pressed():
+            Restore_Game_Window.destroy()
+
+
+        Restore_Game_Window = Tk.Toplevel(takefocus=True)
+        Restore_Game_Window.title('Game Save Manager - Restore Game')
+        Restore_Game_Window.iconbitmap('Save_Icon.ico')
+        Restore_Game_Window.resizable(width=False, height=False)
+        Restore_Game_Window.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
+        Restore_Game_Window.unbind_class("Button", "<Key-space>")
+
+        save_to_restore = Tk.StringVar(Restore_Game_Window)
+
+        popupMenu = ttk.OptionMenu(Restore_Game_Window, save_to_restore, *backup_list)
+        popupMenu.grid(columnspan=2, row=2, column=1, pady=(0,5))
+
+        ConfirmButton = ttk.Button(Restore_Game_Window, text='Confirm', command=Restore_Game_Pressed, width=20)
+        ConfirmButton.grid(row=2, column=0, padx=5, pady= 5)
+
+        CancelButton = ttk.Button(Restore_Game_Window, text='Cancel', command=Cancel_Pressed, width=20)
+        CancelButton.grid(row=2, column=3, padx=5, pady= 5)
+
+        Add_Game_Window.mainloop()
+        return save_to_restore
+
 
     # Defaults for Background and fonts
     Background = 'White'
@@ -270,7 +308,8 @@ def main():
 
 
     def Clicked_Delete():
-        Delete_Check = messagebox.askyesno(title='Game Save Manager', message='Are you sure that you want to delete the game?')
+        msg = 'Are you sure that you want to delete the game?'
+        Delete_Check = messagebox.askyesno(title='Game Save Manager', message=msg)
         if Delete_Check:
           Delete_Game_from_DB(clicked.get())
 
