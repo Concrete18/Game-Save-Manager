@@ -27,7 +27,6 @@ def main():
     backup_dest = Config.get('Main', 'backup_dest')
     backup_redundancy = int(Config.get('Main', 'backup_redundancy'))
 
-    # TODO Create function to give screen center for windows.
 
     game_list = sqlite3.connect('game_list.db')
     c = game_list.cursor()
@@ -38,7 +37,7 @@ def main():
     )''')
 
 
-    def Database_Check(): #  TODO Finish function to make sure save locations exist.
+    def Database_Check():
         '''Checks for missing save directories from database.'''
         c = game_list.cursor()
         c.execute("SELECT save_location FROM games")
@@ -54,7 +53,7 @@ def main():
             msg = f'Save Locations for the following do not exist.\n{missing_save_loc}'
             continue_var = messagebox.showwarning(title='Game Save Manager', message=msg)
         elif len(missing_save_loc) > 5:
-            msg = 'More then 5 save locations do not exist.'
+            msg = 'More than 5 save locations do not exist.'
             continue_var = messagebox.showwarning(title='Game Save Manager', message=msg)
 
 
@@ -98,7 +97,7 @@ def main():
             print(f'{backup_redundancy} or Less Saves.')
             return
         else:
-            print(f'More then {backup_redundancy} Saves.')
+            print(f'More than {backup_redundancy} Saves.')
             sorted_list = sorted(saves_list, key=os.path.getctime, reverse=True)
             for i in range(backup_redundancy, len(saves_list)):
                 shutil.rmtree(sorted_list[i])
@@ -132,7 +131,7 @@ def main():
         clicked.set(updated_list[0])
 
 
-    def Restore_Backup(game): # TODO Finish Restore
+    def Restore_Backup(game):
         '''Restores game save after moving current save to special backup folder.'''
         dest = os.path.join(backup_dest, game, 'Pre-Restore Backup')
         save_loc = Get_Save_Loc(game)
@@ -196,6 +195,7 @@ def main():
         Add_Game_Window.title('Game Save Manager - Add Game')
         Add_Game_Window.iconbitmap('Save_Icon.ico')
         Add_Game_Window.resizable(width=False, height=False)
+        Add_Game_Window.geometry("+600+600")
         Add_Game_Window.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
         Add_Game_Window.unbind_class("Button", "<Key-space>")
 
@@ -239,12 +239,14 @@ def main():
             source = os.path.join(backup_dest, game, save_to_restore)
             shutil.copytree(source, save_loc)
             logger.debug(f'Restored Save for {game}.')
+            Restore_Game_Window.destroy()
 
 
         Restore_Game_Window = Tk.Toplevel(takefocus=True)
         Restore_Game_Window.title('Game Save Manager - Restore Game')
         Restore_Game_Window.iconbitmap('Save_Icon.ico')
         Restore_Game_Window.resizable(width=False, height=False)
+        Restore_Game_Window.geometry("+600+600")
         Restore_Game_Window.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
         Restore_Game_Window.unbind_class("Button", "<Key-space>")
 
@@ -264,16 +266,20 @@ def main():
 
         Restore_Game_Window.mainloop()
 
-
     # Defaults for Background and fonts
     Background = 'White'
     BoldBaseFont = "Arial Bold"
     BaseFont = "Arial"
 
+
     Main_GUI = Tk.Tk()
     Main_GUI.title('Game Save Manager')
     Main_GUI.iconbitmap('Save_Icon.ico')
-    Main_GUI.resizable(width=False, height=False)
+    window_width = 320
+    window_height = 183
+    width = int((Main_GUI.winfo_screenwidth()-window_width)/2)
+    height = int((Main_GUI.winfo_screenheight()-window_height)/2)
+    Main_GUI.geometry(f'{window_width}x{window_height}+{width}+{height}')
     Main_GUI.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
     Main_GUI.unbind_class("Button", "<Key-space>")
 
@@ -284,8 +290,7 @@ def main():
     def convert_size(backup_dest):
         '''Converts size of directory best fitting '''
         size_bytes = os.path.getsize(backup_dest)
-        if size_bytes == 0:
-            return "0B"
+        if size_bytes == 0: return "0B"
         size_name = ("B", "KB", "MB", "GB", "TB")
         i = int(math.floor(math.log(size_bytes, 1024)))
         p = math.pow(1024, i)
@@ -293,7 +298,7 @@ def main():
         return f'{s} {size_name[i]}'
 
 
-    info_text = f'Total Games in Database: {len(Game_list_Sorted())}\nSize of Backup: {convert_size(backup_dest)}'
+    info_text = f'Total Games in Database: {len(Game_list_Sorted())}\nSize of Backups: {convert_size(backup_dest)}'
     Title = Tk.Label(Backup_Frame, text=info_text, font=(BoldBaseFont, 10))
     Title.grid(columnspan=4, row=0, column=1)
 
