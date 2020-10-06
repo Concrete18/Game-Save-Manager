@@ -1,6 +1,5 @@
 from logging.handlers import RotatingFileHandler
 from tkinter import messagebox, filedialog
-from functools import partial
 from tkinter import ttk
 import datetime as dt
 import tkinter as Tk
@@ -27,10 +26,10 @@ def main():
     backup_dest = Config.get('Main', 'backup_dest')
     backup_redundancy = int(Config.get('Main', 'backup_redundancy'))
 
-
     game_list = sqlite3.connect('game_list.db')
     c = game_list.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS games (
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS games (
     game_name text,
     save_location text,
     last_backup text
@@ -122,24 +121,24 @@ def main():
         logger.debug(f'Backed-up Save for {game}.')
 
 
-    def Refresh_Dropdown():
-        '''Refreshes dropdown contents in cases changes were made to its lists.'''
-        popupMenu['menu'].delete(0, 'end')
-        updated_list = Game_list_Sorted()
-        for game in updated_list:
-            popupMenu['menu'].add_command(label=game, command=Tk._setit(clicked, game))
-        clicked.set(updated_list[0])
+    # def Refresh_Dropdown():
+    #     '''Refreshes dropdown contents in cases changes were made to its lists.'''
+    #     popupMenu['menu'].delete(0, 'end')
+    #     updated_list = Game_list_Sorted()
+    #     for game in updated_list:
+    #         popupMenu['menu'].add_command(label=game, command=Tk._setit(clicked, game))
+    #     clicked.set(updated_list[0])
 
 
     def Restore_Backup(game):
         '''Restores game save after moving current save to special backup folder.'''
         dest = os.path.join(backup_dest, game, 'Pre-Restore Backup')
         save_loc = Get_Save_Loc(game)
-        try:
-            shutil.move(save_loc, dest)
-        except FileNotFoundError:
-            messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
-            return
+        # try:
+        #     shutil.move(save_loc, dest)
+        # except FileNotFoundError:
+        #     messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
+        #     return
         Create_Restore_Game_Window(game, save_loc)
 
 
@@ -148,7 +147,7 @@ def main():
         c = game_list.cursor()
         c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': game})
         game_list.commit()
-        Refresh_Dropdown()
+        # Refresh_Dropdown()
         logger.debug(f'Deleted {game} from database.')
 
 
@@ -178,7 +177,7 @@ def main():
             {'game_name': game, 'save_location': save_location, 'last_backup': dt.datetime.now()})
             game_list.commit()
             logger.debug(f'Added {game} to database.')
-            Refresh_Dropdown()
+            # Refresh_Dropdown()
             Add_Game_Window.destroy()
 
 
@@ -255,10 +254,16 @@ def main():
         RestoreInfo = ttk.Label(Restore_Game_Window, text=f'Select save to restore for {game}.')
         RestoreInfo.grid(columnspan=2, row=0, column=0)
 
-        popupMenu = ttk.OptionMenu(Restore_Game_Window, save_to_restore, *backup_list)
-        popupMenu.grid(columnspan=2, row=1, column=0, pady=(0,5))
+        # popupMenu = ttk.OptionMenu(Restore_Game_Window, save_to_restore, *backup_list)
+        # popupMenu.grid(columnspan=2, row=1, column=0, pady=(0,5))
 
-        ConfirmButton = ttk.Button(Restore_Game_Window, text='Confirm', command=partial(Restore_Game_Pressed, save_to_restore.get()), width=20)
+        Listbox = Tk.Listbox(Restore_Game_Window, height=10, width=40)
+        Listbox.grid(columnspan=2, row=1, column=0, pady=(0,5))
+
+        for item in sorted_list:
+            Listbox.insert(Tk.END, item)
+
+        ConfirmButton = ttk.Button(Restore_Game_Window, text='Confirm', command=lambda: Restore_Game_Pressed(save_to_restore.get()), width=20)
         ConfirmButton.grid(row=2, column=0, padx=5, pady= 5)
 
         CancelButton = ttk.Button(Restore_Game_Window, text='Cancel', command=Cancel_Pressed, width=20)
@@ -276,7 +281,7 @@ def main():
     Main_GUI.title('Game Save Manager')
     Main_GUI.iconbitmap('Save_Icon.ico')
     window_width = 320
-    window_height = 183
+    window_height = 320
     width = int((Main_GUI.winfo_screenwidth()-window_width)/2)
     height = int((Main_GUI.winfo_screenheight()-window_height)/2)
     Main_GUI.geometry(f'{window_width}x{window_height}+{width}+{height}')
@@ -302,7 +307,7 @@ def main():
     Title = Tk.Label(Backup_Frame, text=info_text, font=(BoldBaseFont, 10))
     Title.grid(columnspan=4, row=0, column=1)
 
-    Guide = Tk.Label(Backup_Frame, text='Selected Game:', font=(BoldBaseFont, 10))
+    Guide = Tk.Label(Backup_Frame, text='Select Game', font=(BoldBaseFont, 10))
     Guide.grid(columnspan=2, row=1, column=1, pady=(10,0))
 
 
@@ -317,19 +322,29 @@ def main():
     sorted_list = Game_list_Sorted()
     clicked.set(sorted_list[0]) # set the default option
 
-    popupMenu = ttk.OptionMenu(Backup_Frame, clicked, *sorted_list)
-    popupMenu.grid(columnspan=2, row=2, column=1, pady=(0,5))
+    # popupMenu = ttk.OptionMenu(Backup_Frame, clicked, *sorted_list)
+    # popupMenu.grid(columnspan=2, row=2, column=1, pady=(0,5))
 
-    BackupButton = ttk.Button(Backup_Frame, text='Backup Game Save', command=partial(Save_Backup, clicked.get()), width=20)
+    Listbox = Tk.Listbox(Backup_Frame, height=10, width=40)
+    Listbox.grid(columnspan=2, row=2, column=1, pady=(0,5))
+
+    for item in sorted_list:
+        Listbox.insert(Tk.END, item)
+
+    BackupButton = ttk.Button(Backup_Frame, text='Backup Game Save',
+        command=lambda: Save_Backup(Listbox.get(Tk.ACTIVE)), width=20)
     BackupButton.grid(row=3, column=1, padx=5, pady= 5)
 
-    RestoreButton = ttk.Button(Backup_Frame, text='Restore Game Save', command=partial(Restore_Backup, clicked.get()), width=20)
+    RestoreButton = ttk.Button(Backup_Frame, text='Restore Game Save',
+        command=lambda: Restore_Backup(Listbox.get(Tk.ACTIVE)), width=20)
     RestoreButton.grid(row=3, column=2, padx=5, pady= 5)
 
-    DeleteButton = ttk.Button(Backup_Frame, text='Delete Selected Game', command=Clicked_Delete, width=20)
+    DeleteButton = ttk.Button(Backup_Frame, text='Delete Selected Game',
+        command=Clicked_Delete, width=20)
     DeleteButton.grid(row=4, column=1, padx=5, pady= 5)
 
-    AddButton = ttk.Button(Backup_Frame, text='Add New Game', command=Add_Game_Window, width=20)
+    AddButton = ttk.Button(Backup_Frame, text='Add New Game',
+        command=Add_Game_Window, width=20)
     AddButton.grid(row=4, column=2, padx=5, pady= 5)
 
     Database_Check()
