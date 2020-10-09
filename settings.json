@@ -1,0 +1,9 @@
+{
+"settings":
+    {
+    "backup_dest":"Testing Area\\Save Backup",
+    "backup_redundancy":3,
+    "last_window_width":12,
+    "last_window_height":12
+    }
+}

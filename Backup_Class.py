@@ -2,19 +2,23 @@ from tkinter import filedialog, messagebox
 import tkinter as Tk
 import datetime as dt
 import logging as lg
-import configparser
 import sqlite3
 import shutil
 import math
 import os
+import json
 
 
 class Backup:
     def __init__(self, database, logger):
-        Config = configparser.ConfigParser()
-        Config.read('Config.ini')
-        self.backup_dest = Config.get('Main', 'backup_dest')
-        self.backup_redundancy = int(Config.get('Main', 'backup_redundancy'))
+        with open('settings.json') as json_file:
+            data = json.load(json_file)
+        self.backup_dest = data['settings']['backup_dest']
+        redundancy = data['settings']['backup_redundancy']
+        if redundancy > 4:
+            self.backup_redundancy = 4
+        else:
+            self.backup_redundancy = redundancy
         self.database = database
         self.logger = logger
 
@@ -84,15 +88,16 @@ class Backup:
             for i in range(self.backup_redundancy, len(saves_list)):
                 shutil.rmtree(sorted_list[i])
 
-    def Save_Backup(self, game):
+    def Save_Backup(self, game, info_label):
         '''Backups up the game entered based on SQLite save location data to the specified backup folder.'''
         current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M")
-        save_loc = Get_Save_Loc(game)
-        game = Sanitize_For_Filename(game)
+        save_loc = self.Get_Save_Loc(game)
+        game = self.Sanitize_For_Filename(game)
         dest = os.path.join(self.backup_dest, game, current_time)
         try:
             shutil.copytree(save_loc, dest)
-            Delete_Oldest(game)
+            self.Delete_Oldest(game)
+            info_label.config(text=f'Backed up {game} to set backup destination.')
         except FileNotFoundError:
             print('No Action Completed - File location does not exist.')
         except FileExistsError:
@@ -107,29 +112,20 @@ class Backup:
     def Restore_Backup(self, game):
         '''Restores game save after moving current save to special backup folder.'''
         dest = os.path.join(self.backup_dest, game, 'Pre-Restore Backup')
-        save_loc = Get_Save_Loc(game)
+        save_loc = self.Get_Save_Loc(game)
         # try:
         #     shutil.move(save_loc, dest)
         # except FileNotFoundError:
         #     messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
         #     return
-        Create_Restore_Game_Window(game, save_loc)
+        self.Create_Restore_Game_Window(game, save_loc)
 
 
     def Clicked_Delete(self, Listbox):
         msg = 'Are you sure that you want to delete the game?'
         Delete_Check = Tk.messagebox.askyesno(title='Game Save Manager', message=msg)
         if Delete_Check:
-            self.Delete_Game_from_DB(Listbox.get(Tk.ACTIVE))
-
-
-    def Delete_Game_from_DB(self, game):
-        '''Deletes selected game from SQLite Database.'''
-        c = self.database.cursor()
-        c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': game})
-        self.database.commit()
-        # Refresh_Dropdown()
-        self.logger.debug(f'Deleted {game} from database.')
+            self.Delete_Game_from_DB(Listbox.get(Tk.ACTIVE), Listbox)
 
 
     def Convert_Size(self):
@@ -150,10 +146,9 @@ class Backup:
             GameSaveEntry.delete(0, Tk.END)
             GameNameEntry.delete(0, Tk.END)
             self.Add_Game_to_DB(game_name, save_location)
-            Listbox.insert(Tk.ACTIVE, GameNameEntry)
+            Listbox.insert(Tk.ACTIVE, game_name)
         else:
             Tk.messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
-
 
 
     def Browse_Click(self, GameNameEntry, GameSaveEntry):
@@ -164,16 +159,27 @@ class Backup:
 
     def Add_Game_to_DB(self, game, save_location):
         '''Adds game to SQLite Database using entry box data.'''
-        c = self.game_list.cursor()
+        c = self.database.cursor()
         c.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
         {'game_name': game, 'save_location': save_location, 'last_backup': dt.datetime.now()})
-        self.game_list.commit()
+        self.database.commit()
         self.logger.debug(f'Added {game} to database.')
 
 
-    def Update_Game(self): # TODO Add button to update game info.
+    def Delete_Game_from_DB(self, game, Listbox):
+        '''Deletes selected game from SQLite Database.'''
+        c = self.database.cursor()
+        c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': game})
+        self.database.commit()
+        selected_game = Listbox.curselection()
+        Listbox.delete(selected_game[0])
+        self.logger.debug(f'Deleted {game} from database.')
+
+
+    def Update_Game(self, GameNameEntry, GameSaveEntry, Listbox):
         '''Allows updating data for games in database.'''
-        pass
+        # TODO Add button to update game info.
+        selected_game = Listbox.get(Tk.ACTIVE)
 
 
     def Cancel_Pressed(self, window):
@@ -185,7 +191,6 @@ class Backup:
         backup = os.path.join(self.backup_dest, game)
         for file in os.listdir(backup):
             backup_list.append(file)
-
 
 
         def Restore_Game_Pressed(self, save_to_restore):
@@ -212,6 +217,7 @@ class Backup:
         Listbox = Tk.Listbox(Restore_Game_Window, height=10, width=40)
         Listbox.grid(columnspan=2, row=1, column=0, pady=(0,5))
 
+        sorted_list = self.Game_list_Sorted()
         for item in sorted_list:
             Listbox.insert(Tk.END, item)
 
