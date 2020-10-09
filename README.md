@@ -4,7 +4,7 @@ Tkinter Interface for running through a SQLite Database that allows backing up g
 
 ## Features
 
-* Three backup redundancy to prevent corruption issues.
+* Up to 4 backup redundancy to prevent corruption issues.
 * Easy add and delete games to backup database.
 
 ## Python Techniques Used
