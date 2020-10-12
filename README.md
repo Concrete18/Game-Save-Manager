@@ -15,7 +15,6 @@ Tkinter Interface for running through a SQLite Database that allows backing up g
 
 ## To Do
 
-* Auto Focus on dropdown menu.
 * Update Database button.
 
 ## Module Download Requirements

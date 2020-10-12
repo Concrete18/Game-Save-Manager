@@ -52,23 +52,6 @@ def main():
     Title = Tk.Label(Backup_Frame, text=info_text, font=(BoldBaseFont, 10))
     Title.grid(columnspan=4, row=0, column=1)
 
-    Guide = Tk.Label(Backup_Frame, text='Select Game', font=(BoldBaseFont, 10))
-    Guide.grid(columnspan=2, row=1, column=1, pady=(10,0))
-
-    # Row 1
-    ListboxFrame = Tk.Frame(Main_GUI)
-    ListboxFrame.grid(columnspan=4, row=2, column=0,  padx=(20, 20), pady=(5, 10))
-
-    scrollbar = Tk.Scrollbar(ListboxFrame, orient=Tk.VERTICAL)
-    scrollbar.config(command=Tk.Listbox.yview)
-    scrollbar.grid(row=0, column=3)
-    Listbox = Tk.Listbox(ListboxFrame, yscrollcommand=scrollbar.set, font=(BoldBaseFont, 12), height=10, width=63)
-    Listbox.grid(columnspan=3, row=0, column=0)
-
-    sorted_list = App.Game_list_Sorted()
-    for item in sorted_list:
-        Listbox.insert(Tk.END, item)
-
     BackupButton = ttk.Button(Backup_Frame, text='Backup Selected Game Save',
         command=lambda: App.Save_Backup(Listbox.get(Tk.ACTIVE), ActionInfo), width=20)
     BackupButton.grid(row=3, column=1, padx=5, pady= 5)
@@ -82,36 +65,47 @@ def main():
     RestoreSaveButton.grid(row=4, column=2, padx=5, pady= 5)
 
     DeleteButton = ttk.Button(Backup_Frame, text='Delete Selected Game',
-        command=lambda: App.Clicked_Delete(Listbox), width=20)
+        command=lambda: App.Delete_Game_from_DB(Listbox), width=20)
     DeleteButton.grid(row=4, column=1, padx=5, pady= 5)
 
-    # Row 2
+    # Row 1
     ActionInfo = Tk.Label(Main_GUI, text='Text Info', font=(BoldBaseFont, 10))
-    ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady= 5)
+    ActionInfo.grid(columnspan=4, row=2, column=0, padx=5, pady= 5)
 
-    # Row 3
+    # Row 2
     Save_Frame = Tk.Frame(Main_GUI)
-    Save_Frame.grid(columnspan=4, row=3, column=0,  padx=(20, 20), pady=(5, 5))
-
-    MODES = [
-        ("Game Save 1", "1"),
-        ("Game Save 2", "2"),
-        ("Game Save 3", "3"),
-        ("Game Save 4", "4")
-    ]
+    Save_Frame.grid(columnspan=4, row=2, column=0,  padx=(20, 20), pady=(5, 5))
 
     v = Tk.StringVar()
-    v.set("1") # initialize
+    v.set(None)
 
-    column=0
-    for text, mode in MODES:
-        b = Tk.Radiobutton(Save_Frame, text=text,
-                        variable=v, value=mode)
-        b.grid(row=1, column=column)
-        column += 1
+    radio1 = Tk.Radiobutton(Save_Frame, text=f'Save 1', variable=v, value=1, state='disabled').grid(row=1, column=0)
+    radio2 = Tk.Radiobutton(Save_Frame, text=f'Save 2', variable=v, value=2, state='disabled').grid(row=1, column=1)
+    radio3 = Tk.Radiobutton(Save_Frame, text=f'Save 3', variable=v, value=3, state='disabled').grid(row=1, column=2)
+    radio4 = Tk.Radiobutton(Save_Frame, text=f'Save 4', variable=v, value=4, state='disabled').grid(row=1, column=3)
 
-    # ActionInfo = Tk.Label(Main_GUI, text='', font=(BoldBaseFont, 10))
-    # ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady= 5)
+    # column=0
+    # print(App.backup_redundancy)
+    # for num in range(0, App.backup_redundancy):
+    #     r = Tk.Radiobutton(Save_Frame, text=f'Save {num+1}', variable=v, value=num)
+    #     r.grid(row=1, column=column)
+    #     column += 1
+
+    # Row 3
+    ListboxFrame = Tk.Frame(Main_GUI)
+    ListboxFrame.grid(columnspan=4, row=3, column=0,  padx=(20, 20), pady=(5, 10))
+
+    scrollbar = Tk.Scrollbar(ListboxFrame, orient=Tk.VERTICAL)
+    scrollbar.config(command=Tk.Listbox.yview)
+    scrollbar.grid(row=0, column=3, sticky='ns', rowspan=3)
+
+    Listbox = Tk.Listbox(ListboxFrame, yscrollcommand=scrollbar.set, font=(BoldBaseFont, 12), height=10, width=63)
+    Listbox.bind('<<ListboxSelect>>',
+        lambda event, Listbox=Listbox: App.Delete_Update_Entry(Listbox, GameSaveEntry, GameNameEntry, 1))
+    Listbox.grid(columnspan=3, row=0, column=0)
+    sorted_list = App.Game_list_Sorted()
+    for item in sorted_list:
+        Listbox.insert(Tk.END, item)
 
     # Row 4
     Add_Game_Frame = Tk.LabelFrame(Main_GUI, text='Add/Update Game')
@@ -120,29 +114,34 @@ def main():
     EnterGameLabeL = Tk.ttk.Label(Add_Game_Frame, text='Enter Game Name')
     EnterGameLabeL.grid(row=0, column=0)
 
-    GameNameEntry = Tk.ttk.Entry(Add_Game_Frame, width=70, exportselection=0)
-    GameNameEntry.grid(row=0, column=1, columnspan=2, pady=8, padx=5)
+    entry_width = 65
+    GameNameEntry = Tk.ttk.Entry(Add_Game_Frame, width=entry_width, exportselection=0)
+    GameNameEntry.grid(row=0, column=1, columnspan=3, pady=8, padx=5)
 
     EnterSaveLabeL = Tk.ttk.Label(Add_Game_Frame, text='Enter Save Location')
     EnterSaveLabeL.grid(row=1, column=0)
 
-    GameSaveEntry = Tk.ttk.Entry(Add_Game_Frame, width=70, exportselection=0)
-    GameSaveEntry.grid(row=1, column=1, columnspan=2, pady=5, padx=5)
+    GameSaveEntry = Tk.ttk.Entry(Add_Game_Frame, width=entry_width, exportselection=0)
+    GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5)
 
-    button_padx = 1
-    ConfirmAddButton = Tk.ttk.Button(Add_Game_Frame, text='Confirm Info',
+    Button_Frame = Tk.Frame(Add_Game_Frame)
+    Button_Frame.grid(columnspan=4, row=2)
+
+    button_padx = 4
+    ConfirmAddButton = Tk.ttk.Button(Button_Frame, text='Add Entered Game',
         command=lambda: App.Add_Game_Pressed(GameNameEntry, GameSaveEntry, Listbox), width=20)
     ConfirmAddButton.grid(row=2, column=0, padx=button_padx, pady= 5)
 
-    UpdateButton = Tk.ttk.Button(Add_Game_Frame, text='Update Info',
+    UpdateButton = Tk.ttk.Button(Button_Frame, text='Update Selected Game',
         command=lambda: App.Update_Game(GameNameEntry, GameSaveEntry, Listbox.get(Tk.ACTIVE), Listbox), width=20)
     UpdateButton.grid(row=2, column=1, padx=button_padx, pady= 5)
 
-    BrowseButton = Tk.ttk.Button(Add_Game_Frame, text='Browse',
+    BrowseButton = Tk.ttk.Button(Button_Frame, text='Browse for Save',
         command=lambda: App.Browse_Click(GameNameEntry, GameSaveEntry), width=20)
     BrowseButton.grid(row=2, column=2, padx=button_padx, pady= 5)
 
-    ClearButton = Tk.ttk.Button(Add_Game_Frame, text='Clear', command=App.Add_Game_Pressed, width=20)
+    ClearButton = Tk.ttk.Button(Button_Frame, text='Clear Entries',
+        command=lambda: App.Delete_Update_Entry(Listbox, GameNameEntry, GameSaveEntry), width=20)
     ClearButton.grid(row=2, column=3, padx=button_padx, pady= 5)
 
     App.Database_Check()

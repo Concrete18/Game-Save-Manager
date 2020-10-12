@@ -4,9 +4,10 @@ import datetime as dt
 import logging as lg
 import sqlite3
 import shutil
+import time
 import math
-import os
 import json
+import os
 
 
 class Backup:
@@ -21,6 +22,7 @@ class Backup:
             self.backup_redundancy = redundancy
         self.database = database
         self.logger = logger
+        self.selected_game = None
 
 
     def Database_Check(self):
@@ -109,23 +111,27 @@ class Backup:
         self.logger.debug(f'Backed-up Save for {game}.')
 
 
-    def Restore_Backup(self, game):
+    def Restore_Backup(self):
         '''Restores game save after moving current save to special backup folder.'''
-        dest = os.path.join(self.backup_dest, game, 'Pre-Restore Backup')
-        save_loc = self.Get_Save_Loc(game)
+        unfinished = Tk.messagebox.askyesno(title='Game Save Manager', message='Restore is unfinished.')
+        print(self.selected_game)
+        # save_loc = Get_Save_Loc(self, self.selected_game)
+        # source = os.path.join(self.backup_dest, self.selected_game, save_to_restore)
+        # # rename save game folder to ph.bachup
+        # shutil.copytree(source, save_loc)
+        # self.logger.debug(f'Restored Save for {self.selected_game}.')
+        # dest = os.path.join(self.backup_dest, game, 'Pre-Restore Backup')
+        # save_loc = self.Get_Save_Loc(self.selected_game)
+        # radio_buttons = ['radio1', 'radio2', 'radio3', 'radio4']
         # try:
         #     shutil.move(save_loc, dest)
         # except FileNotFoundError:
         #     messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
         #     return
-        self.Create_Restore_Game_Window(game, save_loc)
-
-
-    def Clicked_Delete(self, Listbox):
-        msg = 'Are you sure that you want to delete the game?'
-        Delete_Check = Tk.messagebox.askyesno(title='Game Save Manager', message=msg)
-        if Delete_Check:
-            self.Delete_Game_from_DB(Listbox.get(Tk.ACTIVE), Listbox)
+        # backup_list =[]
+        # backup = os.path.join(self.backup_dest, self.selected_game)
+        # for file in os.listdir(backup):
+        #     backup_list.append(file)
 
 
     def Convert_Size(self):
@@ -166,65 +172,30 @@ class Backup:
         self.logger.debug(f'Added {game} to database.')
 
 
-    def Delete_Game_from_DB(self, game, Listbox):
+    def Delete_Game_from_DB(self, Listbox):
         '''Deletes selected game from SQLite Database.'''
-        c = self.database.cursor()
-        c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': game})
-        self.database.commit()
-        selected_game = Listbox.curselection()
-        Listbox.delete(selected_game[0])
-        self.logger.debug(f'Deleted {game} from database.')
+        msg = 'Are you sure that you want to delete the game?'
+        Delete_Check = Tk.messagebox.askyesno(title='Game Save Manager', message=msg)
+        if Delete_Check:
+            c = self.database.cursor()
+            c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.selected_game})
+            self.database.commit()
+            selected_game = Listbox.curselection()
+            Listbox.delete(selected_game[0])
+            self.logger.debug(f'Deleted {self.selected_game} from database.')
 
 
     def Update_Game(self, GameNameEntry, GameSaveEntry, Listbox):
         '''Allows updating data for games in database.'''
         # TODO Add button to update game info.
-        selected_game = Listbox.get(Tk.ACTIVE)
+        self.selected_game
 
-
-    def Cancel_Pressed(self, window):
-        window.destroy()
-
-
-    def Create_Restore_Game_Window(self, game, save_loc):
-        backup_list =[]
-        backup = os.path.join(self.backup_dest, game)
-        for file in os.listdir(backup):
-            backup_list.append(file)
-
-
-        def Restore_Game_Pressed(self, save_to_restore):
-            source = os.path.join(self.backup_dest, game, save_to_restore)
-            # rename save game folder to ph.bachup
-            shutil.copytree(source, save_loc)
-            self.logger.debug(f'Restored Save for {game}.')
-            Restore_Game_Window.destroy()
-
-
-        Restore_Game_Window = Tk.Toplevel(takefocus=True)
-        Restore_Game_Window.title('Game Save Manager - Restore Game')
-        Restore_Game_Window.iconbitmap('Save_Icon.ico')
-        Restore_Game_Window.resizable(width=False, height=False)
-        Restore_Game_Window.geometry("+600+600")
-        Restore_Game_Window.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
-        Restore_Game_Window.unbind_class("Button", "<Key-space>")
-
-        save_to_restore = Tk.StringVar(Restore_Game_Window)
-
-        RestoreInfo = Tk.ttk.Label(Restore_Game_Window, text=f'Select save to restore for {game}.')
-        RestoreInfo.grid(columnspan=2, row=0, column=0)
-
-        Listbox = Tk.Listbox(Restore_Game_Window, height=10, width=40)
-        Listbox.grid(columnspan=2, row=1, column=0, pady=(0,5))
-
-        sorted_list = self.Game_list_Sorted()
-        for item in sorted_list:
-            Listbox.insert(Tk.END, item)
-
-        ConfirmButton = Tk.ttk.Button(Restore_Game_Window, text='Confirm', command=lambda: Restore_Game_Pressed(save_to_restore.get()), width=20)
-        ConfirmButton.grid(row=2, column=0, padx=5, pady= 5)
-
-        CancelButton = Tk.ttk.Button(Restore_Game_Window, text='Cancel', command=Cancel_Pressed, width=20)
-        CancelButton.grid(row=2, column=1, padx=5, pady= 5)
-
-        Restore_Game_Window.mainloop()
+    def Delete_Update_Entry(self, Listbox, GameSaveEntry, GameNameEntry, Update=0):
+        '''Updates Game Data into Name and Save Entry for viewing.
+        Allows for updating specific entries in the database as well.'''
+        GameNameEntry.delete(0, Tk.END)
+        GameSaveEntry.delete(0, Tk.END)
+        if Update == 1:
+            self.selected_game = Listbox.get(Listbox.curselection())
+            GameNameEntry.insert(0, self.selected_game)
+            GameSaveEntry.insert(0, self.Get_Save_Loc(self.selected_game))
