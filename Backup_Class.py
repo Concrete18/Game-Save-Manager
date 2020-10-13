@@ -188,7 +188,17 @@ class Backup:
     def Update_Game(self, GameNameEntry, GameSaveEntry, Listbox):
         '''Allows updating data for games in database.'''
         # TODO Add button to update game info.
-        self.selected_game
+        game_name = GameNameEntry.get()
+        save_location = GameSaveEntry.get()
+        c = self.database.cursor()
+        print(self.selected_game)
+        sql_update_query  ='''UPDATE games
+                SET game_name = ?, save_location = ?
+                WHERE game_name = ?;'''
+        data = (game_name, save_location, self.selected_game)
+        c.execute(sql_update_query , data)
+        self.database.commit()
+
 
     def Delete_Update_Entry(self, Listbox, GameSaveEntry, GameNameEntry, Update=0):
         '''Updates Game Data into Name and Save Entry for viewing.
@@ -199,3 +209,10 @@ class Backup:
             self.selected_game = Listbox.get(Listbox.curselection())
             GameNameEntry.insert(0, self.selected_game)
             GameSaveEntry.insert(0, self.Get_Save_Loc(self.selected_game))
+            dir = os.path.join(self.backup_dest, self.selected_game)
+            # if os.path.isdir(dir):
+            #     radiolist =['radio1', 'radio2', 'radio3', 'radio4']
+            #     for file in os.scandir(dir):
+            #         for item in radiolist:
+            #             item.config(text=file.name, value=file.path, state='normal')
+            #             print(file.name)
