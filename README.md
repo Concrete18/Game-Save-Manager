@@ -1,26 +1,20 @@
 # Game Save Manager
 
-Tkinter Interface for running through a SQLite Database that allows backing up game saves easily.
+Tkinter Interface for running through an SQLite Database that allows backing up game saves easily.
+
+![Image of Game Save Manager](https://i.imgur.com/Uz3XsDs.png)
+
+Made in Python 3.8.3
 
 ## Features
 
 * Up to 4 backup redundancy to prevent corruption issues.
-* Easy add and delete games to backup database.
+* Easily add, delete and update games in the backup database using the interface.
 
 ## Python Techniques Used
 
 * Tkinter messagebox and directory dialog
 * SQLite Database
 * File copying and other manipulations
-
-## To Do
-
-* Fix Restore Function
-
-## Module Download Requirements
-
-Run within your normal console for pip.
-
-```cmd
-pip install -r requirements.txt
-```
+* Object oriented design
+* Full Logging System for most all actions and errors
