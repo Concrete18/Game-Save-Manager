@@ -1,4 +1,5 @@
 from tkinter import filedialog, messagebox
+from tkinter import ttk
 import tkinter as Tk
 import datetime as dt
 import logging as lg
@@ -8,7 +9,6 @@ import time
 import math
 import json
 import os
-
 
 class Backup:
     def __init__(self, database, logger):
@@ -26,23 +26,23 @@ class Backup:
 
 
     def Database_Check(self):
-            '''Checks for missing save directories from database.'''
-            c = self.database.cursor()
-            c.execute("SELECT save_location FROM games")
-            missing_save_loc = []
-            for save_location in c.fetchall():
-                if os.path.isdir(save_location[0]):
-                    pass
-                else:
-                    missing_save_loc.append(save_location[0])
-            missing_saves = len(missing_save_loc)
-            continue_var = 0
-            if missing_saves > 0 and missing_saves < 6:
-                msg = f'Save Locations for the following do not exist.\n{missing_save_loc}'
-                continue_var = Tk.messagebox.showwarning(title='Game Save Manager', message=msg)
-            elif len(missing_save_loc) > 5:
-                msg = 'More than 5 save locations do not exist.'
-                continue_var = Tk.messagebox.showwarning(title='Game Save Manager', message=msg)
+        '''Checks for missing save directories from database.'''
+        c = self.database.cursor()
+        c.execute("SELECT save_location FROM games")
+        missing_save_loc = []
+        for save_location in c.fetchall():
+            if os.path.isdir(save_location[0]):
+                pass
+            else:
+                missing_save_loc.append(save_location[0])
+        missing_saves = len(missing_save_loc)
+        continue_var = 0
+        if missing_saves > 0 and missing_saves < 6:
+            msg = f'Save Locations for the following do not exist.\n{missing_save_loc}'
+            continue_var = Tk.messagebox.showwarning(title='Game Save Manager', message=msg)
+        elif len(missing_save_loc) > 5:
+            msg = 'More than 5 save locations do not exist.'
+            continue_var = Tk.messagebox.showwarning(title='Game Save Manager', message=msg)
 
 
     def Sanitize_For_Filename(self, string):
@@ -55,7 +55,6 @@ class Backup:
     def Get_Save_Loc(self, game):
         '''Returns the save location of the entered game from the SQLite Database.'''
         print(f'Getting Save location for {game}.')
-        self.database = sqlite3.connect('game_list.db')
         c = self.database.cursor()
         c.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game})
         save_location = c.fetchone()[0]
@@ -113,26 +112,56 @@ class Backup:
 
     def Restore_Backup(self):
         '''Restores game save after moving current save to special backup folder.'''
-        unfinished = Tk.messagebox.askyesno(title='Game Save Manager', message='Restore is unfinished.')
-        print(self.selected_game)
-        # save_loc = Get_Save_Loc(self, self.selected_game)
-        # source = os.path.join(self.backup_dest, self.selected_game, save_to_restore)
-        # # rename save game folder to ph.bachup
-        # shutil.copytree(source, save_loc)
-        # self.logger.debug(f'Restored Save for {self.selected_game}.')
-        # dest = os.path.join(self.backup_dest, game, 'Pre-Restore Backup')
-        # save_loc = self.Get_Save_Loc(self.selected_game)
-        # radio_buttons = ['radio1', 'radio2', 'radio3', 'radio4']
-        # try:
-        #     shutil.move(save_loc, dest)
-        # except FileNotFoundError:
-        #     messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
-        #     return
-        # backup_list =[]
-        # backup = os.path.join(self.backup_dest, self.selected_game)
-        # for file in os.listdir(backup):
-        #     backup_list.append(file)
+        backup_list =[]
+        backup_path = os.path.join(self.backup_dest, self.selected_game)
+        save_location = self.Get_Save_Loc(self.selected_game)
+        print(save_location)
+        if os.path.exists(backup_path):
+            for file in os.scandir(backup_path):
+                backup_list.append(file)
+            print(backup_list)
+        else:
+            Tk.messagebox.showwarning(title='Game Save Manager', message='No saves exist for this game.')
+            return
 
+
+        def Restore_Game_Pressed():
+            print('Pressed Restore')
+            save_name = save_listbox.get(save_listbox.curselection())
+            save_path = os.path.join(self.backup_dest, self.selected_game, save_name)
+            print(save_path)
+            # shutil.copytree(source, save_loc)
+            # logger.debug(f'Restored Save for {self.selected_game}.')
+            Restore_Game_Window.destroy()
+
+
+        Restore_Game_Window = Tk.Toplevel(takefocus=True)
+        Restore_Game_Window.title('Game Save Manager - Restore Game')
+        Restore_Game_Window.iconbitmap('Save_Icon.ico')
+        Restore_Game_Window.resizable(width=False, height=False)
+        # Restore_Game_Window.geometry("+600+600")
+        Restore_Game_Window.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
+        Restore_Game_Window.unbind_class("Button", "<Key-space>")
+
+        save_to_restore = Tk.StringVar(Restore_Game_Window)
+
+        RestoreInfo = ttk.Label(Restore_Game_Window,
+            text=f'Select Save for {self.selected_game}', font=("Arial Bold", 10))
+        RestoreInfo.grid(columnspan=2, row=0, column=0, pady=(2, 0))
+
+        save_listbox = Tk.Listbox(Restore_Game_Window, exportselection=False, font=("Arial Bold", 12), height=5, width=30)
+        save_listbox.grid(columnspan=2, row=1, column=0, pady=5, padx=5)
+
+        for item in backup_list:
+            save_listbox.insert(Tk.END, item.name)
+
+        confirm_button = ttk.Button(Restore_Game_Window, text='Confirm', command=Restore_Game_Pressed, width=20)
+        confirm_button.grid(row=2, column=0, padx=5, pady= 5)
+
+        CancelButton = ttk.Button(Restore_Game_Window, text='Cancel', command=Restore_Game_Window.destroy, width=20)
+        CancelButton.grid(row=2, column=1, padx=5, pady= 5)
+
+        Restore_Game_Window.mainloop()
 
     def Convert_Size(self):
         '''Converts size of directory best fitting '''
@@ -157,7 +186,7 @@ class Backup:
             Tk.messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
 
 
-    def Browse_Click(self, GameNameEntry, GameSaveEntry):
+    def Browse_For_Save(self, GameNameEntry, GameSaveEntry):
         save_dir = filedialog.askdirectory(initialdir="C:/", title="Select Save Directory")
         GameSaveEntry.delete(0, Tk.END)
         GameSaveEntry.insert(0, save_dir)
@@ -186,33 +215,30 @@ class Backup:
 
 
     def Update_Game(self, GameNameEntry, GameSaveEntry, Listbox):
-        '''Allows updating data for games in database.'''
-        # TODO Add button to update game info.
+        '''Allows updating data for games in database.
+        The last selected game in the Listbox gets updated with the info from the Add/Update Game entries.'''
         game_name = GameNameEntry.get()
         save_location = GameSaveEntry.get()
-        c = self.database.cursor()
-        print(self.selected_game)
-        sql_update_query  ='''UPDATE games
-                SET game_name = ?, save_location = ?
-                WHERE game_name = ?;'''
-        data = (game_name, save_location, self.selected_game)
-        c.execute(sql_update_query , data)
-        self.database.commit()
+        if os.path.isdir(save_location):
+            c = self.database.cursor()
+            print(self.selected_game)
+            sql_update_query  ='''UPDATE games
+                    SET game_name = ?, save_location = ?
+                    WHERE game_name = ?;'''
+            data = (game_name, save_location, self.selected_game)
+            c.execute(sql_update_query , data)
+            self.database.commit()
+        else:
+            msg = f'Save Location does not exist.'
+            continue_var = Tk.messagebox.showwarning(title='Game Save Manager', message=msg)
 
 
-    def Delete_Update_Entry(self, Listbox, GameSaveEntry, GameNameEntry, Update=0):
+    def Delete_Update_Entry(self, listbox, GameSaveEntry, GameNameEntry, Update=0):
         '''Updates Game Data into Name and Save Entry for viewing.
         Allows for updating specific entries in the database as well.'''
         GameNameEntry.delete(0, Tk.END)
         GameSaveEntry.delete(0, Tk.END)
         if Update == 1:
-            self.selected_game = Listbox.get(Listbox.curselection())
+            self.selected_game = listbox.get(listbox.curselection())
             GameNameEntry.insert(0, self.selected_game)
             GameSaveEntry.insert(0, self.Get_Save_Loc(self.selected_game))
-            dir = os.path.join(self.backup_dest, self.selected_game)
-            # if os.path.isdir(dir):
-            #     radiolist =['radio1', 'radio2', 'radio3', 'radio4']
-            #     for file in os.scandir(dir):
-            #         for item in radiolist:
-            #             item.config(text=file.name, value=file.path, state='normal')
-            #             print(file.name)
