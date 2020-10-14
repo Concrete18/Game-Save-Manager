@@ -4,10 +4,7 @@ from tkinter import ttk
 import datetime as dt
 import tkinter as Tk
 import logging as lg
-import threading
 import sqlite3
-import time
-import os
 
 
 def main():
