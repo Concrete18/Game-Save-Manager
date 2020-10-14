@@ -110,7 +110,7 @@ class Backup:
 
 
     def Restore_Backup(self):
-        '''Restores game save after moving current save to special backup folder.'''
+        '''Restores game save after renaming current save folder to "save.old".'''
         backup_list =[]
         selected_game = self.selected_game
         backup_path = os.path.join(self.backup_dest, self.selected_game)
