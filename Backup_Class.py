@@ -13,11 +13,7 @@ class Backup:
         with open('settings.json') as json_file:
             data = json.load(json_file)
         self.backup_dest = data['settings']['backup_dest']
-        redundancy = data['settings']['backup_redundancy']
-        if redundancy > 4:
-            self.backup_redundancy = 4
-        else:
-            self.backup_redundancy = redundancy
+        self.backup_redundancy = data['settings']['backup_redundancy']
         self.database = database
         self.logger = logger
         self.selected_game = None
@@ -37,11 +33,11 @@ class Backup:
         continue_var = 0
         if missing_saves > 0 and missing_saves < 6:
             msg = f'Save Locations for the following do not exist.\n{missing_save_loc}'
-            continue_var = Tk.messagebox.showwarning(title='Game Save Manager', message=msg)
+            continue_var = messagebox.showwarning(title='Game Save Manager', message=msg)
             self.logger.debug(f'Missing Save Locations:{missing_save_loc}')
         elif len(missing_save_loc) > 5:
             msg = 'More than 5 save locations do not exist.'
-            continue_var = Tk.messagebox.showwarning(title='Game Save Manager', message=msg)
+            continue_var = messagebox.showwarning(title='Game Save Manager', message=msg)
             self.logger.debug(f'More then 4 save locations in the database do not exist.')
 
 
@@ -121,7 +117,7 @@ class Backup:
                 backup_list.append(file)
             print(backup_list)
         else:
-            Tk.messagebox.showwarning(title='Game Save Manager', message='No saves exist for this game.')
+            messagebox.showwarning(title='Game Save Manager', message='No saves exist for this game.')
             return
 
 
@@ -131,9 +127,10 @@ class Backup:
             if os.path.exists(f'{save_location}.old'):
                 msg = '''Backup of current save before last restore already exists.
                     \nDo you want to delete it? This will cancel the restore.'''
-                response = Tk.messagebox.askyesno(title='Game Save Manager', message=msg)
+                response = messagebox.askyesno(title='Game Save Manager', message=msg)
                 if response in ['yes', 'y']:
-                    os.removedirs(f'{save_location}.old')
+                    shutil.rmtree(f'{save_location}.old')
+                    # os.removedirs(f'{save_location}.old')
                 else:
                     print('Canceling Restore.')
                     return
@@ -190,9 +187,9 @@ class Backup:
             GameSaveEntry.delete(0, Tk.END)
             GameNameEntry.delete(0, Tk.END)
             self.Add_Game_to_DB(game_name, save_location)
-            Listbox.insert(Tk.ACTIVE, game_name)
+            Listbox.insert(0, game_name)
         else:
-            Tk.messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
+            messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
 
 
     def Browse_For_Save(self, GameNameEntry, GameSaveEntry):
@@ -213,7 +210,7 @@ class Backup:
     def Delete_Game_from_DB(self, Listbox):
         '''Deletes selected game from SQLite Database.'''
         msg = 'Are you sure that you want to delete the game?'
-        Delete_Check = Tk.messagebox.askyesno(title='Game Save Manager', message=msg)
+        Delete_Check = messagebox.askyesno(title='Game Save Manager', message=msg)
         if Delete_Check:
             c = self.database.cursor()
             c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.selected_game})
@@ -240,7 +237,7 @@ class Backup:
             self.logger.info(f'Updated {self.selected_game} in database.')
         else:
             msg = f'Save Location does not exist.'
-            continue_var = Tk.messagebox.showwarning(title='Game Save Manager', message=msg)
+            continue_var = messagebox.showwarning(title='Game Save Manager', message=msg)
 
 
     def Delete_Update_Entry(self, listbox, GameSaveEntry, GameNameEntry, Update=0):

@@ -2,8 +2,6 @@
 "settings":
     {
     "backup_dest":"D:/Google Drive/Coding/Python/Scripts/Game-Save-Manager/Testing Area/Save Backup",
-    "backup_redundancy":3,
-    "last_window_width":12,
-    "last_window_height":12
+    "backup_redundancy":3
     }
 }

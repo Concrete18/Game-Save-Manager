@@ -1,10 +1,12 @@
 from logging.handlers import RotatingFileHandler
 from Backup_Class import Backup
+from tkinter import messagebox
 from tkinter import ttk
 import datetime as dt
 import tkinter as Tk
 import logging as lg
 import sqlite3
+import os
 
 
 def main():
@@ -25,6 +27,14 @@ def main():
     )''')
 
     App = Backup(game_list, logger)
+
+    # Settings Check
+    if not os.path.exists(App.backup_dest):
+        messagebox.showwarning(title='Game Save Manager', message='Backup destination does not exist.')
+    if type(App.backup_redundancy) != int:
+        messagebox.showwarning(title='Game Save Manager', message='backup_redundancy in config is not an interger')
+    if App.backup_redundancy > 4:
+        App.backup_redundancy = 4
 
     # Defaults for Background and fonts
     Background = 'White'
@@ -73,6 +83,7 @@ def main():
     ListboxFrame = Tk.Frame(main_gui)
     ListboxFrame.grid(columnspan=4, row=2, column=0,  padx=(20, 20), pady=(5, 10))
 
+    # FIXME Scrollbar does not work unless you use mousewheel or arrow keys
     scrollbar = Tk.Scrollbar(ListboxFrame, orient=Tk.VERTICAL)
     scrollbar.config(command=Tk.Listbox.yview)
     scrollbar.grid(row=0, column=2, sticky='ns', rowspan=3)
