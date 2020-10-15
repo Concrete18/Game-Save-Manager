@@ -62,22 +62,19 @@ def main():
     Title = Tk.Label(Backup_Frame, text=info_text, font=(BoldBaseFont, 10))
     Title.grid(columnspan=4, row=0, column=1)
 
+    button_width = 26
     BackupButton = ttk.Button(Backup_Frame, text='Backup Selected Game Save',
-        command=lambda: App.Save_Backup(game_listbox.get(Tk.ACTIVE), ActionInfo), width=20)
-    BackupButton.grid(row=3, column=1, padx=5)
+        command=lambda: App.Save_Backup(game_listbox.get(Tk.ACTIVE), ActionInfo), width=button_width)
+    BackupButton.grid(row=3, column=1, padx=5, pady=5)
 
-    RestoreGameButton = ttk.Button(Backup_Frame, text='Restore Selected Game',
-        command=lambda: App.Restore_Backup(), width=20)
+    RestoreGameButton = ttk.Button(Backup_Frame, text='Restore Selected Game Save',
+        command=lambda: App.Restore_Backup(), width=button_width)
     RestoreGameButton.grid(row=3, column=2, padx=5)
-
-    DeleteButton = ttk.Button(Backup_Frame, text='Delete Selected Game',
-        command=lambda: App.Delete_Game_from_DB(game_listbox), width=20)
-    DeleteButton.grid(row=3, column=3, padx=5)
 
     # Main Row 1
     instruction = 'Select a Game'
     ActionInfo = Tk.Label(main_gui, text=instruction, font=(BoldBaseFont, 10))
-    ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady= 5)
+    ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady= 3)
 
     # Main Row 2
     ListboxFrame = Tk.Frame(main_gui)
@@ -98,7 +95,7 @@ def main():
         game_listbox.insert(Tk.END, item)
 
     # Main Row 3
-    Add_Game_Frame = Tk.LabelFrame(main_gui, text='Add/Update Game')
+    Add_Game_Frame = Tk.LabelFrame(main_gui, text='Manage Games')
     Add_Game_Frame.grid(columnspan=4, row=3,  padx=15, pady=(5, 17))
 
     EnterGameLabeL = Tk.ttk.Label(Add_Game_Frame, text='Enter Game Name')
@@ -112,25 +109,29 @@ def main():
     EnterSaveLabeL.grid(row=1, column=0)
 
     GameSaveEntry = Tk.ttk.Entry(Add_Game_Frame, width=entry_width, exportselection=0)
-    GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5)
+    GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5, padx=10)
+
+    BrowseButton = Tk.ttk.Button(Add_Game_Frame, text='Browse',
+        command=lambda: App.Browse_For_Save(GameNameEntry, GameSaveEntry))
+    BrowseButton.grid(row=1, column=4, padx=10)
 
     # Button Frame Row 2
     Button_Frame = Tk.Frame(Add_Game_Frame)
-    Button_Frame.grid(columnspan=4, row=2)
+    Button_Frame.grid(columnspan=5, row=2, pady=(5, 5))
 
     button_padx = 4
     button_pady = 5
-    ConfirmAddButton = Tk.ttk.Button(Button_Frame, text='Add Entered Game',
+    ConfirmAddButton = Tk.ttk.Button(Button_Frame, text='Add Game',
         command=lambda: App.Add_Game_Pressed(GameNameEntry, GameSaveEntry, game_listbox), width=20)
     ConfirmAddButton.grid(row=2, column=0, padx=button_padx, pady=button_pady)
 
-    UpdateButton = Tk.ttk.Button(Button_Frame, text='Update Selected Game',
+    UpdateButton = Tk.ttk.Button(Button_Frame, text='Update Game',
         command=lambda: App.Update_Game(GameNameEntry, GameSaveEntry, game_listbox), width=20)
     UpdateButton.grid(row=2, column=1, padx=button_padx, pady=button_pady)
 
-    BrowseButton = Tk.ttk.Button(Button_Frame, text='Browse for Save',
-        command=lambda: App.Browse_For_Save(GameNameEntry, GameSaveEntry), width=20)
-    BrowseButton.grid(row=2, column=2, padx=button_padx, pady=button_pady)
+    RemoveButton = ttk.Button(Button_Frame, text='Remove Game',
+        command=lambda: App.Delete_Game_from_DB(game_listbox), width=20)
+    RemoveButton.grid(row=2, column=2, padx=button_padx, pady=button_pady)
 
     ClearButton = Tk.ttk.Button(Button_Frame, text='Clear Entries',
         command=lambda: App.Delete_Update_Entry(game_listbox, GameNameEntry, GameSaveEntry), width=20)
