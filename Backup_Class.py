@@ -170,7 +170,7 @@ class Backup:
 
 
     def Convert_Size(self):
-        '''Converts size of directory best fitting '''
+        '''Converts size of directory to best fitting unit of measure'''
         size_bytes = os.path.getsize(self.backup_dest)
         if size_bytes == 0: return "0B"
         size_name = ("B", "KB", "MB", "GB", "TB")
