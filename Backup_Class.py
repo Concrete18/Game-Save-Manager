@@ -14,30 +14,28 @@ class Backup:
             data = json.load(json_file)
         self.backup_dest = data['settings']['backup_dest']
         self.backup_redundancy = data['settings']['backup_redundancy']
+        self.disable_resize = data['settings']['disable_resize']
         self.database = database
+        self.cursor = self.database.cursor()
         self.logger = logger
         self.selected_game = None
 
 
     def Database_Check(self):
         '''Checks for missing save directories from database.'''
-        c = self.database.cursor()
-        c.execute("SELECT save_location FROM games")
+        self.cursor.execute("SELECT save_location FROM games")
         missing_save_loc = []
-        for save_location in c.fetchall():
-            if os.path.isdir(save_location[0]):
-                pass
-            else:
+        for save_location in self.cursor.fetchall():
+            if not os.path.isdir(save_location[0]):
                 missing_save_loc.append(save_location[0])
         missing_saves = len(missing_save_loc)
-        continue_var = 0
         if missing_saves > 0 and missing_saves < 6:
             msg = f'Save Locations for the following do not exist.\n{missing_save_loc}'
-            continue_var = messagebox.showwarning(title='Game Save Manager', message=msg)
+            messagebox.showwarning(title='Game Save Manager', message=msg)
             self.logger.debug(f'Missing Save Locations:{missing_save_loc}')
         elif len(missing_save_loc) > 5:
             msg = 'More than 5 save locations do not exist.'
-            continue_var = messagebox.showwarning(title='Game Save Manager', message=msg)
+            messagebox.showwarning(title='Game Save Manager', message=msg)
             self.logger.debug(f'More then 4 save locations in the database do not exist.')
 
 
@@ -50,18 +48,16 @@ class Backup:
 
     def Get_Save_Loc(self, game):
         '''Returns the save location of the entered game from the SQLite Database.'''
-        c = self.database.cursor()
-        c.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game})
-        save_location = c.fetchone()[0]
+        self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game})
+        save_location = self.cursor.fetchone()[0]
         return save_location
 
 
     def Game_list_Sorted(self):
         '''Sorts the game list from the SQLite database based on the last backup and then returns a list.'''
-        c = self.database.cursor()
-        c.execute("SELECT game_name FROM games ORDER BY last_backup DESC")
+        self.cursor.execute("SELECT game_name FROM games ORDER BY last_backup DESC")
         ordered_games = []
-        for game_name in c.fetchall():
+        for game_name in self.cursor.fetchall():
             ordered_games.append(game_name[0])
         self.database.commit()
         return ordered_games
@@ -95,12 +91,13 @@ class Backup:
             self.Delete_Oldest(game)
             info_label.config(text=f'Backed up {game} to set backup destination.')
         except FileNotFoundError:
-            print('No Action Completed - File location does not exist.')
+            messagebox.showwarning(title='Game Save Manager', message='Action Failed - File location does not exist.')
         except FileExistsError:
-            print('No Action Completed - Save Already Backed up.')
-        c = self.database.cursor()
-        c.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
-        {'game_name': game, 'last_backup': dt.datetime.now()})
+            messagebox.showwarning(title='Game Save Manager', message='Action Failed - Save Already Backed up.')
+        # 2020-10-16 00:34:22.303408
+        last_backup = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.cursor.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
+        {'game_name': game, 'last_backup': last_backup})
         self.database.commit()
         self.logger.info(f'Backed-up Save for {game}.')
 
@@ -148,8 +145,6 @@ class Backup:
         Restore_Game_Window.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
         Restore_Game_Window.unbind_class("Button", "<Key-space>")
 
-        save_to_restore = Tk.StringVar(Restore_Game_Window)
-
         RestoreInfo = ttk.Label(Restore_Game_Window,
             text=f'Select Save for {self.selected_game}', font=("Arial Bold", 10))
         RestoreInfo.grid(columnspan=2, row=0, column=0, pady=(2, 0))
@@ -170,7 +165,7 @@ class Backup:
 
 
     def Convert_Size(self):
-        '''Converts size of directory to best fitting unit of measure'''
+        '''Converts size of directory best fitting '''
         size_bytes = os.path.getsize(self.backup_dest)
         if size_bytes == 0: return "0B"
         size_name = ("B", "KB", "MB", "GB", "TB")
@@ -200,8 +195,7 @@ class Backup:
 
     def Add_Game_to_DB(self, game, save_location):
         '''Adds game to SQLite Database using entry box data.'''
-        c = self.database.cursor()
-        c.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
+        self.cursor.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
         {'game_name': game, 'save_location': save_location, 'last_backup': dt.datetime.now()})
         self.database.commit()
         self.logger.info(f'Added {game} to database.')
@@ -212,8 +206,7 @@ class Backup:
         msg = 'Are you sure that you want to delete the game?'
         Delete_Check = messagebox.askyesno(title='Game Save Manager', message=msg)
         if Delete_Check:
-            c = self.database.cursor()
-            c.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.selected_game})
+            self.cursor.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.selected_game})
             self.database.commit()
             selected_game = Listbox.curselection()
             Listbox.delete(selected_game[0])
@@ -226,26 +219,31 @@ class Backup:
         game_name = GameNameEntry.get()
         save_location = GameSaveEntry.get()
         if os.path.isdir(save_location):
-            c = self.database.cursor()
             print(self.selected_game)
             sql_update_query  ='''UPDATE games
                     SET game_name = ?, save_location = ?
                     WHERE game_name = ?;'''
             data = (game_name, save_location, self.selected_game)
-            c.execute(sql_update_query , data)
+            self.cursor.execute(sql_update_query , data)
             self.database.commit()
             self.logger.info(f'Updated {self.selected_game} in database.')
         else:
             msg = f'Save Location does not exist.'
-            continue_var = messagebox.showwarning(title='Game Save Manager', message=msg)
+            messagebox.showwarning(title='Game Save Manager', message=msg)
 
 
-    def Delete_Update_Entry(self, listbox, GameSaveEntry, GameNameEntry, Update=0):
+    def Delete_Update_Entry(self, listbox, GameSaveEntry, GameNameEntry, ActionInfo, Update=0):
         '''Updates Game Data into Name and Save Entry for viewing.
         Allows for updating specific entries in the database as well.'''
+        # clears entry boxes
         GameNameEntry.delete(0, Tk.END)
         GameSaveEntry.delete(0, Tk.END)
+        # updates entry boxes to show currently selected game in listbox
         if Update == 1:
             self.selected_game = listbox.get(listbox.curselection())
             GameNameEntry.insert(0, self.selected_game)
             GameSaveEntry.insert(0, self.Get_Save_Loc(self.selected_game))
+            # TODO Add updating info that displays last time game was backed and other possible info
+            self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name", {'game_name': self.selected_game})
+            last_update = self.cursor.fetchone()[0]
+            ActionInfo.config(text=f'{self.selected_game} last updated on {last_update}')
