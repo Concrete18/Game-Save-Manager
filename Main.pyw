@@ -1,7 +1,7 @@
 from logging.handlers import RotatingFileHandler
 from Backup_Class import Backup
 from tkinter import messagebox
-from tkinter import ttk
+from tkinter import ttk, Scrollbar
 import datetime as dt
 import tkinter as Tk
 import logging as lg
@@ -18,15 +18,14 @@ def main():
     logger.addHandler(my_handler)
 
     game_list = sqlite3.connect('game_list.db')
-    c = game_list.cursor()
-    c.execute('''
+    App = Backup(game_list, logger)
+    App.cursor.execute('''
     CREATE TABLE IF NOT EXISTS games (
     game_name text,
     save_location text,
     last_backup text
     )''')
 
-    App = Backup(game_list, logger)
 
     # Settings Check
     if not os.path.exists(App.backup_dest):
@@ -36,14 +35,14 @@ def main():
     if App.backup_redundancy > 4:
         App.backup_redundancy = 4
 
-    # Defaults for Background and fonts
-    Background = 'White'
+    # Defaults
     BoldBaseFont = "Arial Bold"
-    BaseFont = "Arial"
 
     main_gui = Tk.Tk()
     main_gui.title('Game Save Manager')
     main_gui.iconbitmap('Save_Icon.ico')
+    if App.disable_resize:
+        main_gui.resizable(width=False, height=False)
     # window_width = 600
     # window_height = 477
     # width = int((main_gui.winfo_screenwidth()-window_width)/2)
@@ -80,15 +79,17 @@ def main():
     ListboxFrame = Tk.Frame(main_gui)
     ListboxFrame.grid(columnspan=4, row=2, column=0,  padx=(20, 20), pady=(5, 10))
 
-    # FIXME Scrollbar does not work unless you use mousewheel or arrow keys
+    # FIXME Scroll
+    # ar does not work unless you use mousewheel or arrow keys
     scrollbar = Tk.Scrollbar(ListboxFrame, orient=Tk.VERTICAL)
     scrollbar.config(command=Tk.Listbox.yview)
-    scrollbar.grid(row=0, column=2, sticky='ns', rowspan=3)
+    scrollbar.grid(row=0, column=3, sticky='ns', rowspan=3)
 
-    game_listbox = Tk.Listbox(ListboxFrame, exportselection=False, yscrollcommand=scrollbar.set, font=(BoldBaseFont, 12), height=10, width=60)
+    game_listbox = Tk.Listbox(ListboxFrame, exportselection=False,
+        yscrollcommand=scrollbar.set, font=(BoldBaseFont, 12), height=10, width=60)
     game_listbox.bind('<<ListboxSelect>>', lambda event, game_listbox=game_listbox,:
-        App.Delete_Update_Entry(game_listbox, GameSaveEntry, GameNameEntry, 1))
-    game_listbox.grid(columnspan=2, row=0, column=0)
+        App.Delete_Update_Entry(game_listbox, GameSaveEntry, GameNameEntry, ActionInfo, 1))
+    game_listbox.grid(columnspan=3, row=0, column=0)
 
     sorted_list = App.Game_list_Sorted()
     for item in sorted_list:
