@@ -1,8 +1,7 @@
 from logging.handlers import RotatingFileHandler
 from Backup_Class import Backup
 from tkinter import messagebox
-from tkinter import ttk, Scrollbar
-import datetime as dt
+from tkinter import ttk
 import tkinter as Tk
 import logging as lg
 import sqlite3
@@ -26,14 +25,11 @@ def main():
     last_backup text
     )''')
 
-
     # Settings Check
     if not os.path.exists(App.backup_dest):
         messagebox.showwarning(title='Game Save Manager', message='Backup destination does not exist.')
     if type(App.backup_redundancy) != int:
         messagebox.showwarning(title='Game Save Manager', message='backup_redundancy in config is not an interger')
-    if App.backup_redundancy > 4:
-        App.backup_redundancy = 4
 
     # Defaults
     BoldBaseFont = "Arial Bold"
@@ -41,7 +37,7 @@ def main():
     main_gui = Tk.Tk()
     main_gui.title('Game Save Manager')
     main_gui.iconbitmap('Save_Icon.ico')
-    if App.disable_resize:
+    if App.disable_resize:  # sets window to not resize if disable_resize is set to 1
         main_gui.resizable(width=False, height=False)
     # window_width = 600
     # window_height = 477
@@ -57,7 +53,7 @@ def main():
     Backup_Frame = Tk.Frame(main_gui)
     Backup_Frame.grid(columnspan=4, column=0, row=0,  padx=(20, 20), pady=(5, 10))
 
-    info_text = f'Total Games in Database: {len(App.Game_list_Sorted())}\nSize of Backups: {App.Convert_Size()}'
+    info_text = f'Total Games in Database: {len(App.Game_list_Sorted())}\nSize of Backups: {App.Convert_Size(App.backup_dest)}'
     Title = Tk.Label(Backup_Frame, text=info_text, font=(BoldBaseFont, 10))
     Title.grid(columnspan=4, row=0, column=1)
 
@@ -71,7 +67,7 @@ def main():
     RestoreGameButton.grid(row=3, column=2, padx=5)
 
     # Main Row 1
-    instruction = 'Select a Game'
+    instruction = 'Select a Game\nto continue'
     ActionInfo = Tk.Label(main_gui, text=instruction, font=(BoldBaseFont, 10))
     ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady= 3)
 
@@ -79,8 +75,7 @@ def main():
     ListboxFrame = Tk.Frame(main_gui)
     ListboxFrame.grid(columnspan=4, row=2, column=0,  padx=(20, 20), pady=(5, 10))
 
-    # FIXME Scroll
-    # ar does not work unless you use mousewheel or arrow keys
+    # FIXME Scrollwheel does not work unless you use mousewheel or arrow keys
     scrollbar = Tk.Scrollbar(ListboxFrame, orient=Tk.VERTICAL)
     scrollbar.config(command=Tk.Listbox.yview)
     scrollbar.grid(row=0, column=3, sticky='ns', rowspan=3)

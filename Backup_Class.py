@@ -1,3 +1,4 @@
+from os import stat
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 import tkinter as Tk
@@ -8,12 +9,15 @@ import math
 import json
 import os
 
+
 class Backup:
     def __init__(self, database, logger):
         with open('settings.json') as json_file:
             data = json.load(json_file)
         self.backup_dest = data['settings']['backup_dest']
         self.backup_redundancy = data['settings']['backup_redundancy']
+        if self.backup_redundancy > 4:
+            self.backup_redundancy = 4
         self.disable_resize = data['settings']['disable_resize']
         self.database = database
         self.cursor = self.database.cursor()
@@ -82,20 +86,19 @@ class Backup:
 
     def Save_Backup(self, game, info_label):
         '''Backups up the game entered based on SQLite save location data to the specified backup folder.'''
-        current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M")
+        current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M-%S")
         save_loc = self.Get_Save_Loc(game)
         game = self.Sanitize_For_Filename(game)
         dest = os.path.join(self.backup_dest, game, current_time)
         try:
             shutil.copytree(save_loc, dest)
             self.Delete_Oldest(game)
-            info_label.config(text=f'Backed up {game} to set backup destination.')
+            info_label.config(text=f'Backed up {game} to set backup destination.\n')
         except FileNotFoundError:
             messagebox.showwarning(title='Game Save Manager', message='Action Failed - File location does not exist.')
         except FileExistsError:
             messagebox.showwarning(title='Game Save Manager', message='Action Failed - Save Already Backed up.')
-        # 2020-10-16 00:34:22.303408
-        last_backup = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
         self.cursor.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
         {'game_name': game, 'last_backup': last_backup})
         self.database.commit()
@@ -163,15 +166,17 @@ class Backup:
 
         Restore_Game_Window.mainloop()
 
-
-    def Convert_Size(self):
+    def Convert_Size(self, directory):
         '''Converts size of directory best fitting '''
-        size_bytes = os.path.getsize(self.backup_dest)
-        if size_bytes == 0: return "0B"
+        total_size = 0
+        for path, dirs, files in os.walk(directory):
+            for f in files:
+                fp = os.path.join(path, f)
+                total_size += os.path.getsize(fp)
         size_name = ("B", "KB", "MB", "GB", "TB")
-        i = int(math.floor(math.log(size_bytes, 1024)))
+        i = int(math.floor(math.log(total_size, 1024)))
         p = math.pow(1024, i)
-        s = round(size_bytes / p, 2)
+        s = round(total_size / p, 2)
         return f'{s} {size_name[i]}'
 
 
@@ -243,7 +248,6 @@ class Backup:
             self.selected_game = listbox.get(listbox.curselection())
             GameNameEntry.insert(0, self.selected_game)
             GameSaveEntry.insert(0, self.Get_Save_Loc(self.selected_game))
-            # TODO Add updating info that displays last time game was backed and other possible info
             self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name", {'game_name': self.selected_game})
             last_update = self.cursor.fetchone()[0]
-            ActionInfo.config(text=f'{self.selected_game} last updated on {last_update}')
+            ActionInfo.config(text=f'{self.selected_game} last updated on {last_update}\nTotal Backup Space: {self.Convert_Size(os.path.join(self.backup_dest, self.selected_game))}')
