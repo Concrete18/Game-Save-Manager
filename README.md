@@ -18,3 +18,8 @@ Made in Python 3.8.3
 * File copying and other manipulations
 * Object oriented design
 * Full Logging System for most all actions and errors
+
+## Known Bugs
+
+* Dragging scrollbar does not work
+* Bindings do not properly disable space acting as enter key
