@@ -9,6 +9,7 @@ import os
 
 
 def main():
+    # logger info and setup
     log_formatter = lg.Formatter('%(asctime)s %(levelname)s %(message)s', datefmt='%m-%d-%Y %I:%M:%S %p')
     logger = lg.getLogger(__name__)
     logger.setLevel(lg.DEBUG)
@@ -16,6 +17,7 @@ def main():
     my_handler.setFormatter(log_formatter)
     logger.addHandler(my_handler)
 
+    # database creation
     game_list = sqlite3.connect('game_list.db')
     App = Backup(game_list, logger)
     App.cursor.execute('''
@@ -65,6 +67,8 @@ def main():
     RestoreGameButton = ttk.Button(Backup_Frame, text='Restore Selected Game Save',
         command=lambda: App.Restore_Backup(), width=button_width)
     RestoreGameButton.grid(row=3, column=2, padx=5)
+
+    # TODO Add delete save data button with "Are you sure" prompt
 
     # Main Row 1
     instruction = 'Select a Game\nto continue'
