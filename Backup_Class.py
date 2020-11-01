@@ -67,6 +67,31 @@ class Backup:
         return ordered_games
 
 
+    # def Delete_Folder(self, dir, delete_oldest=0, n=3):
+    #     '''Deletes the entered directory and all of its contents.
+
+    #     Arguements:
+
+    #     dir -- directory to be deleted
+
+    #     delete_oldest -- 1 enables delete oldest files , 0 disables (default = 0)
+
+    #     n -- deleted oldest folders until nth new files are left (default = 3)
+    #     '''
+    #     # TODO finish new function
+    #     saves_list = []
+    #     for file in os.scandir(dir):
+    #         saves_list.append(file.path)
+    #     if len(saves_list) < self.backup_redundancy and delete_oldest == 1:
+    #         self.logger.info(f'{game} has {self.backup_redundancy} or Less Saves.')
+    #         return
+    #     else:
+    #         sorted_list = sorted(saves_list, key=os.path.getctime, reverse=True)
+    #         for i in range(self.backup_redundancy, len(saves_list)):
+    #             shutil.rmtree(sorted_list[i])
+    #         self.logger.info(f'{game} had more then {self.backup_redundancy} Saves. Deleted oldest saves.')
+
+
     def Delete_Oldest(self, game):
         '''Deletest the oldest saves so only the the newest specified ammount is left.'''
         saves_list = []
@@ -215,22 +240,29 @@ class Backup:
             self.database.commit()
             selected_game = Listbox.curselection()
             Listbox.delete(selected_game[0])
+            msg = 'Do you want to delete the backed up game saves as well?'
+            response = messagebox.askyesno(title='Game Save Manager', message=msg)
+            if ['yes, y', 1] in response:
+                print('WIP')
             self.logger.info(f'Deleted {self.selected_game} from database.')
 
 
-    def Update_Game(self, GameNameEntry, GameSaveEntry, Listbox):
+    def Update_Game(self, GameNameEntry, GameSaveEntry, listbox):
         '''Allows updating data for games in database.
         The last selected game in the Listbox gets updated with the info from the Add/Update Game entries.'''
         game_name = GameNameEntry.get()
         save_location = GameSaveEntry.get()
         if os.path.isdir(save_location):
-            print(self.selected_game)
             sql_update_query  ='''UPDATE games
                     SET game_name = ?, save_location = ?
                     WHERE game_name = ?;'''
             data = (game_name, save_location, self.selected_game)
             self.cursor.execute(sql_update_query , data)
             self.database.commit()
+            os.rename(os.path.join(self.backup_dest, self.selected_game), os.path.join(self.backup_dest, game_name))
+            # TODO delete then readd selected entry
+            listbox.delete(0 , Tk.ACTIVE)
+            listbox.insert(0, game_name)
             self.logger.info(f'Updated {self.selected_game} in database.')
         else:
             msg = f'Save Location does not exist.'
@@ -245,7 +277,7 @@ class Backup:
         GameSaveEntry.delete(0, Tk.END)
         # updates entry boxes to show currently selected game in listbox
         if Update == 1:
-            self.selected_game = listbox.get(listbox.curselection())
+            self.selected_game = listbox.get(listbox.curselection())  # script wide variable for selected game
             GameNameEntry.insert(0, self.selected_game)
             GameSaveEntry.insert(0, self.Get_Save_Loc(self.selected_game))
             self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name", {'game_name': self.selected_game})
