@@ -112,7 +112,7 @@ def main():
     GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5, padx=10)
 
     BrowseButton = Tk.ttk.Button(Add_Game_Frame, text='Browse',
-        command=lambda: App.Browse_For_Save(GameNameEntry, GameSaveEntry))
+        command=lambda: App.Browse_For_Save(GameSaveEntry))
     BrowseButton.grid(row=1, column=4, padx=10)
 
     # Button Frame Row 2

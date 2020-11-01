@@ -12,6 +12,14 @@ import os
 
 class Backup:
     def __init__(self, database, logger):
+        '''Sets up backup configuration, database and logger.
+
+        Arguments:
+
+        database -- database object name
+
+        logger -- logger object name
+        '''
         with open('settings.json') as json_file:
             data = json.load(json_file)
         self.backup_dest = data['settings']['backup_dest']
@@ -29,29 +37,39 @@ class Backup:
         '''Checks for missing save directories from database.'''
         self.cursor.execute("SELECT save_location FROM games")
         missing_save_loc = []
-        for save_location in self.cursor.fetchall():
+        for save_location in self.cursor.fetchall():  # appends all save locations that do not exist to a list
             if not os.path.isdir(save_location[0]):
                 missing_save_loc.append(save_location[0])
         missing_saves = len(missing_save_loc)
-        if missing_saves > 0 and missing_saves < 6:
+        if missing_saves > 0 and missing_saves < 6:  # shows unfound save locations if list is less then 6 entries
             msg = f'Save Locations for the following do not exist.\n{missing_save_loc}'
             messagebox.showwarning(title='Game Save Manager', message=msg)
             self.logger.debug(f'Missing Save Locations:{missing_save_loc}')
-        elif len(missing_save_loc) > 5:
+        elif len(missing_save_loc) > 5: # warns of unfound save locations if list is greater then 5 entries
             msg = 'More than 5 save locations do not exist.'
             messagebox.showwarning(title='Game Save Manager', message=msg)
             self.logger.debug(f'More then 4 save locations in the database do not exist.')
 
 
     def Sanitize_For_Filename(self, string):
-        '''Removes illegal characters from string so it can become a valid filename.'''
+        '''Removes illegal characters from string so it can become a valid filename.
+
+        Arguments:
+
+        string -- string that is satitized
+        '''
         for char in ('<', '>', ':', '/', '\\', '|', '?', '*'):
             string = string.replace(char,'')
         return string
 
 
     def Get_Save_Loc(self, game):
-        '''Returns the save location of the entered game from the SQLite Database.'''
+        '''Returns the save location of the entered game from the SQLite Database.
+
+        Arguments:
+
+        game -- game that will have the save location returned for
+        '''
         self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game})
         save_location = self.cursor.fetchone()[0]
         return save_location
@@ -93,7 +111,12 @@ class Backup:
 
 
     def Delete_Oldest(self, game):
-        '''Deletest the oldest saves so only the the newest specified ammount is left.'''
+        '''Deletes the oldest saves so only the newest specified amount is left.
+
+        Arguments:
+
+        game -- game that will all but the newest saves deleted
+        '''
         saves_list = []
         dir = os.path.join(self.backup_dest, game)
         for file in os.listdir(dir):
@@ -110,7 +133,14 @@ class Backup:
 
 
     def Save_Backup(self, game, info_label):
-        '''Backups up the game entered based on SQLite save location data to the specified backup folder.'''
+        '''Backups up the game entered based on SQLite save location data to the specified backup folder.
+
+        Arguments:
+
+        game -- game that is backed up
+
+        info_label -- Tkinter label that shows confirmation of backup upon completion
+        '''
         current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M-%S")
         save_loc = self.Get_Save_Loc(game)
         game = self.Sanitize_For_Filename(game)
@@ -147,13 +177,14 @@ class Backup:
 
 
         def Restore_Game_Pressed():
+            ''' ''' # TODO finish doc string
             save_name = save_listbox.get(save_listbox.curselection())
             save_path = os.path.join(self.backup_dest, selected_game, save_name)
             if os.path.exists(f'{save_location}.old'):
                 msg = '''Backup of current save before last restore already exists.
                     \nDo you want to delete it? This will cancel the restore.'''
                 response = messagebox.askyesno(title='Game Save Manager', message=msg)
-                if response in ['yes', 'y']:
+                if response:
                     shutil.rmtree(f'{save_location}.old')
                     # os.removedirs(f'{save_location}.old')
                 else:
@@ -191,21 +222,39 @@ class Backup:
 
         Restore_Game_Window.mainloop()
 
-    def Convert_Size(self, directory):
-        '''Converts size of directory best fitting '''
+    def Convert_Size(self, dir):
+        '''Converts size of directory to best fitting unit of measure.
+
+        Arguments:
+
+        dir -- directory that have its total size returned
+        '''
         total_size = 0
-        for path, dirs, files in os.walk(directory):
+        for path, dirs, files in os.walk(dir):
             for f in files:
                 fp = os.path.join(path, f)
                 total_size += os.path.getsize(fp)
         size_name = ("B", "KB", "MB", "GB", "TB")
-        i = int(math.floor(math.log(total_size, 1024)))
-        p = math.pow(1024, i)
-        s = round(total_size / p, 2)
-        return f'{s} {size_name[i]}'
+        try:
+            i = int(math.floor(math.log(total_size, 1024)))
+            p = math.pow(1024, i)
+            s = round(total_size / p, 2)
+            return f'{s} {size_name[i]}'
+        except ValueError:
+            return '0 bits'
 
 
     def Add_Game_Pressed(self, GameNameEntry, GameSaveEntry, Listbox):
+        '''Adds game to database using entry inputs.
+
+        Arguments:
+
+        GameNameEntry -- name of game to be added to database
+
+        GameSaveEntry -- save location to be added to database
+
+        Listbox -- Listbox object to be updated with new game
+        '''
         game_name = GameNameEntry.get()
         save_location = GameSaveEntry.get()
         if os.path.isdir(save_location):
@@ -217,39 +266,66 @@ class Backup:
             messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
 
 
-    def Browse_For_Save(self, GameNameEntry, GameSaveEntry):
+    def Browse_For_Save(self, GameSaveEntry):
+        '''Opens a file dialog so a save directory can be chosen.
+
+        Arguments:
+
+        GameSaveEntry -- the chosen directory is put into this entry box
+        '''
         save_dir = filedialog.askdirectory(initialdir="C:/", title="Select Save Directory")
         GameSaveEntry.delete(0, Tk.END)
         GameSaveEntry.insert(0, save_dir)
 
 
     def Add_Game_to_DB(self, game, save_location):
-        '''Adds game to SQLite Database using entry box data.'''
+        '''Adds game to SQLite Database using entry box data.
+
+        Arguments:
+
+        game -- game name that is added to database
+
+        save_location -- game save location that is added to database
+        '''
         self.cursor.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
-        {'game_name': game, 'save_location': save_location, 'last_backup': dt.datetime.now()})
+        {'game_name': game, 'save_location': save_location, 'last_backup': 'Never'})
         self.database.commit()
         self.logger.info(f'Added {game} to database.')
 
 
     def Delete_Game_from_DB(self, Listbox):
-        '''Deletes selected game from SQLite Database.'''
+        '''Deletes selected game from SQLite Database.
+
+        Arguments:
+
+        Listbox -- Listbox object that is updated with the removal of currently selected game
+        '''
         msg = 'Are you sure that you want to delete the game?'
         Delete_Check = messagebox.askyesno(title='Game Save Manager', message=msg)
         if Delete_Check:
             self.cursor.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.selected_game})
             self.database.commit()
-            selected_game = Listbox.curselection()
-            Listbox.delete(selected_game[0])
+            # selected_game = Listbox.curselection()
+            Listbox.delete(Listbox.curselection()[0])
             msg = 'Do you want to delete the backed up game saves as well?'
             response = messagebox.askyesno(title='Game Save Manager', message=msg)
-            if ['yes, y', 1] in response:
+            if response:
                 print('WIP')
             self.logger.info(f'Deleted {self.selected_game} from database.')
 
 
     def Update_Game(self, GameNameEntry, GameSaveEntry, listbox):
         '''Allows updating data for games in database.
-        The last selected game in the Listbox gets updated with the info from the Add/Update Game entries.'''
+        The last selected game in the Listbox gets updated with the info from the Add/Update Game entries.
+
+        Arguments:
+
+        GameNameEntry -- new game name
+
+        GameSaveEntry -- new save location
+
+        listbox -- listbox object to update info in
+        '''
         game_name = GameNameEntry.get()
         save_location = GameSaveEntry.get()
         if os.path.isdir(save_location):
@@ -260,8 +336,7 @@ class Backup:
             self.cursor.execute(sql_update_query , data)
             self.database.commit()
             os.rename(os.path.join(self.backup_dest, self.selected_game), os.path.join(self.backup_dest, game_name))
-            # TODO delete then readd selected entry
-            listbox.delete(0 , Tk.ACTIVE)
+            listbox.delete(Tk.ACTIVE)
             listbox.insert(0, game_name)
             self.logger.info(f'Updated {self.selected_game} in database.')
         else:
@@ -269,9 +344,22 @@ class Backup:
             messagebox.showwarning(title='Game Save Manager', message=msg)
 
 
-    def Delete_Update_Entry(self, listbox, GameSaveEntry, GameNameEntry, ActionInfo, Update=0):
+    def Delete_Update_Entry(self, listbox, GameSaveEntry, GameNameEntry, ActionInfo, Update = 0):
         '''Updates Game Data into Name and Save Entry for viewing.
-        Allows for updating specific entries in the database as well.'''
+        Allows for updating specific entries in the database as well.
+
+        Arguments:
+
+        listbox -- listbox object to update
+
+        GameSaveEntry -- entry box for game save location
+
+        GameNameEntry -- entry box for game name
+
+        ActionInfo -- Tkinter label with info on selected game
+
+        Update -- s (default = 0)
+        '''
         # clears entry boxes
         GameNameEntry.delete(0, Tk.END)
         GameSaveEntry.delete(0, Tk.END)
@@ -282,4 +370,4 @@ class Backup:
             GameSaveEntry.insert(0, self.Get_Save_Loc(self.selected_game))
             self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name", {'game_name': self.selected_game})
             last_update = self.cursor.fetchone()[0]
-            ActionInfo.config(text=f'{self.selected_game} last updated on {last_update}\nTotal Backup Space: {self.Convert_Size(os.path.join(self.backup_dest, self.selected_game))}')
+            ActionInfo.config(text=f'{self.selected_game} last backed up on {last_update}\nTotal Backup Space: {self.Convert_Size(os.path.join(self.backup_dest, self.selected_game))}')
