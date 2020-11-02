@@ -1,4 +1,3 @@
-from os import stat
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 import tkinter as Tk
@@ -132,7 +131,7 @@ class Backup:
             self.logger.info(f'{game} had more then {self.backup_redundancy} Saves. Deleted oldest saves.')
 
 
-    def Save_Backup(self, game, info_label):
+    def Save_Backup(self, game, info_label, listbox):
         '''Backups up the game entered based on SQLite save location data to the specified backup folder.
 
         Arguments:
@@ -144,20 +143,25 @@ class Backup:
         current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M-%S")
         save_loc = self.Get_Save_Loc(game)
         game = self.Sanitize_For_Filename(game)
-        dest = os.path.join(self.backup_dest, game, current_time)
+        total_size = self.Convert_Size(os.path.join(self.backup_dest, self.selected_game))
+        base_backup_folder = os.path.join(self.backup_dest, game)
+        dest = os.path.join(base_backup_folder, current_time)
         try:
             shutil.copytree(save_loc, dest)
             self.Delete_Oldest(game)
-            info_label.config(text=f'Backed up {game} to set backup destination.\n')
+            info_label.config(text=f'''{game} backed up to set backup destination.
+            Total Backup Space: {total_size} from {len(os.listdir(base_backup_folder))} backups''')
+            last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+            self.cursor.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
+            {'game_name': game, 'last_backup': last_backup})
+            self.database.commit()
+            listbox.delete(Tk.ACTIVE)
+            listbox.insert(0, game)
+            self.logger.info(f'Backed up Save for {game}.')
         except FileNotFoundError:
             messagebox.showwarning(title='Game Save Manager', message='Action Failed - File location does not exist.')
         except FileExistsError:
             messagebox.showwarning(title='Game Save Manager', message='Action Failed - Save Already Backed up.')
-        last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-        self.cursor.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
-        {'game_name': game, 'last_backup': last_backup})
-        self.database.commit()
-        self.logger.info(f'Backed-up Save for {game}.')
 
 
     def Restore_Backup(self):
@@ -307,7 +311,8 @@ class Backup:
             self.database.commit()
             # selected_game = Listbox.curselection()
             Listbox.delete(Listbox.curselection()[0])
-            msg = 'Do you want to delete the backed up game saves as well?'
+            # TODO finish function
+            msg = '(WIP) Do you want to delete the backed up game saves as well?'
             response = messagebox.askyesno(title='Game Save Manager', message=msg)
             if response:
                 print('WIP')
@@ -344,7 +349,7 @@ class Backup:
             messagebox.showwarning(title='Game Save Manager', message=msg)
 
 
-    def Delete_Update_Entry(self, listbox, GameSaveEntry, GameNameEntry, ActionInfo, Update = 0):
+    def Delete_Update_Entry(self, listbox, GameSaveEntry, GameNameEntry, info_label, Update = 0):
         '''Updates Game Data into Name and Save Entry for viewing.
         Allows for updating specific entries in the database as well.
 
@@ -368,6 +373,9 @@ class Backup:
             self.selected_game = listbox.get(listbox.curselection())  # script wide variable for selected game
             GameNameEntry.insert(0, self.selected_game)
             GameSaveEntry.insert(0, self.Get_Save_Loc(self.selected_game))
+            base_backup_folder = os.path.join(self.backup_dest, self.selected_game)
+            total_size = self.Convert_Size(base_backup_folder)
             self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name", {'game_name': self.selected_game})
             last_update = self.cursor.fetchone()[0]
-            ActionInfo.config(text=f'{self.selected_game} last backed up on {last_update}\nTotal Backup Space: {self.Convert_Size(os.path.join(self.backup_dest, self.selected_game))}')
+            info_label.config(text=f'''{self.selected_game} last backed up on {last_update}
+            Total Backup Space: {total_size} from {len(os.listdir(base_backup_folder))} backups''')

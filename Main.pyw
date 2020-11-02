@@ -61,7 +61,7 @@ def main():
 
     button_width = 26
     BackupButton = ttk.Button(Backup_Frame, text='Backup Selected Game Save',
-        command=lambda: App.Save_Backup(game_listbox.get(Tk.ACTIVE), ActionInfo), width=button_width)
+        command=lambda: App.Save_Backup(game_listbox.get(Tk.ACTIVE), ActionInfo, game_listbox), width=button_width)
     BackupButton.grid(row=3, column=1, padx=5, pady=5)
 
     RestoreGameButton = ttk.Button(Backup_Frame, text='Restore Selected Game Save',
