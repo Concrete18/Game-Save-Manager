@@ -1,5 +1,4 @@
-from tkinter import filedialog, messagebox
-from tkinter import ttk
+from tkinter import ttk, filedialog, messagebox
 import tkinter as Tk
 import datetime as dt
 import logging as lg
@@ -165,7 +164,7 @@ class Backup:
 
 
     def Restore_Backup(self):
-        '''Restores game save after renaming current save folder to "save.old".'''
+        '''Opens an interface for picking the dated backup of the selected game to restore.'''
         backup_list =[]
         selected_game = self.selected_game
         backup_path = os.path.join(self.backup_dest, self.selected_game)
@@ -181,7 +180,8 @@ class Backup:
 
 
         def Restore_Game_Pressed():
-            ''' ''' # TODO finish doc string
+            '''Restores selected game save based on save clicked.
+            Restores by renaming current save folder to "save.old" and then copying the backup to replace it.'''
             save_name = save_listbox.get(save_listbox.curselection())
             save_path = os.path.join(self.backup_dest, selected_game, save_name)
             if os.path.exists(f'{save_location}.old'):
@@ -348,6 +348,27 @@ class Backup:
             msg = f'Save Location does not exist.'
             messagebox.showwarning(title='Game Save Manager', message=msg)
 
+    @staticmethod
+    def Readable_Time_Since(datetime_obj):
+        '''Gives time since for a datetime object in the unit of time that makes the most sense
+        rounded to 1 decimal place.
+
+        Arguments:
+
+        datetime_obj -- datetime object that will have the current date subtracted from it
+        '''
+        seconds = (dt.datetime.now() - datetime_obj).total_seconds()
+        if seconds < 3600:
+            minutes = round(seconds / 60, 1)
+            time_since = f' {minutes} minutes ago'
+        elif seconds < 86400:
+            hours = round(seconds / 3600, 1)
+            time_since = f' {hours} hours ago'
+        else:
+            days = round(seconds / 86400, 1)
+            time_since = f' {days} days ago'
+        return time_since
+
 
     def Delete_Update_Entry(self, listbox, GameSaveEntry, GameNameEntry, info_label, Update = 0):
         '''Updates Game Data into Name and Save Entry for viewing.
@@ -375,7 +396,9 @@ class Backup:
             GameSaveEntry.insert(0, self.Get_Save_Loc(self.selected_game))
             base_backup_folder = os.path.join(self.backup_dest, self.selected_game)
             total_size = self.Convert_Size(base_backup_folder)
-            self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name", {'game_name': self.selected_game})
-            last_update = self.cursor.fetchone()[0]
-            info_label.config(text=f'''{self.selected_game} last backed up on {last_update}
+            self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name",
+                {'game_name': self.selected_game})
+            last_backup = self.cursor.fetchone()[0]
+            time_since = self.Readable_Time_Since(dt.datetime.strptime(last_backup, '%Y/%m/%d %H:%M:%S'))
+            info_label.config(text=f'''{self.selected_game} last backed up {time_since}
             Total Backup Space: {total_size} from {len(os.listdir(base_backup_folder))} backups''')
