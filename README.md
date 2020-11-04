@@ -10,6 +10,8 @@ Made in Python 3.8.3
 
 * Up to 4 backup redundancy to prevent corruption issues.
 * Easily add, delete and update games in the backup database using the interface.
+* Selecting games shows useful info such as number of saves, size they all take combined and time since last backup.
+* Fully works with python built in modules only.
 
 ## Python Techniques Used
 
@@ -21,5 +23,5 @@ Made in Python 3.8.3
 
 ## Known Bugs
 
-* Dragging scrollbar does not work
-* Bindings do not properly disable space acting as enter key
+* Dragging scrollbar does not work.
+* Bindings do not properly disable space acting as enter key.
