@@ -68,8 +68,6 @@ def main():
         command=lambda: App.Restore_Backup(), width=button_width)
     RestoreGameButton.grid(row=3, column=2, padx=5)
 
-    # TODO Add delete save data button with "Are you sure" prompt
-
     # Main Row 1
     instruction = 'Select a Game\nto continue'
     ActionInfo = Tk.Label(main_gui, text=instruction, font=(BoldBaseFont, 10))
@@ -130,11 +128,11 @@ def main():
     UpdateButton.grid(row=2, column=1, padx=button_padx, pady=button_pady)
 
     RemoveButton = ttk.Button(Button_Frame, text='Remove Game',
-        command=lambda: App.Delete_Game_from_DB(game_listbox), width=20)
+        command=lambda: App.Delete_Game_from_DB(game_listbox, GameNameEntry, GameSaveEntry, info_text), width=20)
     RemoveButton.grid(row=2, column=2, padx=button_padx, pady=button_pady)
 
     ClearButton = Tk.ttk.Button(Button_Frame, text='Clear Entries',
-        command=lambda: App.Delete_Update_Entry(game_listbox, GameNameEntry, GameSaveEntry), width=20)
+        command=lambda: App.Delete_Update_Entry(game_listbox, GameNameEntry, GameSaveEntry, info_text), width=20)
     ClearButton.grid(row=2, column=3, padx=button_padx, pady=button_pady)
 
     App.Database_Check()

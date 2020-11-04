@@ -48,8 +48,8 @@ class Backup:
             messagebox.showwarning(title='Game Save Manager', message=msg)
             self.logger.debug(f'More then 4 save locations in the database do not exist.')
 
-
-    def Sanitize_For_Filename(self, string):
+    @staticmethod
+    def Sanitize_For_Filename(string):
         '''Removes illegal characters from string so it can become a valid filename.
 
         Arguments:
@@ -81,31 +81,6 @@ class Backup:
             ordered_games.append(game_name[0])
         self.database.commit()
         return ordered_games
-
-
-    # def Delete_Folder(self, dir, delete_oldest=0, n=3):
-    #     '''Deletes the entered directory and all of its contents.
-
-    #     Arguements:
-
-    #     dir -- directory to be deleted
-
-    #     delete_oldest -- 1 enables delete oldest files , 0 disables (default = 0)
-
-    #     n -- deleted oldest folders until nth new files are left (default = 3)
-    #     '''
-    #     # TODO finish new function
-    #     saves_list = []
-    #     for file in os.scandir(dir):
-    #         saves_list.append(file.path)
-    #     if len(saves_list) < self.backup_redundancy and delete_oldest == 1:
-    #         self.logger.info(f'{game} has {self.backup_redundancy} or Less Saves.')
-    #         return
-    #     else:
-    #         sorted_list = sorted(saves_list, key=os.path.getctime, reverse=True)
-    #         for i in range(self.backup_redundancy, len(saves_list)):
-    #             shutil.rmtree(sorted_list[i])
-    #         self.logger.info(f'{game} had more then {self.backup_redundancy} Saves. Deleted oldest saves.')
 
 
     def Delete_Oldest(self, game):
@@ -297,7 +272,7 @@ class Backup:
         self.logger.info(f'Added {game} to database.')
 
 
-    def Delete_Game_from_DB(self, Listbox):
+    def Delete_Game_from_DB(self, Listbox, GameNameEntry, GameSaveEntry, info_text):
         '''Deletes selected game from SQLite Database.
 
         Arguments:
@@ -309,13 +284,17 @@ class Backup:
         if Delete_Check:
             self.cursor.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.selected_game})
             self.database.commit()
-            # selected_game = Listbox.curselection()
             Listbox.delete(Listbox.curselection()[0])
-            # TODO finish function
-            msg = '(WIP) Do you want to delete the backed up game saves as well?'
+            self.Delete_Update_Entry(Listbox, GameNameEntry, GameSaveEntry, info_text)
+            msg = 'Do you want to delete the backed up game saves as well?'
             response = messagebox.askyesno(title='Game Save Manager', message=msg)
             if response:
-                print('WIP')
+                os.path.join(self.backup_dest, self.selected_game)
+                try:
+                    shutil.rmtree(os.path.join(self.backup_dest, self.selected_game))
+                except PermissionError:
+                    msg = 'Failed to delete directory\nPermission Error'
+                    messagebox.showerror(title='Game Save Manager',message=msg)
             self.logger.info(f'Deleted {self.selected_game} from database.')
 
 
@@ -348,6 +327,7 @@ class Backup:
             msg = f'Save Location does not exist.'
             messagebox.showwarning(title='Game Save Manager', message=msg)
 
+
     @staticmethod
     def Readable_Time_Since(datetime_obj):
         '''Gives time since for a datetime object in the unit of time that makes the most sense
@@ -358,14 +338,14 @@ class Backup:
         datetime_obj -- datetime object that will have the current date subtracted from it
         '''
         seconds = (dt.datetime.now() - datetime_obj).total_seconds()
-        if seconds < 3600:
-            minutes = round(seconds / 60, 1)
+        if seconds < (60 * 60):  # seconds in minute * minutes in hour
+            minutes = round(seconds / 60, 1)  # seconds in a minute
             time_since = f' {minutes} minutes ago'
-        elif seconds < 86400:
-            hours = round(seconds / 3600, 1)
+        elif seconds < (60 * 60 * 24):  # seconds in minute * minutes in hour * hours in a day
+            hours = round(seconds / (60 * 60), 1)  # seconds in minute * minutes in hour
             time_since = f' {hours} hours ago'
         else:
-            days = round(seconds / 86400, 1)
+            days = round(seconds / 86400, 1)  # seconds in minute * minutes in hour * hours in a day
             time_since = f' {days} days ago'
         return time_since
 
@@ -399,6 +379,10 @@ class Backup:
             self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name",
                 {'game_name': self.selected_game})
             last_backup = self.cursor.fetchone()[0]
-            time_since = self.Readable_Time_Since(dt.datetime.strptime(last_backup, '%Y/%m/%d %H:%M:%S'))
-            info_label.config(text=f'''{self.selected_game} last backed up {time_since}
-            Total Backup Space: {total_size} from {len(os.listdir(base_backup_folder))} backups''')
+            if last_backup != 'Never':
+                time_since = self.Readable_Time_Since(dt.datetime.strptime(last_backup, '%Y/%m/%d %H:%M:%S'))
+                info = f'''{self.selected_game} last backed up {time_since}
+                Total Backup Space: {total_size} from {len(os.listdir(base_backup_folder))} backups'''
+            else:
+                info = f'{self.selected_game} has not been backed up\n'
+            info_label.config(text=info)
