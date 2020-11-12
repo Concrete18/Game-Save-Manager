@@ -1,14 +1,15 @@
 from tkinter import ttk, filedialog, messagebox
-import tkinter as Tk
 import datetime as dt
+import tkinter as Tk
+import subprocess
 import shutil
 import math
 import json
 import os
 
-print(range(1, 6))
 
 class Backup:
+
     def __init__(self, database, logger):
         '''Sets up backup configuration, database and logger.
 
@@ -59,6 +60,7 @@ class Backup:
             msg = 'More than 5 save locations do not exist.'
             messagebox.showwarning(title='Game Save Manager', message=msg)
             self.logger.debug(f'More then 5 save locations in the database do not exist.')
+
 
     @staticmethod
     def Sanitize_For_Filename(string):
@@ -126,6 +128,9 @@ class Backup:
 
         info_label -- Tkinter label that shows confirmation of backup upon completion
         '''
+        if self.selected_game == None:
+            messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
+            return
         current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M-%S")
         save_loc = self.Get_Save_Loc(game)
         game = self.Sanitize_For_Filename(game)
@@ -154,7 +159,10 @@ class Backup:
     def Restore_Backup(self):
         '''Opens an interface for picking the dated backup of the selected game to restore.'''
         backup_list =[]
-        selected_game = self.selected_game
+        if self.selected_game == None:
+            messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
+            return
+        print(self.backup_dest, self.selected_game)
         backup_path = os.path.join(self.backup_dest, self.selected_game)
         save_location = self.Get_Save_Loc(self.selected_game)
         print(save_location)
@@ -168,11 +176,20 @@ class Backup:
             return
 
 
+    def Explore_Save_location(self):
+        '''Opens the selected games save location in explorer'''
+        if self.selected_game == None:
+            messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
+            return
+        save_location = self.Get_Save_Loc(self.selected_game)
+        subprocess.Popen(f'explorer "{save_location}"')
+
+
         def Restore_Game_Pressed():
             '''Restores selected game save based on save clicked.
             Restores by renaming current save folder to "save.old" and then copying the backup to replace it.'''
             save_name = save_listbox.get(save_listbox.curselection())
-            save_path = os.path.join(self.backup_dest, selected_game, save_name)
+            save_path = os.path.join(self.backup_dest, self.selected_game, save_name)
             if os.path.exists(f'{save_location}.old'):
                 msg = '''Backup of current save before last restore already exists.
                     \nDo you want to delete it? This will cancel the restore if you do not delete it.'''
@@ -184,7 +201,7 @@ class Backup:
                     return
             os.rename(save_location, f'{save_location}.old')
             shutil.copytree(save_path, save_location)
-            self.logger.info(f'Restored Save for {selected_game}.')
+            self.logger.info(f'Restored Save for {self.selected_game}.')
             Restore_Game_Window.destroy()
 
 
@@ -214,7 +231,9 @@ class Backup:
 
         Restore_Game_Window.mainloop()
 
-    def Convert_Size(self, dir):
+
+    @staticmethod
+    def Convert_Size(dir):
         '''Converts size of directory to best fitting unit of measure.
 
         Arguments:
@@ -247,6 +266,9 @@ class Backup:
 
         Listbox -- Listbox object to be updated with new game
         '''
+        if self.selected_game == None:
+            messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
+            return
         game_name = GameNameEntry.get()
         save_location = GameSaveEntry.get()
         self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
@@ -264,7 +286,8 @@ class Backup:
             messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
 
 
-    def Browse_For_Save(self, GameSaveEntry):
+    @staticmethod
+    def Browse_For_Save(GameSaveEntry):
         '''Opens a file dialog so a save directory can be chosen.
 
         Arguments:
@@ -298,6 +321,9 @@ class Backup:
 
         Listbox -- Listbox object that is updated with the removal of currently selected game
         '''
+        if self.selected_game == None:
+            messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
+            return
         msg = 'Are you sure that you want to delete the game?'
         Delete_Check = messagebox.askyesno(title='Game Save Manager', message=msg)
         if Delete_Check:
@@ -329,6 +355,9 @@ class Backup:
 
         listbox -- listbox object to update info in
         '''
+        if self.selected_game == None:
+            messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
+            return
         game_name = GameNameEntry.get()
         save_location = GameSaveEntry.get()
         if os.path.isdir(save_location):
