@@ -131,4 +131,5 @@ dmypy.json
 # custom
 *.db
 /Testing Area
+/Save Backup
 /.vscode
