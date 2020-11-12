@@ -53,7 +53,7 @@ def main():
 
     # Main Row 0
     Backup_Frame = Tk.Frame(main_gui)
-    Backup_Frame.grid(columnspan=4, column=0, row=0,  padx=(20, 20), pady=(5, 10))
+    Backup_Frame.grid(columnspan=4, column=0, row=0,  padx=(20, 20), pady=(5, 0))
 
     info_text = f'Total Games in Database: {len(App.Game_list_Sorted())}\nSize of Backups: {App.Convert_Size(App.backup_dest)}'
     Title = Tk.Label(Backup_Frame, text=info_text, font=(BoldBaseFont, 10))
@@ -65,8 +65,12 @@ def main():
     BackupButton.grid(row=3, column=1, padx=5, pady=5)
 
     RestoreGameButton = ttk.Button(Backup_Frame, text='Restore Selected Game Save',
-        command=lambda: App.Restore_Backup(), width=button_width)
+        command=App.Restore_Backup, width=button_width)
     RestoreGameButton.grid(row=3, column=2, padx=5)
+
+    ExploreSaveButton = ttk.Button(Backup_Frame, text='Explore Selected Game Save',
+        command=App.Explore_Save_location, width=button_width)
+    ExploreSaveButton.grid(row=3, column=3, padx=5)
 
     # Main Row 1
     instruction = 'Select a Game\nto continue'
