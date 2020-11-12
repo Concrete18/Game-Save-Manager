@@ -1,12 +1,12 @@
 from tkinter import ttk, filedialog, messagebox
 import tkinter as Tk
 import datetime as dt
-import logging as lg
 import shutil
 import math
 import json
 import os
 
+print(range(1, 6))
 
 class Backup:
     def __init__(self, database, logger):
@@ -34,19 +34,31 @@ class Backup:
     def Database_Check(self):
         '''Checks for missing save directories from database.'''
         self.cursor.execute("SELECT save_location FROM games")
-        missing_save_loc = []
+        missing_save_list = []
+        missing_save_string = ''
         for save_location in self.cursor.fetchall():  # appends all save locations that do not exist to a list
             if not os.path.isdir(save_location[0]):
-                missing_save_loc.append(save_location[0])
-        missing_saves = len(missing_save_loc)
-        if missing_saves > 0 and missing_saves < 6:  # shows unfound save locations if list is less then 6 entries
-            msg = f'Save Locations for the following do not exist.\n{missing_save_loc}'
+                self.cursor.execute('''
+                SELECT game_name
+                FROM games
+                WHERE save_location=:save_location''', {'save_location': save_location[0]})
+                game_name = self.cursor.fetchone()[0]
+                missing_save_list.append(game_name)
+        total_missing_saves = len(missing_save_list)
+        if total_missing_saves == 1:
+            missing_save_string = missing_save_list[0]
+        elif total_missing_saves == 2:
+            missing_save_string = f'{missing_save_list[0]} and {missing_save_list[1]}'
+        else:
+            missing_save_string = ", ".join(missing_save_list)
+        if total_missing_saves in range(1, 6):  # shows unfound save locations if list has 1-5 entries
+            msg = f'Save Locations for the following games do not exist.\n{missing_save_string}'
             messagebox.showwarning(title='Game Save Manager', message=msg)
-            self.logger.debug(f'Missing Save Locations:{missing_save_loc}')
-        elif len(missing_save_loc) > 5: # warns of unfound save locations if list is greater then 5 entries
+            self.logger.debug(f'Missing Save Locations:{missing_save_string}')
+        elif total_missing_saves > 5: # warns of unfound save locations if list is greater then 5 entries
             msg = 'More than 5 save locations do not exist.'
             messagebox.showwarning(title='Game Save Manager', message=msg)
-            self.logger.debug(f'More then 4 save locations in the database do not exist.')
+            self.logger.debug(f'More then 5 save locations in the database do not exist.')
 
     @staticmethod
     def Sanitize_For_Filename(string):
@@ -123,8 +135,9 @@ class Backup:
         try:
             shutil.copytree(save_loc, dest)
             self.Delete_Oldest(game)
-            info_label.config(text=f'''{game} backed up to set backup destination.
-            Total Backup Space: {total_size} from {len(os.listdir(base_backup_folder))} backups''')
+            info1 = f'{game} backed up to set backup destination.\n'
+            info2 = f'Total Backup Space: {total_size} from {len(os.listdir(base_backup_folder))} backups'
+            info_label.config(text=info1 + info2)
             last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
             self.cursor.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
             {'game_name': game, 'last_backup': last_backup})
@@ -147,6 +160,7 @@ class Backup:
         print(save_location)
         if os.path.exists(backup_path):
             for file in os.scandir(backup_path):
+                # TODO Make listbox names look better with datetime
                 backup_list.append(file)
             print(backup_list)
         else:
@@ -161,11 +175,10 @@ class Backup:
             save_path = os.path.join(self.backup_dest, selected_game, save_name)
             if os.path.exists(f'{save_location}.old'):
                 msg = '''Backup of current save before last restore already exists.
-                    \nDo you want to delete it? This will cancel the restore.'''
+                    \nDo you want to delete it? This will cancel the restore if you do not delete it.'''
                 response = messagebox.askyesno(title='Game Save Manager', message=msg)
                 if response:
                     shutil.rmtree(f'{save_location}.old')
-                    # os.removedirs(f'{save_location}.old')
                 else:
                     print('Canceling Restore.')
                     return
@@ -236,6 +249,12 @@ class Backup:
         '''
         game_name = GameNameEntry.get()
         save_location = GameSaveEntry.get()
+        self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
+        database_save_location = self.cursor.fetchone()[0]
+        if database_save_location != None:
+            msg = "Can't add game to database.\nGame already exists."
+            messagebox.showwarning(title='Game Save Manager', message=msg)
+            return
         if os.path.isdir(save_location):
             GameSaveEntry.delete(0, Tk.END)
             GameNameEntry.delete(0, Tk.END)
@@ -381,8 +400,9 @@ class Backup:
             last_backup = self.cursor.fetchone()[0]
             if last_backup != 'Never':
                 time_since = self.Readable_Time_Since(dt.datetime.strptime(last_backup, '%Y/%m/%d %H:%M:%S'))
-                info = f'''{self.selected_game} last backed up {time_since}
-                Total Backup Space: {total_size} from {len(os.listdir(base_backup_folder))} backups'''
+                info1 = f'{self.selected_game} was last backed up {time_since}\n'
+                info2 = f'Total Backup Space: {total_size} from {len(os.listdir(base_backup_folder))} backups'
+                info = info1 + info2
             else:
                 info = f'{self.selected_game} has not been backed up\n'
             info_label.config(text=info)
