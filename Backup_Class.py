@@ -176,15 +176,6 @@ class Backup:
             return
 
 
-    def Explore_Save_location(self):
-        '''Opens the selected games save location in explorer'''
-        if self.selected_game == None:
-            messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
-            return
-        save_location = self.Get_Save_Loc(self.selected_game)
-        subprocess.Popen(f'explorer "{save_location}"')
-
-
         def Restore_Game_Pressed():
             '''Restores selected game save based on save clicked.
             Restores by renaming current save folder to "save.old" and then copying the backup to replace it.'''
@@ -230,6 +221,15 @@ class Backup:
         CancelButton.grid(row=2, column=1, padx=5, pady= 5)
 
         Restore_Game_Window.mainloop()
+
+
+    def Explore_Save_location(self):
+        '''Opens the selected games save location in explorer'''
+        if self.selected_game == None:
+            messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
+            return
+        save_location = self.Get_Save_Loc(self.selected_game)
+        subprocess.Popen(f'explorer "{save_location}"')
 
 
     @staticmethod
