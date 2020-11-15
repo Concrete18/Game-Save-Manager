@@ -30,8 +30,6 @@ def main():
     # Settings Check
     if not os.path.exists(App.backup_dest):
         messagebox.showwarning(title='Game Save Manager', message='Backup destination does not exist.')
-    if type(App.backup_redundancy) != int:
-        messagebox.showwarning(title='Game Save Manager', message='backup_redundancy in config is not an interger')
 
     # Defaults
     BoldBaseFont = "Arial Bold"
@@ -81,9 +79,7 @@ def main():
     ListboxFrame = Tk.Frame(main_gui)
     ListboxFrame.grid(columnspan=4, row=2, column=0,  padx=(20, 20), pady=(5, 10))
 
-    # FIXME Scrollwheel does not work unless you use mousewheel or arrow keys
     scrollbar = Tk.Scrollbar(ListboxFrame, orient=Tk.VERTICAL)
-    scrollbar.config(command=Tk.Listbox.yview)
     scrollbar.grid(row=0, column=3, sticky='ns', rowspan=3)
 
     game_listbox = Tk.Listbox(ListboxFrame, exportselection=False,
@@ -91,6 +87,7 @@ def main():
     game_listbox.bind('<<ListboxSelect>>', lambda event, game_listbox=game_listbox,:
         App.Delete_Update_Entry(game_listbox, GameSaveEntry, GameNameEntry, ActionInfo, 1))
     game_listbox.grid(columnspan=3, row=0, column=0)
+    scrollbar.config(command=game_listbox.yview)
 
     sorted_list = App.Game_list_Sorted()
     for item in sorted_list:

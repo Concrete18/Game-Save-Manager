@@ -23,13 +23,14 @@ class Backup:
             data = json.load(json_file)
         self.backup_dest = data['settings']['backup_dest']
         self.backup_redundancy = data['settings']['backup_redundancy']
-        if self.backup_redundancy > 4:
+        if type(self.backup_redundancy) is not int or self.backup_redundancy > 4:
             self.backup_redundancy = 4
         self.disable_resize = data['settings']['disable_resize']
         self.database = database
         self.cursor = self.database.cursor()
         self.logger = logger
         self.selected_game = None
+        self.save_dic = {}
 
 
     def Database_Check(self):
@@ -158,19 +159,16 @@ class Backup:
 
     def Restore_Backup(self):
         '''Opens an interface for picking the dated backup of the selected game to restore.'''
-        backup_list =[]
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
-        print(self.backup_dest, self.selected_game)
         backup_path = os.path.join(self.backup_dest, self.selected_game)
         save_location = self.Get_Save_Loc(self.selected_game)
-        print(save_location)
+        self.save_dic = {}
         if os.path.exists(backup_path):
             for file in os.scandir(backup_path):
-                # TODO Make listbox names look better with datetime
-                backup_list.append(file)
-            print(backup_list)
+                updated_name = dt.datetime.strptime(file.name, '%d-%m-%y %H-%M-%S').strftime('%b %d, %Y %I:%M %p')
+                self.save_dic[updated_name] = file
         else:
             messagebox.showwarning(title='Game Save Manager', message='No saves exist for this game.')
             return
@@ -179,8 +177,8 @@ class Backup:
         def Restore_Game_Pressed():
             '''Restores selected game save based on save clicked.
             Restores by renaming current save folder to "save.old" and then copying the backup to replace it.'''
-            save_name = save_listbox.get(save_listbox.curselection())
-            save_path = os.path.join(self.backup_dest, self.selected_game, save_name)
+            save_name = self.save_dic[save_listbox.get(save_listbox.curselection())]
+            save_path = os.path.join(self.backup_dest, self.selected_game, save_name.name)
             if os.path.exists(f'{save_location}.old'):
                 msg = '''Backup of current save before last restore already exists.
                     \nDo you want to delete it? This will cancel the restore if you do not delete it.'''
@@ -200,25 +198,24 @@ class Backup:
         Restore_Game_Window.title('Game Save Manager - Restore Game')
         Restore_Game_Window.iconbitmap('Save_Icon.ico')
         Restore_Game_Window.resizable(width=False, height=False)
-        # Restore_Game_Window.geometry("+600+600")
         Restore_Game_Window.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
         Restore_Game_Window.unbind_class("Button", "<Key-space>")
 
         RestoreInfo = ttk.Label(Restore_Game_Window,
             text=f'Select Save for {self.selected_game}', font=("Arial Bold", 10))
-        RestoreInfo.grid(columnspan=2, row=0, column=0, pady=(2, 0))
+        RestoreInfo.grid(columnspan=2, row=0, column=0, pady=10, padx=10)
 
         save_listbox = Tk.Listbox(Restore_Game_Window, exportselection=False, font=("Arial Bold", 12), height=5, width=30)
-        save_listbox.grid(columnspan=2, row=1, column=0, pady=5, padx=5)
+        save_listbox.grid(columnspan=2, row=1, column=0, pady=5, padx=10)
 
-        for item in backup_list:
-            save_listbox.insert(Tk.END, item.name)
+        for item in self.save_dic:
+            save_listbox.insert(Tk.END, item)
 
         confirm_button = ttk.Button(Restore_Game_Window, text='Confirm', command=Restore_Game_Pressed, width=20)
-        confirm_button.grid(row=2, column=0, padx=5, pady= 5)
+        confirm_button.grid(row=2, column=0, padx=10, pady=10)
 
         CancelButton = ttk.Button(Restore_Game_Window, text='Cancel', command=Restore_Game_Window.destroy, width=20)
-        CancelButton.grid(row=2, column=1, padx=5, pady= 5)
+        CancelButton.grid(row=2, column=1, padx=10, pady=10)
 
         Restore_Game_Window.mainloop()
 
