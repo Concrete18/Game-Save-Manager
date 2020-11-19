@@ -1,4 +1,5 @@
 from tkinter import ttk, filedialog, messagebox
+from threading import Thread
 import datetime as dt
 import tkinter as Tk
 import subprocess
@@ -139,8 +140,11 @@ class Backup:
         base_backup_folder = os.path.join(self.backup_dest, game)
         dest = os.path.join(base_backup_folder, current_time)
         try:
-            shutil.copytree(save_loc, dest)
-            self.Delete_Oldest(game)
+            def backup():
+                shutil.copytree(save_loc, dest)
+                self.Delete_Oldest(game)
+            BackupThread = Thread(target=backup)
+            BackupThread.start()
             info1 = f'{game} backed up to set backup destination.\n'
             info2 = f'Total Backup Space: {total_size} from {len(os.listdir(base_backup_folder))} backups'
             info_label.config(text=info1 + info2)
@@ -263,13 +267,10 @@ class Backup:
 
         Listbox -- Listbox object to be updated with new game
         '''
-        if self.selected_game == None:
-            messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
-            return
         game_name = GameNameEntry.get()
         save_location = GameSaveEntry.get()
         self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
-        database_save_location = self.cursor.fetchone()[0]
+        database_save_location = self.cursor.fetchone()
         if database_save_location != None:
             msg = "Can't add game to database.\nGame already exists."
             messagebox.showwarning(title='Game Save Manager', message=msg)
