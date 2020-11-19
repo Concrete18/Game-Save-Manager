@@ -104,15 +104,14 @@ class Backup:
 
         Arguments:
 
-        game -- game that will all but the newest saves deleted
+        game -- game that will have all but the newest saves deleted
         '''
         saves_list = []
         dir = os.path.join(self.backup_dest, game)
         for file in os.listdir(dir):
             file = os.path.join(dir, file)
             saves_list.append(file)
-        if len(saves_list) < 4:
-            self.logger.info(f'{game} has {self.backup_redundancy} or Less Saves.')
+        if len(saves_list) <= self.backup_redundancy:
             return
         else:
             sorted_list = sorted(saves_list, key=os.path.getctime, reverse=True)
@@ -157,8 +156,10 @@ class Backup:
             self.logger.info(f'Backed up Save for {game}.')
         except FileNotFoundError:
             messagebox.showwarning(title='Game Save Manager', message='Action Failed - File location does not exist.')
+            self.logger.error(f'Failed to Backed up Save for {game}. File location does not exist.except')
         except FileExistsError:
             messagebox.showwarning(title='Game Save Manager', message='Action Failed - Save Already Backed up.')
+            self.logger.error(f'Failed to Backed up Save for {game}. Save Already Backed up.')
 
 
     def Restore_Backup(self):
@@ -224,13 +225,17 @@ class Backup:
         Restore_Game_Window.mainloop()
 
 
-    def Explore_Save_location(self):
-        '''Opens the selected games save location in explorer'''
-        if self.selected_game == None:
-            messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
-            return
-        save_location = self.Get_Save_Loc(self.selected_game)
-        subprocess.Popen(f'explorer "{save_location}"')
+    def Explore_Folder(self, folder):
+        '''Opens the selected games save location in explorer or backup folder.'''
+        print(folder)
+        if folder == 'Game Save':
+            if self.selected_game == None:
+                messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
+                return
+            save_location = self.Get_Save_Loc(self.selected_game)
+            subprocess.Popen(f'explorer "{save_location}"')
+        elif folder == 'Backup':
+            subprocess.Popen(f'explorer "{self.backup_dest}"')
 
 
     @staticmethod

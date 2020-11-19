@@ -7,6 +7,7 @@ import logging as lg
 import sqlite3
 import os
 
+# TODO move all code into one folder with new GUI class
 
 def main():
     # logger info and setup
@@ -57,6 +58,7 @@ def main():
     Title = Tk.Label(Backup_Frame, text=info_text, font=(BoldBaseFont, 10))
     Title.grid(columnspan=4, row=0, column=1)
 
+    # TODO choose better naming scheme
     button_width = 26
     BackupButton = ttk.Button(Backup_Frame, text='Backup Selected Game Save',
         command=lambda: App.Save_Backup(game_listbox.get(Tk.ACTIVE), ActionInfo, game_listbox), width=button_width)
@@ -67,8 +69,12 @@ def main():
     RestoreGameButton.grid(row=3, column=2, padx=5)
 
     ExploreSaveButton = ttk.Button(Backup_Frame, text='Explore Selected Game Save',
-        command=App.Explore_Save_location, width=button_width)
-    ExploreSaveButton.grid(row=3, column=3, padx=5)
+        command=lambda: App.Explore_Folder('Game Save'), width=button_width)
+    ExploreSaveButton.grid(row=4, column=1, padx=5)
+
+    ExploreBackupButton = ttk.Button(Backup_Frame, text='Explore Backup Location',
+        command=lambda: App.Explore_Folder('Backup'), width=button_width)
+    ExploreBackupButton.grid(row=4, column=2, padx=5)
 
     # Main Row 1
     instruction = 'Select a Game\nto continue'
