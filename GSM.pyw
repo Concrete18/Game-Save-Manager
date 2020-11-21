@@ -14,15 +14,9 @@ import os
 
 class Backup:
 
+
     def __init__(self):
-        '''Sets up backup configuration, database and logger.
-
-        Arguments:
-
-        database -- database object name
-
-        logger -- logger object name
-        '''
+        '''Sets up backup configuration, database and logger.'''
         self.selected_game = None
         self.save_dic = {}
         # settings setup
@@ -35,7 +29,7 @@ class Backup:
         if type(self.backup_redundancy) is not int or self.backup_redundancy > 4:
             self.backup_redundancy = 4
         self.disable_resize = data['settings']['disable_resize']
-        # logger info and setup
+        # logger setup
         log_formatter = lg.Formatter('%(asctime)s %(levelname)s %(message)s', datefmt='%m-%d-%Y %I:%M:%S %p')
         self.logger = lg.getLogger(__name__)
         self.logger.setLevel(lg.DEBUG)
@@ -89,7 +83,7 @@ class Backup:
 
         Arguments:
 
-        string -- string that is satitized
+        string -- string that is sanitized
         '''
         for char in ('<', '>', ':', '/', '\\', '|', '?', '*'):
             string = string.replace(char,'')
@@ -104,8 +98,7 @@ class Backup:
         game -- game that will have the save location returned for
         '''
         self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game})
-        save_location = self.cursor.fetchone()[0]
-        return save_location
+        return self.cursor.fetchone()[0]
 
 
     def Game_list_Sorted(self):
@@ -123,7 +116,7 @@ class Backup:
 
         Arguments:
 
-        game -- game that will have all but the newest saves deleted
+        game -- name of folder that will have all but the newest saves deleted
         '''
         saves_list = []
         dir = os.path.join(self.backup_dest, game)
@@ -139,21 +132,14 @@ class Backup:
             self.logger.info(f'{game} had more then {self.backup_redundancy} Saves. Deleted oldest saves.')
 
 
-    def Save_Backup(self, game, info_label, listbox):
-        '''Backups up the game entered based on SQLite save location data to the specified backup folder.
-
-        Arguments:
-
-        game -- game that is backed up
-
-        info_label -- Tkinter label that shows confirmation of backup upon completion
-        '''
+    def Backup_Save(self):
+        '''Backups up the game entered based on SQLite save location data to the specified backup folder.'''
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
         current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M-%S")
-        save_loc = self.Get_Save_Loc(game)
-        game = self.Sanitize_For_Filename(game)
+        save_loc = self.Get_Save_Loc(self.selected_game)
+        game = self.Sanitize_For_Filename(self.selected_game)
         total_size = self.Convert_Size(os.path.join(self.backup_dest, self.selected_game))
         base_backup_folder = os.path.join(self.backup_dest, game)
         dest = os.path.join(base_backup_folder, current_time)
@@ -165,13 +151,13 @@ class Backup:
             BackupThread.start()
             info1 = f'{game} backed up to set backup destination.\n'
             info2 = f'Total Backup Space: {total_size} from {len(os.listdir(base_backup_folder))} backups'
-            info_label.config(text=info1 + info2)
+            self.ActionInfo.config(text=info1 + info2)
             last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
             self.cursor.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
             {'game_name': game, 'last_backup': last_backup})
             self.database.commit()
-            listbox.delete(Tk.ACTIVE)
-            listbox.insert(0, game)
+            self.game_listbox.delete(Tk.ACTIVE)
+            self.game_listbox.insert(0, game)
             self.logger.info(f'Backed up Save for {game}.')
         except FileNotFoundError:
             messagebox.showwarning(title='Game Save Manager', message='Action Failed - File location does not exist.')
@@ -181,7 +167,7 @@ class Backup:
             self.logger.error(f'Failed to Backed up Save for {game}. Save Already Backed up.')
 
 
-    def Restore_Backup(self):
+    def Restore_Save(self):
         '''Opens an interface for picking the dated backup of the selected game to restore.'''
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
@@ -195,7 +181,6 @@ class Backup:
                 self.save_dic[updated_name] = file
         else:
             messagebox.showwarning(title='Game Save Manager', message='No saves exist for this game.')
-            return
 
 
         def Restore_Game_Pressed():
@@ -245,16 +230,21 @@ class Backup:
 
 
     def Explore_Folder(self, folder):
-        '''Opens the selected games save location in explorer or backup folder.'''
-        print(folder)
+        '''Opens the selected games save location in explorer or backup folder.
+
+        Arguments:
+
+        folder -- Set to "Game Save" or "Backup" to determine folder that is opened in explorer
+        '''
+        if self.selected_game == None:
+            messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
+            return
+        save_location = self.Get_Save_Loc(self.selected_game)
         if folder == 'Game Save':
-            if self.selected_game == None:
-                messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
-                return
-            save_location = self.Get_Save_Loc(self.selected_game)
             subprocess.Popen(f'explorer "{save_location}"')
         elif folder == 'Backup':
-            subprocess.Popen(f'explorer "{self.backup_dest}"')
+            game = self.Sanitize_For_Filename(self.selected_game)
+            subprocess.Popen(f'explorer "{os.path.join(self.backup_dest, game)}"')
 
 
     @staticmethod
@@ -280,69 +270,38 @@ class Backup:
             return '0 bits'
 
 
-    def Add_Game_Pressed(self, GameNameEntry, GameSaveEntry, Listbox):
-        '''Adds game to database using entry inputs.
-
-        Arguments:
-
-        GameNameEntry -- name of game to be added to database
-
-        GameSaveEntry -- save location to be added to database
-
-        Listbox -- Listbox object to be updated with new game
-        '''
-        game_name = GameNameEntry.get()
-        save_location = GameSaveEntry.get()
+    def Add_Game_to_Database(self):
+        '''Adds game to database using entry inputs.'''
+        game_name = self.GameNameEntry.get()
+        save_location = self.GameSaveEntry.get()
         self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
         database_save_location = self.cursor.fetchone()
         if database_save_location != None:
             msg = "Can't add game to database.\nGame already exists."
             messagebox.showwarning(title='Game Save Manager', message=msg)
             return
-        if os.path.isdir(save_location):
-            GameSaveEntry.delete(0, Tk.END)
-            GameNameEntry.delete(0, Tk.END)
-            self.Add_Game_to_DB(game_name, save_location)
-            Listbox.insert(0, game_name)
         else:
-            messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
+            if os.path.isdir(save_location):
+                self.GameSaveEntry.delete(0, Tk.END)
+                self.GameNameEntry.delete(0, Tk.END)
+                self.cursor.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
+                    {'game_name': game_name, 'save_location': save_location, 'last_backup': 'Never'})
+                self.database.commit()
+                self.game_listbox.insert(0, game_name)
+                self.logger.info(f'Added {game_name} to database.')
+            else:
+                messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
 
 
-    @staticmethod
-    def Browse_For_Save(GameSaveEntry):
-        '''Opens a file dialog so a save directory can be chosen.
-
-        Arguments:
-
-        GameSaveEntry -- the chosen directory is put into this entry box
-        '''
+    def Browse_For_Save(self):
+        '''Opens a file dialog so a save directory can be chosen.'''
         save_dir = filedialog.askdirectory(initialdir="C:/", title="Select Save Directory")
-        GameSaveEntry.delete(0, Tk.END)
-        GameSaveEntry.insert(0, save_dir)
+        self.GameSaveEntry.delete(0, Tk.END)
+        self.GameSaveEntry.insert(0, save_dir)
 
 
-    def Add_Game_to_DB(self, game, save_location):
-        '''Adds game to SQLite Database using entry box data.
-
-        Arguments:
-
-        game -- game name that is added to database
-
-        save_location -- game save location that is added to database
-        '''
-        self.cursor.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
-        {'game_name': game, 'save_location': save_location, 'last_backup': 'Never'})
-        self.database.commit()
-        self.logger.info(f'Added {game} to database.')
-
-
-    def Delete_Game_from_DB(self, Listbox, GameNameEntry, GameSaveEntry, info_text):
-        '''Deletes selected game from SQLite Database.
-
-        Arguments:
-
-        Listbox -- Listbox object that is updated with the removal of currently selected game
-        '''
+    def Delete_Game_from_DB(self):
+        '''Deletes selected game from SQLite Database.'''
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
@@ -351,8 +310,8 @@ class Backup:
         if Delete_Check:
             self.cursor.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.selected_game})
             self.database.commit()
-            Listbox.delete(Listbox.curselection()[0])
-            self.Delete_Update_Entry(Listbox, GameNameEntry, GameSaveEntry, info_text)
+            self.game_listbox.delete(self.game_listbox.curselection()[0])
+            self.Delete_Update_Entry()
             msg = 'Do you want to delete the backed up game saves as well?'
             response = messagebox.askyesno(title='Game Save Manager', message=msg)
             if response:
@@ -365,23 +324,14 @@ class Backup:
             self.logger.info(f'Deleted {self.selected_game} from database.')
 
 
-    def Update_Game(self, GameNameEntry, GameSaveEntry, listbox):
+    def Update_Game(self):
         '''Allows updating data for games in database.
-        The last selected game in the Listbox gets updated with the info from the Add/Update Game entries.
-
-        Arguments:
-
-        GameNameEntry -- new game name
-
-        GameSaveEntry -- new save location
-
-        listbox -- listbox object to update info in
-        '''
+        The last selected game in the Listbox gets updated with the info from the Add/Update Game entries.'''
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
-        game_name = GameNameEntry.get()
-        save_location = GameSaveEntry.get()
+        game_name = self.GameNameEntry.get()
+        save_location = self.GameSaveEntry.get()
         if os.path.isdir(save_location):
             sql_update_query  ='''UPDATE games
                     SET game_name = ?, save_location = ?
@@ -390,8 +340,8 @@ class Backup:
             self.cursor.execute(sql_update_query , data)
             self.database.commit()
             os.rename(os.path.join(self.backup_dest, self.selected_game), os.path.join(self.backup_dest, game_name))
-            listbox.delete(Tk.ACTIVE)
-            listbox.insert(0, game_name)
+            self.game_listbox.delete(Tk.ACTIVE)
+            self.game_listbox.insert(0, game_name)
             self.logger.info(f'Updated {self.selected_game} in database.')
         else:
             msg = f'Save Location does not exist.'
@@ -420,30 +370,23 @@ class Backup:
         return time_since
 
 
-    def Delete_Update_Entry(self, listbox, GameSaveEntry, GameNameEntry, info_label, Update = 0):
+    def Delete_Update_Entry(self, Update = 0):
         '''Updates Game Data into Name and Save Entry for viewing.
         Allows for updating specific entries in the database as well.
 
         Arguments:
 
-        listbox -- listbox object to update
-
-        GameSaveEntry -- entry box for game save location
-
-        GameNameEntry -- entry box for game name
-
-        ActionInfo -- Tkinter label with info on selected game
-
-        Update -- s (default = 0)
+        Update -- 1 or 0 (default = 0)
         '''
         # clears entry boxes
-        GameNameEntry.delete(0, Tk.END)
-        GameSaveEntry.delete(0, Tk.END)
+        self.GameNameEntry.delete(0, Tk.END)
+        self.GameSaveEntry.delete(0, Tk.END)
         # updates entry boxes to show currently selected game in listbox
         if Update == 1:
-            self.selected_game = listbox.get(listbox.curselection())  # script wide variable for selected game
-            GameNameEntry.insert(0, self.selected_game)
-            GameSaveEntry.insert(0, self.Get_Save_Loc(self.selected_game))
+            # TODO set buttons to be enabled once something is selected
+            self.selected_game = self.game_listbox.get(self.game_listbox.curselection())  # script wide variable for selected game
+            self.GameNameEntry.insert(0, self.selected_game)
+            self.GameSaveEntry.insert(0, self.Get_Save_Loc(self.selected_game))
             base_backup_folder = os.path.join(self.backup_dest, self.selected_game)
             total_size = self.Convert_Size(base_backup_folder)
             self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name",
@@ -456,10 +399,11 @@ class Backup:
                 info = info1 + info2
             else:
                 info = f'{self.selected_game} has not been backed up\n'
-            info_label.config(text=info)
+            self.ActionInfo.config(text=info)
+            self.BackupButton.focus_set()
 
 
-    def main(self):
+    def Run_GUI(self):
         # Defaults
         BoldBaseFont = "Arial Bold"
 
@@ -468,13 +412,13 @@ class Backup:
         self.main_gui.iconbitmap('Save_Icon.ico')
         if self.disable_resize:  # sets window to not resize if disable_resize is set to 1
             self.main_gui.resizable(width=False, height=False)
-        # window_width = 600
-        # window_height = 477
-        # width = int((main_gui.winfo_screenwidth()-window_width)/2)
-        # height = int((main_gui.winfo_screenheight()-window_height)/2)
-        # main_gui.geometry(f'{window_width}x{window_height}+{width}+{height}')
+        # window_width = 670
+        # window_height = 550
+        # width = int((self.main_gui.winfo_screenwidth()-window_width)/2)
+        # height = int((self.main_gui.winfo_screenheight()-window_height)/2)
+        # self.main_gui.geometry(f'{window_width}x{window_height}+{width}+{height}')
 
-        # FIXME Binds do not work.
+        # TODO Binds do not work.
         self.main_gui.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
         self.main_gui.unbind_class("Button", "<Key-space>")
 
@@ -486,66 +430,65 @@ class Backup:
         Title = Tk.Label(Backup_Frame, text=info_text, font=(BoldBaseFont, 10))
         Title.grid(columnspan=4, row=0, column=1)
 
-        # TODO choose better naming scheme
-        button_width = 26
-        BackupButton = ttk.Button(Backup_Frame, text='Backup Selected Game Save',
-            command=lambda: self.Save_Backup(game_listbox.get(Tk.ACTIVE), ActionInfo, game_listbox), width=button_width)
-        BackupButton.grid(row=3, column=1, padx=5, pady=5)
+        button_width = 23
+        self.BackupButton = ttk.Button(Backup_Frame, text='Backup Save',
+            command=self.Backup_Save, width=button_width)
+        self.BackupButton.grid(row=3, column=1, padx=5, pady=5)
 
-        RestoreGameButton = ttk.Button(Backup_Frame, text='Restore Selected Game Save',
-            command=self.Restore_Backup, width=button_width)
-        RestoreGameButton.grid(row=3, column=2, padx=5)
+        self.RestoreGameButton = ttk.Button(Backup_Frame, text='Restore Save',
+            command=self.Restore_Save, width=button_width)
+        self.RestoreGameButton.grid(row=3, column=2, padx=5)
 
-        ExploreSaveButton = ttk.Button(Backup_Frame, text='Explore Selected Game Save',
+        self.ExploreSaveButton = ttk.Button(Backup_Frame, text='Explore Save Location',
             command=lambda: self.Explore_Folder('Game Save'), width=button_width)
-        ExploreSaveButton.grid(row=4, column=1, padx=5)
+        self.ExploreSaveButton.grid(row=4, column=1, padx=5)
 
-        ExploreBackupButton = ttk.Button(Backup_Frame, text='Explore Backup Location',
+        self.ExploreBackupButton = ttk.Button(Backup_Frame, text='Explore Backup Location',
             command=lambda: self.Explore_Folder('Backup'), width=button_width)
-        ExploreBackupButton.grid(row=4, column=2, padx=5)
+        self.ExploreBackupButton.grid(row=4, column=2, padx=5)
 
         # Main Row 1
         instruction = 'Select a Game\nto continue'
-        ActionInfo = Tk.Label(self.main_gui, text=instruction, font=(BoldBaseFont, 10))
-        ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady= 3)
+        self.ActionInfo = Tk.Label(self.main_gui, text=instruction, font=(BoldBaseFont, 10))
+        self.ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady= 3)
 
         # Main Row 2
-        ListboxFrame = Tk.Frame(self.main_gui)
-        ListboxFrame.grid(columnspan=4, row=2, column=0,  padx=(20, 20), pady=(5, 10))
+        self.ListboxFrame = Tk.Frame(self.main_gui)
+        self.ListboxFrame.grid(columnspan=4, row=2, column=0,  padx=(20, 20), pady=(5, 10))
 
-        scrollbar = Tk.Scrollbar(ListboxFrame, orient=Tk.VERTICAL)
-        scrollbar.grid(row=0, column=3, sticky='ns', rowspan=3)
+        self.scrollbar = Tk.Scrollbar(self.ListboxFrame, orient=Tk.VERTICAL)
+        self.scrollbar.grid(row=0, column=3, sticky='ns', rowspan=3)
 
-        game_listbox = Tk.Listbox(ListboxFrame, exportselection=False,
-            yscrollcommand=scrollbar.set, font=(BoldBaseFont, 12), height=10, width=60)
-        game_listbox.bind('<<ListboxSelect>>', lambda event, game_listbox=game_listbox,:
-            self.Delete_Update_Entry(game_listbox, GameSaveEntry, GameNameEntry, ActionInfo, 1))
-        game_listbox.grid(columnspan=3, row=0, column=0)
-        scrollbar.config(command=game_listbox.yview)
+        self.game_listbox = Tk.Listbox(self.ListboxFrame, exportselection=False,
+            yscrollcommand=self.scrollbar.set, font=(BoldBaseFont, 12), height=10, width=60)
+        self.game_listbox.bind('<<ListboxSelect>>', lambda event, game_listbox=self.game_listbox,:
+            self.Delete_Update_Entry(1))
+        self.game_listbox.grid(columnspan=3, row=0, column=0)
+        self.scrollbar.config(command=self.game_listbox.yview)
 
         sorted_list = self.Game_list_Sorted()
         for item in sorted_list:
-            game_listbox.insert(Tk.END, item)
+            self.game_listbox.insert(Tk.END, item)
 
         # Main Row 3
         Add_Game_Frame = Tk.LabelFrame(self.main_gui, text='Manage Games')
-        Add_Game_Frame.grid(columnspan=4, row=3,  padx=15, pady=(5, 17))
+        Add_Game_Frame.grid(columnspan=4, row=3, padx=15, pady=(5, 17))
 
-        EnterGameLabeL = Tk.ttk.Label(Add_Game_Frame, text='Enter Game Name')
-        EnterGameLabeL.grid(row=0, column=0)
+        EnterGameLabel = Tk.ttk.Label(Add_Game_Frame, text='Enter Game Name')
+        EnterGameLabel.grid(row=0, column=0)
 
         entry_width = 65
-        GameNameEntry = Tk.ttk.Entry(Add_Game_Frame, width=entry_width, exportselection=0)
-        GameNameEntry.grid(row=0, column=1, columnspan=3, pady=8, padx=5)
+        self.GameNameEntry = Tk.ttk.Entry(Add_Game_Frame, width=entry_width, exportselection=0)
+        self.GameNameEntry.grid(row=0, column=1, columnspan=3, pady=8, padx=5)
 
         EnterSaveLabeL = Tk.ttk.Label(Add_Game_Frame, text='Enter Save Location')
         EnterSaveLabeL.grid(row=1, column=0)
 
-        GameSaveEntry = Tk.ttk.Entry(Add_Game_Frame, width=entry_width, exportselection=0)
-        GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5, padx=10)
+        self.GameSaveEntry = Tk.ttk.Entry(Add_Game_Frame, width=entry_width, exportselection=0)
+        self.GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5, padx=10)
 
         BrowseButton = Tk.ttk.Button(Add_Game_Frame, text='Browse',
-            command=lambda: self.Browse_For_Save(GameSaveEntry))
+            command=self.Browse_For_Save)
         BrowseButton.grid(row=1, column=4, padx=10)
 
         # Button Frame Row 2
@@ -555,19 +498,19 @@ class Backup:
         button_padx = 4
         button_pady = 5
         ConfirmAddButton = Tk.ttk.Button(Button_Frame, text='Add Game',
-            command=lambda: self.Add_Game_Pressed(GameNameEntry, GameSaveEntry, game_listbox), width=20)
+            command=self.Add_Game_to_Database, width=20)
         ConfirmAddButton.grid(row=2, column=0, padx=button_padx, pady=button_pady)
 
         UpdateButton = Tk.ttk.Button(Button_Frame, text='Update Game',
-            command=lambda: self.Update_Game(GameNameEntry, GameSaveEntry, game_listbox), width=20)
+            command=self.Update_Game, width=20)
         UpdateButton.grid(row=2, column=1, padx=button_padx, pady=button_pady)
 
         RemoveButton = ttk.Button(Button_Frame, text='Remove Game',
-            command=lambda: self.Delete_Game_from_DB(game_listbox, GameNameEntry, GameSaveEntry, info_text), width=20)
+            command=self.Delete_Game_from_DB, width=20)
         RemoveButton.grid(row=2, column=2, padx=button_padx, pady=button_pady)
 
         ClearButton = Tk.ttk.Button(Button_Frame, text='Clear Entries',
-            command=lambda: self.Delete_Update_Entry(game_listbox, GameNameEntry, GameSaveEntry, info_text), width=20)
+            command=self.Delete_Update_Entry, width=20)
         ClearButton.grid(row=2, column=3, padx=button_padx, pady=button_pady)
 
         self.Database_Check()
@@ -578,4 +521,4 @@ class Backup:
 
 if __name__ == '__main__':
     App = Backup()
-    App.main()
+    App.Run_GUI()

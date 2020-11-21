@@ -23,5 +23,4 @@ Made in Python 3.8.3
 
 ## Known Bugs
 
-* Dragging scrollbar does not work.
 * Bindings do not properly disable space acting as enter key.
