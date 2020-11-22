@@ -85,9 +85,12 @@ class Backup:
 
         string -- string that is sanitized
         '''
-        for char in ('<', '>', ':', '/', '\\', '|', '?', '*'):
+        for char in ('<', '>', ':', '/', '\\', '{', '}','|', '?', '!', '*', '#', '%','&', '$', '"', "'"):
             string = string.replace(char,'')
-        return string
+        if len(string) > 31:
+            return string[0:31]
+        else:
+            return string
 
 
     def Get_Save_Loc(self, game):
