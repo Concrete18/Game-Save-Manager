@@ -1,0 +1,1 @@
+This is a test file for the directory size checker. It should always remain the same size at all times for testing properly.
