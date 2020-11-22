@@ -373,6 +373,11 @@ class Backup:
         return time_since
 
 
+    def On_Entry_Trace(self, *args):
+        new_state = "disabled" if self.description.get() == "" else "normal"
+        self.co_button.configure(state=new_state)
+
+
     def Delete_Update_Entry(self, Update = 0):
         '''Updates Game Data into Name and Save Entry for viewing.
         Allows for updating specific entries in the database as well.
@@ -386,10 +391,17 @@ class Backup:
         self.GameSaveEntry.delete(0, Tk.END)
         # updates entry boxes to show currently selected game in listbox
         if Update == 1:
-            # TODO set buttons to be enabled once something is selected
             self.selected_game = self.game_listbox.get(self.game_listbox.curselection())  # script wide variable for selected game
             self.GameNameEntry.insert(0, self.selected_game)
             self.GameSaveEntry.insert(0, self.Get_Save_Loc(self.selected_game))
+            # enables all buttons to be pressed once a selection is made
+            for button in [
+                self.BackupButton,
+                self.RestoreButton,
+                self.ExploreBackupButton,
+                self.ExploreSaveButton
+                ]:
+                button.config(state='normal')
             base_backup_folder = os.path.join(self.backup_dest, self.selected_game)
             total_size = self.Convert_Size(base_backup_folder)
             self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name",
@@ -434,26 +446,26 @@ class Backup:
         Title.grid(columnspan=4, row=0, column=1)
 
         button_width = 23
-        self.BackupButton = ttk.Button(Backup_Frame, text='Backup Save',
+        self.BackupButton = ttk.Button(Backup_Frame, text='Backup Save', state='disabled',
             command=self.Backup_Save, width=button_width)
         self.BackupButton.grid(row=3, column=1, padx=5, pady=5)
 
-        self.RestoreGameButton = ttk.Button(Backup_Frame, text='Restore Save',
+        self.RestoreButton = ttk.Button(Backup_Frame, text='Restore Save', state='disabled',
             command=self.Restore_Save, width=button_width)
-        self.RestoreGameButton.grid(row=3, column=2, padx=5)
+        self.RestoreButton.grid(row=3, column=2, padx=5)
 
-        self.ExploreSaveButton = ttk.Button(Backup_Frame, text='Explore Save Location',
+        self.ExploreSaveButton = ttk.Button(Backup_Frame, text='Explore Save Location', state='disabled',
             command=lambda: self.Explore_Folder('Game Save'), width=button_width)
         self.ExploreSaveButton.grid(row=4, column=1, padx=5)
 
-        self.ExploreBackupButton = ttk.Button(Backup_Frame, text='Explore Backup Location',
+        self.ExploreBackupButton = ttk.Button(Backup_Frame, text='Explore Backup Location', state='disabled',
             command=lambda: self.Explore_Folder('Backup'), width=button_width)
         self.ExploreBackupButton.grid(row=4, column=2, padx=5)
 
         # Main Row 1
         instruction = 'Select a Game\nto continue'
         self.ActionInfo = Tk.Label(self.main_gui, text=instruction, font=(BoldBaseFont, 10))
-        self.ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady= 3)
+        self.ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady= 5)
 
         # Main Row 2
         self.ListboxFrame = Tk.Frame(self.main_gui)
@@ -489,6 +501,11 @@ class Backup:
 
         self.GameSaveEntry = Tk.ttk.Entry(Add_Game_Frame, width=entry_width, exportselection=0)
         self.GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5, padx=10)
+
+        # TODO set buttons to be disabled unless both entries are not empty
+        # for entry in [self.GameSaveEntry, self.GameNameEntry]:
+        #     entry.trace("w", self.On_Entry_Trace)
+        #     entry.set("")  # initialize the state
 
         BrowseButton = Tk.ttk.Button(Add_Game_Frame, text='Browse',
             command=self.Browse_For_Save)
