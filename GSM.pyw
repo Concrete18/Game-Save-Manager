@@ -90,7 +90,7 @@ class Backup:
         return self.filename_regex.sub('', self.selected_game)[0:31]
 
 
-    def game_save_loc(self,):
+    def game_save_loc(self):
         '''
         Returns the save location of the selected game from the SQLite Database.
         '''
@@ -140,14 +140,15 @@ class Backup:
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
-        current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M-%S")
-        game = self.selected_game_filename(self.selected_game)
+        current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
+        game = self.selected_game_filename()
         total_size = self.convert_size(os.path.join(self.backup_dest, self.selected_game))
         base_backup_folder = os.path.join(self.backup_dest, game)
         dest = os.path.join(base_backup_folder, current_time)
+        save_location = self.game_save_loc()
         try:
             def backup():
-                shutil.copytree(self.game_save_loc(), dest)
+                shutil.copytree(save_location, dest)
                 self.delete_oldest(game)
             BackupThread = Thread(target=backup)
             BackupThread.start()
@@ -196,9 +197,9 @@ class Backup:
             for file in os.scandir(backup_path):
                 updated_name = dt.datetime.strptime(file.name, '%d-%m-%y %H-%M-%S').strftime('%b %d, %Y %I:%M %p')
                 self.save_dic[updated_name] = file
+            # TODO Add entry for .old file if it exists.
         else:
             messagebox.showwarning(title='Game Save Manager', message='No saves exist for this game.')
-        # TODO Add entry for .old file if it exists.
 
 
         def restore_game_pressed():
@@ -264,8 +265,7 @@ class Backup:
         if folder == 'Game Save':
             subprocess.Popen(f'explorer "{self.game_save_loc()}"')
         elif folder == 'Backup':
-            game = self.selected_game_filename(self.selected_game)
-            subprocess.Popen(f'explorer "{os.path.join(self.backup_dest, game)}"')
+            subprocess.Popen(f'explorer "{os.path.join(self.backup_dest, self.selected_game_filename())}"')
 
 
     @staticmethod
@@ -402,15 +402,6 @@ class Backup:
         return time_since
 
 
-    def on_entry_trace(self, *args):
-        '''
-        Tracks if entry boxs are empty.
-        '''
-        # TODO complete trace
-        new_state = "disabled" if self.description.get() == "" else "normal"
-        self.co_button.configure(state=new_state)
-
-
     def delete_update_entry(self, Update = 0):
         '''
         Updates Game Data into Name and Save Entry for viewing.
@@ -537,11 +528,6 @@ class Backup:
 
         self.GameSaveEntry = Tk.ttk.Entry(Add_Game_Frame, width=entry_width, exportselection=0)
         self.GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5, padx=10)
-
-        # TODO set buttons to be disabled unless both entries are not empty
-        # for entry in [self.GameSaveEntry, self.GameNameEntry]:
-        #     entry.trace("w", self.on_entry_trace)
-        #     entry.set("")  # initialize the state
 
         BrowseButton = Tk.ttk.Button(Add_Game_Frame, text='Browse',
             command=self.browse_for_save)
