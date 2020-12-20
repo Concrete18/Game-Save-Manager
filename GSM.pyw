@@ -10,15 +10,19 @@ import shutil
 import json
 import math
 import os
+import re
 
 
 class Backup:
 
 
     def __init__(self):
-        '''Sets up backup configuration, database and logger.'''
+        '''
+        Sets up backup configuration, database and logger.
+        '''
         self.selected_game = None
         self.save_dic = {}
+        self.filename_regex = re.compile('[^a-zA-Z\s]')
         # settings setup
         with open('settings.json') as json_file:
             data = json.load(json_file)
@@ -47,8 +51,10 @@ class Backup:
         )''')
 
 
-    def Database_Check(self):
-        '''Checks for missing save directories from database.'''
+    def database_check(self):
+        '''
+        Checks for missing save directories from database.
+        '''
         self.cursor.execute("SELECT save_location FROM games")
         missing_save_list = []
         missing_save_string = ''
@@ -77,35 +83,26 @@ class Backup:
             self.logger.debug(f'More then 5 save locations in the database do not exist.')
 
 
-    @staticmethod
-    def Sanitize_For_Filename(string):
-        '''Removes illegal characters from string so it can become a valid filename.
-
-        Arguments:
-
-        string -- string that is sanitized
+    def selected_game_filename(self):
         '''
-        for char in ('<', '>', ':', '/', '\\', '{', '}','|', '?', '!', '*', '#', '%','&', '$', '"', "'"):
-            string = string.replace(char,'')
-        if len(string) > 31:
-            return string[0:31]
-        else:
-            return string
-
-
-    def Get_Save_Loc(self, game):
-        '''Returns the save location of the entered game from the SQLite Database.
-
-        Arguments:
-
-        game -- game that will have the save location returned for
+        Removes illegal characters and shortens the selected games name so it can become a valid filename.
         '''
-        self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game})
+        return self.filename_regex.sub('', self.selected_game)[0:31]
+
+
+    def game_save_loc(self,):
+        '''
+        Returns the save location of the selected game from the SQLite Database.
+        '''
+        self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name",
+            {'game_name': self.selected_game})
         return self.cursor.fetchone()[0]
 
 
-    def Game_list_Sorted(self):
-        '''Sorts the game list from the SQLite database based on the last backup and then returns a list.'''
+    def sorted_games(self):
+        '''
+        Sorts the game list from the SQLite database based on the last backup and then returns a list.
+        '''
         self.cursor.execute("SELECT game_name FROM games ORDER BY last_backup DESC")
         ordered_games = []
         for game_name in self.cursor.fetchall():
@@ -114,8 +111,9 @@ class Backup:
         return ordered_games
 
 
-    def Delete_Oldest(self, game):
-        '''Deletes the oldest saves so only the newest specified amount is left.
+    def delete_oldest(self, game):
+        '''
+        Deletes the oldest saves so only the newest specified amount is left.
 
         Arguments:
 
@@ -135,25 +133,26 @@ class Backup:
             self.logger.info(f'{game} had more then {self.backup_redundancy} Saves. Deleted oldest saves.')
 
 
-    def Backup_Save(self):
-        '''Backups up the game entered based on SQLite save location data to the specified backup folder.'''
+    def backup_save(self):
+        '''
+        Backups up the game entered based on SQLite save location data to the specified backup folder.
+        '''
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
         current_time = dt.datetime.now().strftime("%d-%m-%y %H-%M-%S")
-        save_loc = self.Get_Save_Loc(self.selected_game)
-        game = self.Sanitize_For_Filename(self.selected_game)
-        total_size = self.Convert_Size(os.path.join(self.backup_dest, self.selected_game))
+        game = self.selected_game_filename(self.selected_game)
+        total_size = self.convert_size(os.path.join(self.backup_dest, self.selected_game))
         base_backup_folder = os.path.join(self.backup_dest, game)
         dest = os.path.join(base_backup_folder, current_time)
         try:
             def backup():
-                shutil.copytree(save_loc, dest)
-                self.Delete_Oldest(game)
+                shutil.copytree(self.game_save_loc(), dest)
+                self.delete_oldest(game)
             BackupThread = Thread(target=backup)
             BackupThread.start()
             info1 = f'{game} backed up to set backup destination.\n'
-            info2 = f'Total Backup Space: {total_size} from {len(os.listdir(base_backup_folder))} backups'
+            info2 = f'Game Backup Size: {total_size} from {len(os.listdir(base_backup_folder))} backups'
             self.ActionInfo.config(text=info1 + info2)
             last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
             self.cursor.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
@@ -170,13 +169,28 @@ class Backup:
             self.logger.error(f'Failed to Backed up Save for {game}. Save Already Backed up.')
 
 
-    def Restore_Save(self):
-        '''Opens an interface for picking the dated backup of the selected game to restore.'''
+    def backup_shortcut(self, event):
+        '''
+        Shortcut that activates when pressing enter while a game is selected.
+        '''
+        msg = f'Are you sure you want to backup {self.selected_game}'
+        response = messagebox.askquestion(title='Game Save Manager', message=msg)
+        if response == 'yes':
+            self.backup_save()
+        else:
+            self.game_listbox.activate(0)
+            return
+        print(event)
+
+
+    def restore_save(self):
+        '''
+        Opens an interface for picking the dated backup of the selected game to restore.
+        '''
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
         backup_path = os.path.join(self.backup_dest, self.selected_game)
-        save_location = self.Get_Save_Loc(self.selected_game)
         self.save_dic = {}
         if os.path.exists(backup_path):
             for file in os.scandir(backup_path):
@@ -184,13 +198,17 @@ class Backup:
                 self.save_dic[updated_name] = file
         else:
             messagebox.showwarning(title='Game Save Manager', message='No saves exist for this game.')
+        # TODO Add entry for .old file if it exists.
 
 
-        def Restore_Game_Pressed():
-            '''Restores selected game save based on save clicked.
-            Restores by renaming current save folder to "save.old" and then copying the backup to replace it.'''
+        def restore_game_pressed():
+            '''
+            Restores selected game save based on save clicked.
+            Restores by renaming current save folder to "save.old" and then copying the backup to replace it.
+            '''
             save_name = self.save_dic[save_listbox.get(save_listbox.curselection())]
             save_path = os.path.join(self.backup_dest, self.selected_game, save_name.name)
+            save_location = self.game_save_loc()
             if os.path.exists(f'{save_location}.old'):
                 msg = '''Backup of current save before last restore already exists.
                     \nDo you want to delete it? This will cancel the restore if you do not delete it.'''
@@ -210,8 +228,7 @@ class Backup:
         Restore_Game_Window.title('Game Save Manager - Restore Game')
         Restore_Game_Window.iconbitmap('Save_Icon.ico')
         Restore_Game_Window.resizable(width=False, height=False)
-        Restore_Game_Window.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
-        Restore_Game_Window.unbind_class("Button", "<Key-space>")
+        Restore_Game_Window.grab_set()
 
         RestoreInfo = ttk.Label(Restore_Game_Window,
             text=f'Select Save for {self.selected_game}', font=("Arial Bold", 10))
@@ -223,17 +240,19 @@ class Backup:
         for item in self.save_dic:
             save_listbox.insert(Tk.END, item)
 
-        confirm_button = ttk.Button(Restore_Game_Window, text='Confirm', command=Restore_Game_Pressed, width=20)
+        confirm_button = ttk.Button(Restore_Game_Window, text='Confirm', command=restore_game_pressed, width=20)
         confirm_button.grid(row=2, column=0, padx=10, pady=10)
 
         CancelButton = ttk.Button(Restore_Game_Window, text='Cancel', command=Restore_Game_Window.destroy, width=20)
         CancelButton.grid(row=2, column=1, padx=10, pady=10)
 
         Restore_Game_Window.mainloop()
+        Restore_Game_Window.grab_release()
 
 
-    def Explore_Folder(self, folder):
-        '''Opens the selected games save location in explorer or backup folder.
+    def explore_folder(self, folder):
+        '''
+        Opens the selected games save location in explorer or backup folder.
 
         Arguments:
 
@@ -242,17 +261,17 @@ class Backup:
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
-        save_location = self.Get_Save_Loc(self.selected_game)
         if folder == 'Game Save':
-            subprocess.Popen(f'explorer "{save_location}"')
+            subprocess.Popen(f'explorer "{self.game_save_loc()}"')
         elif folder == 'Backup':
-            game = self.Sanitize_For_Filename(self.selected_game)
+            game = self.selected_game_filename(self.selected_game)
             subprocess.Popen(f'explorer "{os.path.join(self.backup_dest, game)}"')
 
 
     @staticmethod
-    def Convert_Size(dir):
-        '''Converts size of directory to best fitting unit of measure.
+    def convert_size(dir):
+        '''
+        Converts size of directory to best fitting unit of measure.
 
         Arguments:
 
@@ -273,10 +292,12 @@ class Backup:
             return '0 bits'
 
 
-    def Add_Game_to_Database(self):
-        '''Adds game to database using entry inputs.'''
+    def add_game_to_database(self):
+        '''
+        Adds game to database using entry inputs.
+        '''
         game_name = self.GameNameEntry.get()
-        save_location = self.GameSaveEntry.get()
+        save_location = self.GameSaveEntry.get().replace('/', '\\')
         self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
         database_save_location = self.cursor.fetchone()
         if database_save_location != None:
@@ -296,15 +317,19 @@ class Backup:
                 messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
 
 
-    def Browse_For_Save(self):
-        '''Opens a file dialog so a save directory can be chosen.'''
+    def browse_for_save(self):
+        '''
+        Opens a file dialog so a save directory can be chosen.
+        '''
         save_dir = filedialog.askdirectory(initialdir="C:/", title="Select Save Directory")
         self.GameSaveEntry.delete(0, Tk.END)
         self.GameSaveEntry.insert(0, save_dir)
 
 
-    def Delete_Game_from_DB(self):
-        '''Deletes selected game from SQLite Database.'''
+    def delete_game_from_db(self):
+        '''
+        Deletes selected game from SQLite Database.
+        '''
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
@@ -314,7 +339,7 @@ class Backup:
             self.cursor.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.selected_game})
             self.database.commit()
             self.game_listbox.delete(self.game_listbox.curselection()[0])
-            self.Delete_Update_Entry()
+            self.delete_update_entry()
             msg = 'Do you want to delete the backed up game saves as well?'
             response = messagebox.askyesno(title='Game Save Manager', message=msg)
             if response:
@@ -327,14 +352,17 @@ class Backup:
             self.logger.info(f'Deleted {self.selected_game} from database.')
 
 
-    def Update_Game(self):
-        '''Allows updating data for games in database.
-        The last selected game in the Listbox gets updated with the info from the Add/Update Game entries.'''
+    def update_game(self):
+        '''
+        Allows updating data for games in database.
+        The last selected game in the Listbox gets updated with the info from the Add/Update Game entries.
+        '''
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
         game_name = self.GameNameEntry.get()
         save_location = self.GameSaveEntry.get()
+        save_location = save_location.replace('/', '\\')
         if os.path.isdir(save_location):
             sql_update_query  ='''UPDATE games
                     SET game_name = ?, save_location = ?
@@ -352,8 +380,9 @@ class Backup:
 
 
     @staticmethod
-    def Readable_Time_Since(datetime_obj):
-        '''Gives time since for a datetime object in the unit of time that makes the most sense
+    def readable_time_since(datetime_obj):
+        '''
+        Gives time since for a datetime object in the unit of time that makes the most sense
         rounded to 1 decimal place.
 
         Arguments:
@@ -373,13 +402,18 @@ class Backup:
         return time_since
 
 
-    def On_Entry_Trace(self, *args):
+    def on_entry_trace(self, *args):
+        '''
+        Tracks if entry boxs are empty.
+        '''
+        # TODO complete trace
         new_state = "disabled" if self.description.get() == "" else "normal"
         self.co_button.configure(state=new_state)
 
 
-    def Delete_Update_Entry(self, Update = 0):
-        '''Updates Game Data into Name and Save Entry for viewing.
+    def delete_update_entry(self, Update = 0):
+        '''
+        Updates Game Data into Name and Save Entry for viewing.
         Allows for updating specific entries in the database as well.
 
         Arguments:
@@ -393,7 +427,7 @@ class Backup:
         if Update == 1:
             self.selected_game = self.game_listbox.get(self.game_listbox.curselection())  # script wide variable for selected game
             self.GameNameEntry.insert(0, self.selected_game)
-            self.GameSaveEntry.insert(0, self.Get_Save_Loc(self.selected_game))
+            self.GameSaveEntry.insert(0, self.game_save_loc())
             # enables all buttons to be pressed once a selection is made
             for button in [
                 self.BackupButton,
@@ -403,14 +437,14 @@ class Backup:
                 ]:
                 button.config(state='normal')
             base_backup_folder = os.path.join(self.backup_dest, self.selected_game)
-            total_size = self.Convert_Size(base_backup_folder)
+            total_size = self.convert_size(base_backup_folder)
             self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name",
                 {'game_name': self.selected_game})
             last_backup = self.cursor.fetchone()[0]
             if last_backup != 'Never':
-                time_since = self.Readable_Time_Since(dt.datetime.strptime(last_backup, '%Y/%m/%d %H:%M:%S'))
+                time_since = self.readable_time_since(dt.datetime.strptime(last_backup, '%Y/%m/%d %H:%M:%S'))
                 info1 = f'{self.selected_game} was last backed up {time_since}\n'
-                info2 = f'Total Backup Space: {total_size} from {len(os.listdir(base_backup_folder))} backups'
+                info2 = f'Game Backup Size: {total_size} from {len(os.listdir(base_backup_folder))} backups'
                 info = info1 + info2
             else:
                 info = f'{self.selected_game} has not been backed up\n'
@@ -418,7 +452,7 @@ class Backup:
             self.BackupButton.focus_set()
 
 
-    def Run_GUI(self):
+    def run_gui(self):
         # Defaults
         BoldBaseFont = "Arial Bold"
 
@@ -427,39 +461,41 @@ class Backup:
         self.main_gui.iconbitmap('Save_Icon.ico')
         if self.disable_resize:  # sets window to not resize if disable_resize is set to 1
             self.main_gui.resizable(width=False, height=False)
-        # window_width = 670
-        # window_height = 550
-        # width = int((self.main_gui.winfo_screenwidth()-window_width)/2)
-        # height = int((self.main_gui.winfo_screenheight()-window_height)/2)
+        window_width = 670
+        window_height = 550
+        width = int((self.main_gui.winfo_screenwidth()-window_width)/2)
+        height = int((self.main_gui.winfo_screenheight()-window_height)/2)
+        self.main_gui.geometry(f'+{width}+{height}')
         # self.main_gui.geometry(f'{window_width}x{window_height}+{width}+{height}')
 
-        # TODO Binds do not work.
-        self.main_gui.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
+        # TODO replace space with enter bind does not work.
+        # self.main_gui.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
         self.main_gui.unbind_class("Button", "<Key-space>")
+        self.main_gui.bind("<Key-Return>", self.backup_shortcut)
 
         # Main Row 0
         Backup_Frame = Tk.Frame(self.main_gui)
         Backup_Frame.grid(columnspan=4, column=0, row=0,  padx=(20, 20), pady=(5, 0))
 
-        info_text = f'Total Games in Database: {len(self.Game_list_Sorted())}\nSize of Backups: {self.Convert_Size(self.backup_dest)}'
+        info_text = f'Total Games: {len(self.sorted_games())}\nTotal Backup Size: {self.convert_size(self.backup_dest)}'
         Title = Tk.Label(Backup_Frame, text=info_text, font=(BoldBaseFont, 10))
         Title.grid(columnspan=4, row=0, column=1)
 
         button_width = 23
         self.BackupButton = ttk.Button(Backup_Frame, text='Backup Save', state='disabled',
-            command=self.Backup_Save, width=button_width)
+            command=self.backup_save, width=button_width)
         self.BackupButton.grid(row=3, column=1, padx=5, pady=5)
 
         self.RestoreButton = ttk.Button(Backup_Frame, text='Restore Save', state='disabled',
-            command=self.Restore_Save, width=button_width)
+            command=self.restore_save, width=button_width)
         self.RestoreButton.grid(row=3, column=2, padx=5)
 
         self.ExploreSaveButton = ttk.Button(Backup_Frame, text='Explore Save Location', state='disabled',
-            command=lambda: self.Explore_Folder('Game Save'), width=button_width)
+            command=lambda: self.explore_folder('Game Save'), width=button_width)
         self.ExploreSaveButton.grid(row=4, column=1, padx=5)
 
         self.ExploreBackupButton = ttk.Button(Backup_Frame, text='Explore Backup Location', state='disabled',
-            command=lambda: self.Explore_Folder('Backup'), width=button_width)
+            command=lambda: self.explore_folder('Backup'), width=button_width)
         self.ExploreBackupButton.grid(row=4, column=2, padx=5)
 
         # Main Row 1
@@ -477,11 +513,11 @@ class Backup:
         self.game_listbox = Tk.Listbox(self.ListboxFrame, exportselection=False,
             yscrollcommand=self.scrollbar.set, font=(BoldBaseFont, 12), height=10, width=60)
         self.game_listbox.bind('<<ListboxSelect>>', lambda event, game_listbox=self.game_listbox,:
-            self.Delete_Update_Entry(1))
+            self.delete_update_entry(1))
         self.game_listbox.grid(columnspan=3, row=0, column=0)
         self.scrollbar.config(command=self.game_listbox.yview)
 
-        sorted_list = self.Game_list_Sorted()
+        sorted_list = self.sorted_games()
         for item in sorted_list:
             self.game_listbox.insert(Tk.END, item)
 
@@ -504,11 +540,11 @@ class Backup:
 
         # TODO set buttons to be disabled unless both entries are not empty
         # for entry in [self.GameSaveEntry, self.GameNameEntry]:
-        #     entry.trace("w", self.On_Entry_Trace)
+        #     entry.trace("w", self.on_entry_trace)
         #     entry.set("")  # initialize the state
 
         BrowseButton = Tk.ttk.Button(Add_Game_Frame, text='Browse',
-            command=self.Browse_For_Save)
+            command=self.browse_for_save)
         BrowseButton.grid(row=1, column=4, padx=10)
 
         # Button Frame Row 2
@@ -518,22 +554,22 @@ class Backup:
         button_padx = 4
         button_pady = 5
         ConfirmAddButton = Tk.ttk.Button(Button_Frame, text='Add Game',
-            command=self.Add_Game_to_Database, width=20)
+            command=self.add_game_to_database, width=20)
         ConfirmAddButton.grid(row=2, column=0, padx=button_padx, pady=button_pady)
 
         UpdateButton = Tk.ttk.Button(Button_Frame, text='Update Game',
-            command=self.Update_Game, width=20)
+            command=self.update_game, width=20)
         UpdateButton.grid(row=2, column=1, padx=button_padx, pady=button_pady)
 
         RemoveButton = ttk.Button(Button_Frame, text='Remove Game',
-            command=self.Delete_Game_from_DB, width=20)
+            command=self.delete_game_from_db, width=20)
         RemoveButton.grid(row=2, column=2, padx=button_padx, pady=button_pady)
 
         ClearButton = Tk.ttk.Button(Button_Frame, text='Clear Entries',
-            command=self.Delete_Update_Entry, width=20)
+            command=self.delete_update_entry, width=20)
         ClearButton.grid(row=2, column=3, padx=button_padx, pady=button_pady)
 
-        self.Database_Check()
+        self.database_check()
 
         self.main_gui.mainloop()
 
@@ -541,4 +577,4 @@ class Backup:
 
 if __name__ == '__main__':
     App = Backup()
-    App.Run_GUI()
+    App.run_gui()
