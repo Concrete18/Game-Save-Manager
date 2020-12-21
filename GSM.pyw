@@ -83,10 +83,12 @@ class Backup:
             self.logger.debug(f'More then 5 save locations in the database do not exist.')
 
 
-    def selected_game_filename(self):
+    def selected_game_filename(self, game=None):
         '''
         Removes illegal characters and shortens the selected games name so it can become a valid filename.
         '''
+        if game != None:
+            return self.filename_regex.sub('', game)[0:31]
         return self.filename_regex.sub('', self.selected_game)[0:31]
 
 
@@ -195,9 +197,16 @@ class Backup:
         self.save_dic = {}
         if os.path.exists(backup_path):
             for file in os.scandir(backup_path):
-                updated_name = dt.datetime.strptime(file.name, '%d-%m-%y %H-%M-%S').strftime('%b %d, %Y %I:%M %p')
+                try:
+                    updated_name = dt.datetime.strptime(file.name, '%m-%d-%y %H-%M-%S').strftime('%b %d, %Y %I:%M %p')
+                except ValueError:
+                    updated_name = file.name
                 self.save_dic[updated_name] = file
             # TODO Add entry for .old file if it exists.
+            for file in os.scandir(os.path.split(self.game_save_loc())[0]):
+                if file.name.endswith('.old'):
+                    self.save_dic['Pre-Restore Save'] = file
+            print(self.save_dic)
         else:
             messagebox.showwarning(title='Game Save Manager', message='No saves exist for this game.')
 
@@ -208,8 +217,13 @@ class Backup:
             Restores by renaming current save folder to "save.old" and then copying the backup to replace it.
             '''
             save_name = self.save_dic[save_listbox.get(save_listbox.curselection())]
-            save_path = os.path.join(self.backup_dest, self.selected_game, save_name.name)
             save_location = self.game_save_loc()
+            backup_path = os.path.join(self.backup_dest, self.selected_game, save_name.name)
+            if save_name.name.endswith('.old'):
+                print('Pre-Restore Found.')
+                Restore_Game_Window.grab_release()
+                Restore_Game_Window.destroy()
+                return
             if os.path.exists(f'{save_location}.old'):
                 msg = '''Backup of current save before last restore already exists.
                     \nDo you want to delete it? This will cancel the restore if you do not delete it.'''
@@ -218,9 +232,10 @@ class Backup:
                     shutil.rmtree(f'{save_location}.old')
                 else:
                     print('Canceling Restore.')
+                    Restore_Game_Window.grab_release()
                     return
             os.rename(save_location, f'{save_location}.old')
-            shutil.copytree(save_path, save_location)
+            shutil.copytree(backup_path, save_location)
             self.logger.info(f'Restored Save for {self.selected_game}.')
             Restore_Game_Window.destroy()
 
@@ -239,6 +254,7 @@ class Backup:
         save_listbox.grid(columnspan=2, row=1, column=0, pady=5, padx=10)
 
         for item in self.save_dic:
+            print(item)
             save_listbox.insert(Tk.END, item)
 
         confirm_button = ttk.Button(Restore_Game_Window, text='Confirm', command=restore_game_pressed, width=20)
@@ -248,7 +264,6 @@ class Backup:
         CancelButton.grid(row=2, column=1, padx=10, pady=10)
 
         Restore_Game_Window.mainloop()
-        Restore_Game_Window.grab_release()
 
 
     def explore_folder(self, folder):
