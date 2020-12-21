@@ -21,6 +21,15 @@ Made in Python 3.8.3
 * Object oriented design
 * Full Logging System for most all actions and errors
 
+## Config
+
+```json
+"backup_dest":"Save Backup",
+"backup_redundancy":3,
+"disable_resize":1,
+"center_window":1
+```
+
 ## Known Bugs
 
 * Bindings do not properly disable space acting as enter key.
