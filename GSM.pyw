@@ -33,6 +33,7 @@ class Backup:
         if type(self.backup_redundancy) is not int or self.backup_redundancy > 4:
             self.backup_redundancy = 4
         self.disable_resize = data['settings']['disable_resize']
+        self.center_window = data['settings']['center_window']
         # logger setup
         log_formatter = lg.Formatter('%(asctime)s %(levelname)s %(message)s', datefmt='%m-%d-%Y %I:%M:%S %p')
         self.logger = lg.getLogger(__name__)
@@ -172,6 +173,18 @@ class Backup:
             self.logger.error(f'Failed to Backed up Save for {game}. Save Already Backed up.')
 
 
+    def tk_window_options(self, window_name, window_width, window_height):
+        '''
+        Disables window resize and centers window if config enables each.
+        '''
+        if self.disable_resize:  # sets window to not resize if disable_resize is set to 1
+            window_name.resizable(width=False, height=False)
+        if self.center_window == 1:
+            width_pos = int((window_name.winfo_screenwidth()-window_width)/2)
+            height_pos = int((window_name.winfo_screenheight()-window_height)/2)
+            window_name.geometry(f'+{width_pos}+{height_pos}')
+
+
     def backup_shortcut(self, event):
         '''
         Shortcut that activates when pressing enter while a game is selected.
@@ -202,11 +215,9 @@ class Backup:
                 except ValueError:
                     updated_name = file.name
                 self.save_dic[updated_name] = file
-            # TODO Add entry for .old file if it exists.
             for file in os.scandir(os.path.split(self.game_save_loc())[0]):
                 if file.name.endswith('.old'):
-                    self.save_dic['Pre-Restore Save'] = file
-            print(self.save_dic)
+                    self.save_dic['Undo Last Restore'] = file
         else:
             messagebox.showwarning(title='Game Save Manager', message='No saves exist for this game.')
 
@@ -220,48 +231,60 @@ class Backup:
             save_location = self.game_save_loc()
             backup_path = os.path.join(self.backup_dest, self.selected_game, save_name.name)
             if save_name.name.endswith('.old'):
-                print('Pre-Restore Found.')
-                Restore_Game_Window.grab_release()
-                Restore_Game_Window.destroy()
+                msg1 = 'This will delete the previously restored save and revert to the original.'
+                msg2 = 'Are you sure? This will skip the recycle bin.'
+                response = messagebox.askyesno(title='Game Save Manager', message=msg1 + msg2)
+                if response:
+                    shutil.rmtree(save_name.path[:-4])
+                    os.rename(save_name.path, save_name.path[:-4])
+                    Restore_Game_Window.grab_release()
+                    Restore_Game_Window.destroy()
+                    self.logger.info(f'Restored original save for {self.selected_game}.')
                 return
             if os.path.exists(f'{save_location}.old'):
-                msg = '''Backup of current save before last restore already exists.
-                    \nDo you want to delete it? This will cancel the restore if you do not delete it.'''
-                response = messagebox.askyesno(title='Game Save Manager', message=msg)
+                msg1 = 'Backup of current save before last restore already exists.'
+                msg2 = 'Do you want to delete it? This will cancel the restore if you do not delete it.'
+                response = messagebox.askyesno(title='Game Save Manager', message=msg1 + msg2)
                 if response:
                     shutil.rmtree(f'{save_location}.old')
+                    self.logger.info(f'Deleted original save before last restore for {self.selected_game}.')
                 else:
                     print('Canceling Restore.')
                     Restore_Game_Window.grab_release()
                     return
             os.rename(save_location, f'{save_location}.old')
             shutil.copytree(backup_path, save_location)
-            self.logger.info(f'Restored Save for {self.selected_game}.')
+            self.logger.info(f'Restored save for {self.selected_game}.')
             Restore_Game_Window.destroy()
 
 
         Restore_Game_Window = Tk.Toplevel(takefocus=True)
-        Restore_Game_Window.title('Game Save Manager - Restore Game')
+        Restore_Game_Window.title('Game Save Manager')
         Restore_Game_Window.iconbitmap('Save_Icon.ico')
-        Restore_Game_Window.resizable(width=False, height=False)
+        window_width = 300
+        window_height = 220
+        self.tk_window_options(Restore_Game_Window, window_width, window_height)
         Restore_Game_Window.grab_set()
 
         RestoreInfo = ttk.Label(Restore_Game_Window,
-            text=f'Select Save for {self.selected_game}', font=("Arial Bold", 10))
-        RestoreInfo.grid(columnspan=2, row=0, column=0, pady=10, padx=10)
+            text='Select save to restore for', font=("Arial Bold", 10))
+        RestoreInfo.grid(columnspan=2, row=0, column=0, pady=(10,0), padx=10)
+
+        RestoreGame = ttk.Label(Restore_Game_Window,
+            text=self.selected_game, font=("Arial Bold", 10))
+        RestoreGame.grid(columnspan=2, row=1, column=0, pady=(0,10), padx=10)
 
         save_listbox = Tk.Listbox(Restore_Game_Window, exportselection=False, font=("Arial Bold", 12), height=5, width=30)
-        save_listbox.grid(columnspan=2, row=1, column=0, pady=5, padx=10)
+        save_listbox.grid(columnspan=2, row=2, column=0, pady=5, padx=10)
 
         for item in self.save_dic:
-            print(item)
             save_listbox.insert(Tk.END, item)
 
         confirm_button = ttk.Button(Restore_Game_Window, text='Confirm', command=restore_game_pressed, width=20)
-        confirm_button.grid(row=2, column=0, padx=10, pady=10)
+        confirm_button.grid(row=3, column=0, padx=10, pady=10)
 
         CancelButton = ttk.Button(Restore_Game_Window, text='Cancel', command=Restore_Game_Window.destroy, width=20)
-        CancelButton.grid(row=2, column=1, padx=10, pady=10)
+        CancelButton.grid(row=3, column=1, padx=10, pady=10)
 
         Restore_Game_Window.mainloop()
 
@@ -407,14 +430,13 @@ class Backup:
         seconds = (dt.datetime.now() - datetime_obj).total_seconds()
         if seconds < (60 * 60):  # seconds in minute * minutes in hour
             minutes = round(seconds / 60, 1)  # seconds in a minute
-            time_since = f' {minutes} minutes ago'
+            return f' {minutes} minutes ago'
         elif seconds < (60 * 60 * 24):  # seconds in minute * minutes in hour * hours in a day
             hours = round(seconds / (60 * 60), 1)  # seconds in minute * minutes in hour
-            time_since = f' {hours} hours ago'
+            return f' {hours} hours ago'
         else:
             days = round(seconds / 86400, 1)  # seconds in minute * minutes in hour * hours in a day
-            time_since = f' {days} days ago'
-        return time_since
+            return f' {days} days ago'
 
 
     def delete_update_entry(self, Update = 0):
@@ -465,19 +487,10 @@ class Backup:
         self.main_gui = Tk.Tk()
         self.main_gui.title('Game Save Manager')
         self.main_gui.iconbitmap('Save_Icon.ico')
-        if self.disable_resize:  # sets window to not resize if disable_resize is set to 1
-            self.main_gui.resizable(width=False, height=False)
         window_width = 670
         window_height = 550
-        width = int((self.main_gui.winfo_screenwidth()-window_width)/2)
-        height = int((self.main_gui.winfo_screenheight()-window_height)/2)
-        self.main_gui.geometry(f'+{width}+{height}')
+        self.center_tk_window(self.main_gui, window_width, window_height)
         # self.main_gui.geometry(f'{window_width}x{window_height}+{width}+{height}')
-
-        # TODO replace space with enter bind does not work.
-        # self.main_gui.bind_class("Button", "<Key-Return>", lambda event: event.widget.invoke())
-        self.main_gui.unbind_class("Button", "<Key-space>")
-        self.main_gui.bind("<Key-Return>", self.backup_shortcut)
 
         # Main Row 0
         Backup_Frame = Tk.Frame(self.main_gui)
