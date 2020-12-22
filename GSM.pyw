@@ -22,7 +22,7 @@ class Backup:
         '''
         self.selected_game = None
         self.save_dic = {}
-        self.filename_regex = re.compile('[^a-zA-Z\s]')
+        self.filename_regex = re.compile('[^a-zA-Z0-9\s]')
         # settings setup
         with open('settings.json') as json_file:
             data = json.load(json_file)
@@ -165,12 +165,14 @@ class Backup:
             self.game_listbox.delete(Tk.ACTIVE)
             self.game_listbox.insert(0, game)
             self.logger.info(f'Backed up Save for {game}.')
-        except FileNotFoundError:
-            messagebox.showwarning(title='Game Save Manager', message='Action Failed - File location does not exist.')
-            self.logger.error(f'Failed to Backed up Save for {game}. File location does not exist.except')
-        except FileExistsError:
-            messagebox.showwarning(title='Game Save Manager', message='Action Failed - Save Already Backed up.')
-            self.logger.error(f'Failed to Backed up Save for {game}. Save Already Backed up.')
+        except ValueError:
+            print('')
+        # except FileNotFoundError:
+        #     messagebox.showwarning(title='Game Save Manager', message='Action Failed - File location does not exist.')
+        #     self.logger.error(f'Failed to Backed up Save for {game}. File location does not exist.except')
+        # except FileExistsError:
+        #     messagebox.showwarning(title='Game Save Manager', message='Action Failed - Save Already Backed up.')
+        #     self.logger.error(f'Failed to Backed up Save for {game}. Save Already Backed up.')
 
 
     def tk_window_options(self, window_name, window_width, window_height):
@@ -489,7 +491,7 @@ class Backup:
         self.main_gui.iconbitmap('Save_Icon.ico')
         window_width = 670
         window_height = 550
-        self.center_tk_window(self.main_gui, window_width, window_height)
+        self.tk_window_options(self.main_gui, window_width, window_height)
         # self.main_gui.geometry(f'{window_width}x{window_height}+{width}+{height}')
 
         # Main Row 0
