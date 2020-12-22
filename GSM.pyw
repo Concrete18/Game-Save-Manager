@@ -165,14 +165,12 @@ class Backup:
             self.game_listbox.delete(Tk.ACTIVE)
             self.game_listbox.insert(0, game)
             self.logger.info(f'Backed up Save for {game}.')
-        except ValueError:
-            print('')
-        # except FileNotFoundError:
-        #     messagebox.showwarning(title='Game Save Manager', message='Action Failed - File location does not exist.')
-        #     self.logger.error(f'Failed to Backed up Save for {game}. File location does not exist.except')
-        # except FileExistsError:
-        #     messagebox.showwarning(title='Game Save Manager', message='Action Failed - Save Already Backed up.')
-        #     self.logger.error(f'Failed to Backed up Save for {game}. Save Already Backed up.')
+        except FileNotFoundError:
+            messagebox.showwarning(title='Game Save Manager', message='Action Failed - File location does not exist.')
+            self.logger.error(f'Failed to Backed up Save for {game}. File location does not exist.except')
+        except FileExistsError:
+            messagebox.showwarning(title='Game Save Manager', message='Action Failed - Save Already Backed up.')
+            self.logger.error(f'Failed to Backed up Save for {game}. Save Already Backed up.')
 
 
     def tk_window_options(self, window_name, window_width, window_height):
