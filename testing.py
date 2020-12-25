@@ -12,10 +12,9 @@ class TestGameSaveManager(unittest.TestCase):
         'Amnesia: The Dark Descent':'Amnesia The Dark Descent',
         'Is&this<>correct?':'Isthiscorrect',
         '  This       is  a *&^%^ space *(&^test    ':'This is a space test',
-        'This is a long test of the file sanitize function':'This is a long test of the file'
         }
         for test_value, answer in tests.items():
-            self.assertEqual(App.selected_game_filename(test_value), answer)
+            self.assertEqual(App.get_selected_game_filename(test_value), answer)
 
 
     def test_convert_size(self):
