@@ -20,9 +20,6 @@ class Backup:
         '''
         Sets up backup configuration, database and logger.
         '''
-        self.selected_game = None
-        self.save_dic = {}
-        self.filename_regex = re.compile('[^a-zA-Z0-9\s]')
         # settings setup
         with open('settings.json') as json_file:
             data = json.load(json_file)
@@ -37,7 +34,7 @@ class Backup:
         # logger setup
         log_formatter = lg.Formatter('%(asctime)s %(levelname)s %(message)s', datefmt='%m-%d-%Y %I:%M:%S %p')
         self.logger = lg.getLogger(__name__)
-        self.logger.setLevel(lg.DEBUG)
+        self.logger.setLevel(lg.DEBUG) # Log Level
         my_handler = RotatingFileHandler('Game_Backup.log', maxBytes=5*1024*1024, backupCount=2)
         my_handler.setFormatter(log_formatter)
         self.logger.addHandler(my_handler)
@@ -84,22 +81,29 @@ class Backup:
             self.logger.debug(f'More then 5 save locations in the database do not exist.')
 
 
-    def selected_game_filename(self, game=None):
+    def get_selected_game_filename(self, game=None):
         '''
         Removes illegal characters and shortens the selected games name so it can become a valid filename.
         '''
-        if game != None:
-            return self.filename_regex.sub('', game)[0:31]
-        return self.filename_regex.sub('', self.selected_game)[0:31]
+        if game == None:
+            game = self.selected_game
+        game.replace('&', 'and')
+        char_removal = re.compile('[^a-zA-Z0-9\s]')
+        string = char_removal.sub('', game)
+        return re.sub("\s\s+" , " ", string).strip()[0:50]
 
 
-    def game_save_loc(self):
+    def get_selected_game_save(self):
         '''
         Returns the save location of the selected game from the SQLite Database.
         '''
-        self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name",
-            {'game_name': self.selected_game})
-        return self.cursor.fetchone()[0]
+        try:
+            self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name",
+                {'game_name': self.selected_game})
+            return self.cursor.fetchone()[0]
+        except TypeError:
+            print('Selected Game is ', self.selected_game)
+            print(self.cursor.fetchone()[0])
 
 
     def sorted_games(self):
@@ -144,39 +148,40 @@ class Backup:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
         current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
-        game = self.selected_game_filename()
+        game_name = self.selected_game
         total_size = self.convert_size(os.path.join(self.backup_dest, self.selected_game))
-        base_backup_folder = os.path.join(self.backup_dest, game)
+        base_backup_folder = os.path.join(self.backup_dest, self.game_filename)
         dest = os.path.join(base_backup_folder, current_time)
-        save_location = self.game_save_loc()
+        last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
         try:
             def backup():
-                shutil.copytree(save_location, dest)
-                self.delete_oldest(game)
+                shutil.copytree(self.selected_game_save, dest)
+                self.delete_oldest(self.game_filename)
+                info1 = f'{game_name} backed up to set backup destination.\n'
+                info2 = f'Game Backup Size: {total_size} from {len(os.listdir(base_backup_folder))} backups'
+                self.ActionInfo.config(text=info1 + info2)
+                self.game_listbox.delete(Tk.ACTIVE)
+                self.game_listbox.insert(0, game_name)
+                self.logger.info(f'Backed up Save for {game_name}.')
             BackupThread = Thread(target=backup)
             BackupThread.start()
-            info1 = f'{game} backed up to set backup destination.\n'
-            info2 = f'Game Backup Size: {total_size} from {len(os.listdir(base_backup_folder))} backups'
-            self.ActionInfo.config(text=info1 + info2)
-            last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
             self.cursor.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
-            {'game_name': game, 'last_backup': last_backup})
+            {'game_name': game_name, 'last_backup': last_backup})
             self.database.commit()
-            self.game_listbox.delete(Tk.ACTIVE)
-            self.game_listbox.insert(0, game)
-            self.logger.info(f'Backed up Save for {game}.')
         except FileNotFoundError:
             messagebox.showwarning(title='Game Save Manager', message='Action Failed - File location does not exist.')
-            self.logger.error(f'Failed to Backed up Save for {game}. File location does not exist.except')
+            self.logger.error(f'Failed to Backed up Save for {game_name}. File location does not exist.except')
         except FileExistsError:
             messagebox.showwarning(title='Game Save Manager', message='Action Failed - Save Already Backed up.')
-            self.logger.error(f'Failed to Backed up Save for {game}. Save Already Backed up.')
+            self.logger.error(f'Failed to Backed up Save for {game_name}. Save Already Backed up.')
 
 
     def tk_window_options(self, window_name, window_width, window_height):
         '''
         Disables window resize and centers window if config enables each.
         '''
+        window_name.title('Game Save Manager')
+        window_name.iconbitmap('Save_Icon.ico')
         if self.disable_resize:  # sets window to not resize if disable_resize is set to 1
             window_name.resizable(width=False, height=False)
         if self.center_window == 1:
@@ -206,7 +211,7 @@ class Backup:
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
-        backup_path = os.path.join(self.backup_dest, self.selected_game)
+        backup_path = os.path.join(self.backup_dest, self.game_filename)
         self.save_dic = {}
         if os.path.exists(backup_path):
             for file in os.scandir(backup_path):
@@ -215,20 +220,20 @@ class Backup:
                 except ValueError:
                     updated_name = file.name
                 self.save_dic[updated_name] = file
-            for file in os.scandir(os.path.split(self.game_save_loc())[0]):
+            for file in os.scandir(os.path.split(self.selected_game_save)[0]):
                 if file.name.endswith('.old'):
                     self.save_dic['Undo Last Restore'] = file
         else:
             messagebox.showwarning(title='Game Save Manager', message='No saves exist for this game.')
+            return
 
 
-        def restore_game_pressed():
+        def restore_selected_save():
             '''
             Restores selected game save based on save clicked.
             Restores by renaming current save folder to "save.old" and then copying the backup to replace it.
             '''
             save_name = self.save_dic[save_listbox.get(save_listbox.curselection())]
-            save_location = self.game_save_loc()
             backup_path = os.path.join(self.backup_dest, self.selected_game, save_name.name)
             if save_name.name.endswith('.old'):
                 msg1 = 'This will delete the previously restored save and revert to the original.'
@@ -241,26 +246,25 @@ class Backup:
                     Restore_Game_Window.destroy()
                     self.logger.info(f'Restored original save for {self.selected_game}.')
                 return
-            if os.path.exists(f'{save_location}.old'):
+            if os.path.exists(f'{self.selected_game_save}.old'):
                 msg1 = 'Backup of current save before last restore already exists.'
                 msg2 = 'Do you want to delete it? This will cancel the restore if you do not delete it.'
                 response = messagebox.askyesno(title='Game Save Manager', message=msg1 + msg2)
                 if response:
-                    shutil.rmtree(f'{save_location}.old')
+                    shutil.rmtree(f'{self.selected_game_save}.old')
                     self.logger.info(f'Deleted original save before last restore for {self.selected_game}.')
                 else:
                     print('Canceling Restore.')
                     Restore_Game_Window.grab_release()
                     return
-            os.rename(save_location, f'{save_location}.old')
-            shutil.copytree(backup_path, save_location)
+            # TODO Move old file to special backup folder instead of renaming to .old
+            os.rename(self.selected_game_save, f'{self.selected_game_save}.old')
+            shutil.copytree(backup_path, self.selected_game_save)
             self.logger.info(f'Restored save for {self.selected_game}.')
             Restore_Game_Window.destroy()
 
 
         Restore_Game_Window = Tk.Toplevel(takefocus=True)
-        Restore_Game_Window.title('Game Save Manager')
-        Restore_Game_Window.iconbitmap('Save_Icon.ico')
         window_width = 300
         window_height = 220
         self.tk_window_options(Restore_Game_Window, window_width, window_height)
@@ -280,7 +284,7 @@ class Backup:
         for item in self.save_dic:
             save_listbox.insert(Tk.END, item)
 
-        confirm_button = ttk.Button(Restore_Game_Window, text='Confirm', command=restore_game_pressed, width=20)
+        confirm_button = ttk.Button(Restore_Game_Window, text='Confirm', command=restore_selected_save, width=20)
         confirm_button.grid(row=3, column=0, padx=10, pady=10)
 
         CancelButton = ttk.Button(Restore_Game_Window, text='Cancel', command=Restore_Game_Window.destroy, width=20)
@@ -301,9 +305,9 @@ class Backup:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
         if folder == 'Game Save':
-            subprocess.Popen(f'explorer "{self.game_save_loc()}"')
+            subprocess.Popen(f'explorer "{self.selected_game_save}"')
         elif folder == 'Backup':
-            subprocess.Popen(f'explorer "{os.path.join(self.backup_dest, self.selected_game_filename())}"')
+            subprocess.Popen(f'explorer "{os.path.join(self.backup_dest, self.game_filename)}"')
 
 
     @staticmethod
@@ -383,8 +387,10 @@ class Backup:
             if response:
                 os.path.join(self.backup_dest, self.selected_game)
                 try:
-                    shutil.rmtree(os.path.join(self.backup_dest, self.selected_game))
+                    shutil.rmtree(os.path.join(self.backup_dest, self.game_filename))
+                    self.logger.info(f'Deleted backups for{self.selected_game}.')
                 except PermissionError:
+                    self.logger.warning(f'Failed to delete backups for {self.selected_game}')
                     msg = 'Failed to delete directory\nPermission Error'
                     messagebox.showerror(title='Game Save Manager',message=msg)
             self.logger.info(f'Deleted {self.selected_game} from database.')
@@ -399,8 +405,7 @@ class Backup:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
         game_name = self.GameNameEntry.get()
-        save_location = self.GameSaveEntry.get()
-        save_location = save_location.replace('/', '\\')
+        save_location = self.GameSaveEntry.get().replace('/', '\\')
         if os.path.isdir(save_location):
             sql_update_query  ='''UPDATE games
                     SET game_name = ?, save_location = ?
@@ -408,9 +413,14 @@ class Backup:
             data = (game_name, save_location, self.selected_game)
             self.cursor.execute(sql_update_query , data)
             self.database.commit()
-            os.rename(os.path.join(self.backup_dest, self.selected_game), os.path.join(self.backup_dest, game_name))
+            original_name = os.path.join(self.backup_dest, self.game_filename)
+            new_name = os.path.join(self.backup_dest, self.get_selected_game_filename(game_name))
+            # FIXME renaming twice in a row brings up an error
+            os.rename(original_name, new_name)
+            index = self.game_listbox.curselection()
+            print(index)
             self.game_listbox.delete(Tk.ACTIVE)
-            self.game_listbox.insert(0, game_name)
+            self.game_listbox.insert(index, game_name)
             self.logger.info(f'Updated {self.selected_game} in database.')
         else:
             msg = f'Save Location does not exist.'
@@ -454,8 +464,10 @@ class Backup:
         # updates entry boxes to show currently selected game in listbox
         if Update == 1:
             self.selected_game = self.game_listbox.get(self.game_listbox.curselection())  # script wide variable for selected game
+            self.game_filename = self.get_selected_game_filename()
+            self.selected_game_save = self.get_selected_game_save()
             self.GameNameEntry.insert(0, self.selected_game)
-            self.GameSaveEntry.insert(0, self.game_save_loc())
+            self.GameSaveEntry.insert(0, self.selected_game_save)
             # enables all buttons to be pressed once a selection is made
             for button in [
                 self.BackupButton,
@@ -464,7 +476,7 @@ class Backup:
                 self.ExploreSaveButton
                 ]:
                 button.config(state='normal')
-            base_backup_folder = os.path.join(self.backup_dest, self.selected_game)
+            base_backup_folder = os.path.join(self.backup_dest, self.game_filename)
             total_size = self.convert_size(base_backup_folder)
             self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name",
                 {'game_name': self.selected_game})
@@ -485,8 +497,6 @@ class Backup:
         BoldBaseFont = "Arial Bold"
 
         self.main_gui = Tk.Tk()
-        self.main_gui.title('Game Save Manager')
-        self.main_gui.iconbitmap('Save_Icon.ico')
         window_width = 670
         window_height = 550
         self.tk_window_options(self.main_gui, window_width, window_height)

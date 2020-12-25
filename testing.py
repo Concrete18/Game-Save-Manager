@@ -11,6 +11,7 @@ class TestGameSaveManager(unittest.TestCase):
         tests = {
         'Amnesia: The Dark Descent':'Amnesia The Dark Descent',
         'Is&this<>correct?':'Isthiscorrect',
+        '  This       is  a *&^%^ space *(&^test    ':'This is a space test',
         'This is a long test of the file sanitize function':'This is a long test of the file'
         }
         for test_value, answer in tests.items():
