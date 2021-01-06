@@ -153,6 +153,7 @@ class Backup:
         base_backup_folder = os.path.join(self.backup_dest, self.game_filename)
         dest = os.path.join(base_backup_folder, current_time)
         last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+        self.ActionInfo.config(text=f'Backing up {game_name}\n')
         try:
             def backup():
                 shutil.copytree(self.selected_game_save, dest)
@@ -181,7 +182,7 @@ class Backup:
         Disables window resize and centers window if config enables each.
         '''
         window_name.title('Game Save Manager')
-        window_name.iconbitmap('Save_Icon.ico')
+        window_name.iconbitmap(window_name, 'Save_Icon.ico')
         if self.disable_resize:  # sets window to not resize if disable_resize is set to 1
             window_name.resizable(width=False, height=False)
         if self.center_window == 1:
@@ -304,10 +305,19 @@ class Backup:
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
-        if folder == 'Game Save':
+        if folder == 'Game Save':  # open game save location in explorer
+            if not os.path.isdir(self.selected_game_save):
+                msg = 'Save location no longer exists'
+                messagebox.showwarning(title='Game Save Manager', message=msg)
+                return
             subprocess.Popen(f'explorer "{self.selected_game_save}"')
-        elif folder == 'Backup':
-            subprocess.Popen(f'explorer "{os.path.join(self.backup_dest, self.game_filename)}"')
+        elif folder == 'Backup':  # open game backup location in explorer
+            backup_folder = os.path.join(self.backup_dest, self.game_filename)
+            if not os.path.isdir(backup_folder):
+                msg = 'Game has not been backed up yet.'
+                messagebox.showwarning(title='Game Save Manager', message=msg)
+                return
+            subprocess.Popen(f'explorer "{backup_folder}"')
 
 
     @staticmethod
