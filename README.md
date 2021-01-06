@@ -29,7 +29,3 @@ Made in Python 3.8.3
 "disable_resize":1,
 "center_window":1
 ```
-
-## Known Bugs
-
-* Bindings do not properly disable space acting as enter key.
