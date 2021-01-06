@@ -150,16 +150,15 @@ class Backup:
         current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
         game_name = self.selected_game
         total_size = self.convert_size(os.path.join(self.backup_dest, self.selected_game))
-        base_backup_folder = os.path.join(self.backup_dest, self.game_filename)
-        dest = os.path.join(base_backup_folder, current_time)
+        dest = os.path.join(self.base_backup_folder, current_time)
         last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
         self.ActionInfo.config(text=f'Backing up {game_name}\n')
         try:
             def backup():
                 shutil.copytree(self.selected_game_save, dest)
                 self.delete_oldest(self.game_filename)
-                info1 = f'{game_name} backed up to set backup destination.\n'
-                info2 = f'Game Backup Size: {total_size} from {len(os.listdir(base_backup_folder))} backups'
+                info1 = f'{game_name} has been backed up.\n'
+                info2 = f'Game Backup Size: {total_size} from {len(os.listdir(self.base_backup_folder))} backups'
                 self.ActionInfo.config(text=info1 + info2)
                 self.game_listbox.delete(Tk.ACTIVE)
                 self.game_listbox.insert(0, game_name)
@@ -212,7 +211,7 @@ class Backup:
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
-        backup_path = os.path.join(self.backup_dest, self.game_filename)
+        backup_path = self.base_backup_folder
         self.save_dic = {}
         if os.path.exists(backup_path):
             for file in os.scandir(backup_path):
@@ -312,12 +311,11 @@ class Backup:
                 return
             subprocess.Popen(f'explorer "{self.selected_game_save}"')
         elif folder == 'Backup':  # open game backup location in explorer
-            backup_folder = os.path.join(self.backup_dest, self.game_filename)
-            if not os.path.isdir(backup_folder):
+            if not os.path.isdir(self.base_backup_folder):
                 msg = 'Game has not been backed up yet.'
                 messagebox.showwarning(title='Game Save Manager', message=msg)
                 return
-            subprocess.Popen(f'explorer "{backup_folder}"')
+            subprocess.Popen(f'explorer "{self.base_backup_folder}"')
 
 
     @staticmethod
@@ -392,18 +390,19 @@ class Backup:
             self.database.commit()
             self.game_listbox.delete(self.game_listbox.curselection()[0])
             self.delete_update_entry()
-            msg = 'Do you want to delete the backed up game saves as well?'
-            response = messagebox.askyesno(title='Game Save Manager', message=msg)
-            if response:
-                os.path.join(self.backup_dest, self.selected_game)
-                try:
-                    shutil.rmtree(os.path.join(self.backup_dest, self.game_filename))
-                    self.logger.info(f'Deleted backups for{self.selected_game}.')
-                except PermissionError:
-                    self.logger.warning(f'Failed to delete backups for {self.selected_game}')
-                    msg = 'Failed to delete directory\nPermission Error'
-                    messagebox.showerror(title='Game Save Manager',message=msg)
-            self.logger.info(f'Deleted {self.selected_game} from database.')
+            if os.path.isdir(self.base_backup_folder):
+                msg = 'Do you want to delete the backed up game saves as well?'
+                response = messagebox.askyesno(title='Game Save Manager', message=msg)
+                if response:
+                    os.path.join(self.backup_dest, self.selected_game)
+                    try:
+                        shutil.rmtree(self.base_backup_folder)
+                        self.logger.info(f'Deleted backups for{self.selected_game}.')
+                    except PermissionError:
+                        self.logger.warning(f'Failed to delete backups for {self.selected_game}')
+                        msg = 'Failed to delete directory\nPermission Error'
+                        messagebox.showerror(title='Game Save Manager',message=msg)
+                self.logger.info(f'Deleted {self.selected_game} from database.')
 
 
     def update_game(self):
@@ -423,10 +422,9 @@ class Backup:
             data = (game_name, save_location, self.selected_game)
             self.cursor.execute(sql_update_query , data)
             self.database.commit()
-            original_name = os.path.join(self.backup_dest, self.game_filename)
             new_name = os.path.join(self.backup_dest, self.get_selected_game_filename(game_name))
             # FIXME renaming twice in a row brings up an error
-            os.rename(original_name, new_name)
+            os.rename(self.base_backup_folder, new_name)
             index = self.game_listbox.curselection()
             print(index)
             self.game_listbox.delete(Tk.ACTIVE)
@@ -478,23 +476,24 @@ class Backup:
             self.selected_game_save = self.get_selected_game_save()
             self.GameNameEntry.insert(0, self.selected_game)
             self.GameSaveEntry.insert(0, self.selected_game_save)
+            self.base_backup_folder = os.path.join(self.backup_dest, self.game_filename)
             # enables all buttons to be pressed once a selection is made
-            for button in [
-                self.BackupButton,
-                self.RestoreButton,
-                self.ExploreBackupButton,
-                self.ExploreSaveButton
-                ]:
+            for button in [self.BackupButton, self.ExploreSaveButton]:
                 button.config(state='normal')
-            base_backup_folder = os.path.join(self.backup_dest, self.game_filename)
-            total_size = self.convert_size(base_backup_folder)
+            if os.path.isdir(self.base_backup_folder):
+                set_state = 'normal'
+            else:
+                set_state = 'disabled'
+            for button in [self.ExploreBackupButton, self.RestoreButton]:
+                button.config(state=set_state)
+            total_size = self.convert_size(self.base_backup_folder)
             self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name",
                 {'game_name': self.selected_game})
             last_backup = self.cursor.fetchone()[0]
             if last_backup != 'Never':
                 time_since = self.readable_time_since(dt.datetime.strptime(last_backup, '%Y/%m/%d %H:%M:%S'))
                 info1 = f'{self.selected_game} was last backed up {time_since}\n'
-                info2 = f'Game Backup Size: {total_size} from {len(os.listdir(base_backup_folder))} backups'
+                info2 = f'Game Backup Size: {total_size} from {len(os.listdir(self.base_backup_folder))} backups'
                 info = info1 + info2
             else:
                 info = f'{self.selected_game} has not been backed up\n'
