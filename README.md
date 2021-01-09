@@ -2,7 +2,7 @@
 
 Tkinter Interface for running through an SQLite Database that allows backing up game saves easily.
 
-![Image of Game Save Manager](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/Screenshot.png)
+![Image of Game Save Manager](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/images\Screenshot.png)
 
 Made in Python 3.8.3
 
@@ -29,3 +29,12 @@ Made in Python 3.8.3
 "disable_resize":1,
 "center_window":1
 ```
+
+## Todo
+
+* Total Games and Total size only updates on program restart.
+* Change location that the current save is backed up to before restoring to current backup location.
+
+## Bugs
+
+* Renaming twice in a row brings up an error.
