@@ -2,7 +2,7 @@
 
 Tkinter Interface for running through an SQLite Database that allows backing up game saves easily.
 
-![Image of Game Save Manager](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/images\Screenshot.png)
+![Image of Game Save Manager](https://github.com/Concrete18/Game-Save-Manager/blob/master/images/Screenshot.png)
 
 Made in Python 3.8.3
 
