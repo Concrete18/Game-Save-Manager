@@ -20,6 +20,10 @@ class Backup:
         '''
         Sets up backup configuration, database and logger.
         '''
+        # sets script directory in case current working directory is different
+        self.script_dir = os.path.dirname(os.path.abspath(__file__))
+        if os.getcwd() != self.script_dir:
+            os.chdir(self.script_dir)
         # settings setup
         with open('settings.json') as json_file:
             data = json.load(json_file)
@@ -42,11 +46,12 @@ class Backup:
         self.database = sqlite3.connect('game_list.db')
         self.cursor = self.database.cursor()
         self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS games (
-        game_name text,
-        save_location text,
-        last_backup text
-        )''')
+            CREATE TABLE IF NOT EXISTS games (
+            game_name text,
+            save_location text,
+            last_backup text
+            )''')
+        self.sorted_list = self.sorted_games()
 
 
     def database_check(self):
@@ -170,7 +175,7 @@ class Backup:
             self.database.commit()
         except FileNotFoundError:
             messagebox.showwarning(title='Game Save Manager', message='Action Failed - File location does not exist.')
-            self.logger.error(f'Failed to Backed up Save for {game_name}. File location does not exist.except')
+            self.logger.error(f'Failed to Backed up Save for {game_name}. File location does not exist.')
         except FileExistsError:
             messagebox.showwarning(title='Game Save Manager', message='Action Failed - Save Already Backed up.')
             self.logger.error(f'Failed to Backed up Save for {game_name}. Save Already Backed up.')
@@ -181,7 +186,7 @@ class Backup:
         Disables window resize and centers window if config enables each.
         '''
         window_name.title('Game Save Manager')
-        window_name.iconbitmap(window_name, 'Save_Icon.ico')
+        window_name.iconbitmap(window_name, 'images\Save_icon.ico')
         if self.disable_resize:  # sets window to not resize if disable_resize is set to 1
             window_name.resizable(width=False, height=False)
         if self.center_window == 1:
@@ -224,7 +229,7 @@ class Backup:
                 if file.name.endswith('.old'):
                     self.save_dic['Undo Last Restore'] = file
         else:
-            messagebox.showwarning(title='Game Save Manager', message='No saves exist for this game.')
+            messagebox.showwarning(title='Game Save Manager', message=f'No backed up saves exist for {self.selected_game}.')
             return
 
 
@@ -306,13 +311,13 @@ class Backup:
             return
         if folder == 'Game Save':  # open game save location in explorer
             if not os.path.isdir(self.selected_game_save):
-                msg = 'Save location no longer exists'
+                msg = f'Save location for {self.selected_game} no longer exists'
                 messagebox.showwarning(title='Game Save Manager', message=msg)
                 return
             subprocess.Popen(f'explorer "{self.selected_game_save}"')
         elif folder == 'Backup':  # open game backup location in explorer
             if not os.path.isdir(self.base_backup_folder):
-                msg = 'Game has not been backed up yet.'
+                msg = f'{self.selected_game} has not been backed up yet.'
                 messagebox.showwarning(title='Game Save Manager', message=msg)
                 return
             subprocess.Popen(f'explorer "{self.base_backup_folder}"')
@@ -351,7 +356,7 @@ class Backup:
         self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
         database_save_location = self.cursor.fetchone()
         if database_save_location != None:
-            msg = "Can't add game to database.\nGame already exists."
+            msg = f"Can't add {self.selected_game} to database.\nGame already exists."
             messagebox.showwarning(title='Game Save Manager', message=msg)
             return
         else:
@@ -364,14 +369,20 @@ class Backup:
                 self.game_listbox.insert(0, game_name)
                 self.logger.info(f'Added {game_name} to database.')
             else:
-                messagebox.showwarning(title='Game Save Manager', message='Save Location does not exist.')
+                messagebox.showwarning(title='Game Save Manager', message=f'Save Location for {self.selected_game} does not exist.')
 
 
     def browse_for_save(self):
         '''
         Opens a file dialog so a save directory can be chosen.
+        It starts in the My Games folder in My Documents if it exists within a limited drive letter search.
         '''
-        save_dir = filedialog.askdirectory(initialdir="C:/", title="Select Save Directory")
+        initialdir = "C:/"
+        for letter in ['C', 'D', 'E', 'F', 'G', 'H']:
+            my_games_dir = f'{letter}:/My Documents/My Games'
+            if os.path.isdir(my_games_dir):
+                initialdir = my_games_dir
+        save_dir = filedialog.askdirectory(initialdir=initialdir, title="Select Save Directory")
         self.GameSaveEntry.delete(0, Tk.END)
         self.GameSaveEntry.insert(0, save_dir)
 
@@ -383,15 +394,15 @@ class Backup:
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
             return
-        msg = 'Are you sure that you want to delete the game?'
-        Delete_Check = messagebox.askyesno(title='Game Save Manager', message=msg)
-        if Delete_Check:
+        msg = f'Are you sure that you want to delete {self.selected_game}?'
+        delete_check = messagebox.askyesno(title='Game Save Manager', message=msg)
+        if delete_check:
             self.cursor.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.selected_game})
             self.database.commit()
             self.game_listbox.delete(self.game_listbox.curselection()[0])
             self.delete_update_entry()
             if os.path.isdir(self.base_backup_folder):
-                msg = 'Do you want to delete the backed up game saves as well?'
+                msg = 'Do you want to delete the backed up saves as well?'
                 response = messagebox.askyesno(title='Game Save Manager', message=msg)
                 if response:
                     os.path.join(self.backup_dest, self.selected_game)
@@ -515,7 +526,7 @@ class Backup:
         Backup_Frame = Tk.Frame(self.main_gui)
         Backup_Frame.grid(columnspan=4, column=0, row=0,  padx=(20, 20), pady=(5, 0))
 
-        info_text = f'Total Games: {len(self.sorted_games())}\nTotal Backup Size: {self.convert_size(self.backup_dest)}'
+        info_text = f'Total Games: {len(self.sorted_list)}\nTotal Backup Size: {self.convert_size(self.backup_dest)}'
         Title = Tk.Label(Backup_Frame, text=info_text, font=(BoldBaseFont, 10))
         Title.grid(columnspan=4, row=0, column=1)
 
@@ -555,8 +566,7 @@ class Backup:
         self.game_listbox.grid(columnspan=3, row=0, column=0)
         self.scrollbar.config(command=self.game_listbox.yview)
 
-        sorted_list = self.sorted_games()
-        for item in sorted_list:
+        for item in self.sorted_list:
             self.game_listbox.insert(Tk.END, item)
 
         # Main Row 3
