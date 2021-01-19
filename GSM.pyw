@@ -28,9 +28,9 @@ class Backup:
         Tk.Tk().withdraw() # hides blank tkinter window that pop up otherwise
         with open('settings.json') as json_file:
             data = json.load(json_file)
+        # backup destination setup
         self.backup_dest = data['settings']['backup_dest']
         if not os.path.exists(self.backup_dest):
-            # TODO Add defaults for missing backup_dest
             msg = 'Do you want to choose a save backup directory instead of using a default within the program folder?'
             response = messagebox.askyesno(title='Game Save Manager', message=msg)
             if response:
@@ -367,6 +367,10 @@ class Backup:
         '''
         game_name = self.GameNameEntry.get()
         save_location = self.GameSaveEntry.get().replace('/', '\\')
+        if len(self.get_selected_game_filename(game_name)) == 0:
+            msg = f'Game name has no legal characters for a filename'
+            messagebox.showwarning(title='Game Save Manager', message=msg)
+            return
         self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
         database_save_location = self.cursor.fetchone()
         if database_save_location != None:
@@ -383,7 +387,8 @@ class Backup:
                 self.game_listbox.insert(0, game_name)
                 self.logger.info(f'Added {game_name} to database.')
             else:
-                messagebox.showwarning(title='Game Save Manager', message=f'Save Location for {self.selected_game} does not exist.')
+                msg = f'Save Location for {self.selected_game} does not exist.'
+                messagebox.showwarning(title='Game Save Manager', message=msg)
 
 
     def browse_for_save(self):
@@ -496,14 +501,15 @@ class Backup:
         self.GameSaveEntry.delete(0, Tk.END)
         # updates entry boxes to show currently selected game in listbox
         if Update == 1:
-            self.selected_game = self.game_listbox.get(self.game_listbox.curselection())  # script wide variable for selected game
+            # script wide variables for selected game
+            self.selected_game = self.game_listbox.get(self.game_listbox.curselection())
             self.game_filename = self.get_selected_game_filename()
             self.selected_game_save = self.get_selected_game_save()
             self.GameNameEntry.insert(0, self.selected_game)
             self.GameSaveEntry.insert(0, self.selected_game_save)
             self.base_backup_folder = os.path.join(self.backup_dest, self.game_filename)
             # enables all buttons to be pressed once a selection is made
-            for button in [self.BackupButton, self.ExploreSaveButton]:
+            for button in [self.BackupButton, self.ExploreSaveButton]: #  TODO only works with 2 or more games
                 button.config(state='normal')
             if os.path.isdir(self.base_backup_folder):
                 set_state = 'normal'
