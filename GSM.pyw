@@ -25,11 +25,22 @@ class Backup:
         if os.getcwd() != self.script_dir:
             os.chdir(self.script_dir)
         # settings setup
+        Tk.Tk().withdraw() # hides blank tkinter window that pop up otherwise
         with open('settings.json') as json_file:
             data = json.load(json_file)
         self.backup_dest = data['settings']['backup_dest']
         if not os.path.exists(self.backup_dest):
-            messagebox.showwarning(title='Game Save Manager', message='Backup destination does not exist.')
+            # TODO Add defaults for missing backup_dest
+            response = input("Do you want to choose a backup dir or use the default within the program folder?")
+            if response ['yes', 'y', 'yeah']:  # update backup directory
+                self.backup_dest = filedialog.askdirectory(initialdir="C:/", title="Select Backup Directory")
+                if os.path.exists(self.backup_dest):
+                    data['settings']['backup_dest'] = self.backup_dest
+                    json_object = json.dumps(data, indent = 4)  # Serializing json
+                    with open('settings.json', "w") as outfile:  # Writing to sample.json
+                        outfile.write(json_object)
+                else:
+                    messagebox.showwarning(title='Game Save Manager', message='Path does not exist.')
         self.backup_redundancy = data['settings']['backup_redundancy']
         if type(self.backup_redundancy) is not int or self.backup_redundancy > 4:
             self.backup_redundancy = 4
