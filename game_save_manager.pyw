@@ -11,6 +11,7 @@ import json
 import math
 import os
 import re
+import time
 
 
 class Backup:
@@ -322,18 +323,15 @@ class Backup:
         '''
         if self.selected_game == None:
             messagebox.showwarning(title='Game Save Manager', message='No game is selected yet.')
-            return
-        if folder == 'Game Save':  # open game save location in explorer
+        elif folder == 'Game Save':  # open game save location in explorer
             if not os.path.isdir(self.selected_game_save):
                 msg = f'Save location for {self.selected_game} no longer exists'
                 messagebox.showwarning(title='Game Save Manager', message=msg)
-                return
             subprocess.Popen(f'explorer "{self.selected_game_save}"')
         elif folder == 'Backup':  # open game backup location in explorer
             if not os.path.isdir(self.base_backup_folder):
                 msg = f'{self.selected_game} has not been backed up yet.'
                 messagebox.showwarning(title='Game Save Manager', message=msg)
-                return
             subprocess.Popen(f'explorer "{self.base_backup_folder}"')
 
 
@@ -376,7 +374,6 @@ class Backup:
         if database_save_location != None:
             msg = f"Can't add {self.selected_game} to database.\nGame already exists."
             messagebox.showwarning(title='Game Save Manager', message=msg)
-            return
         else:
             if os.path.isdir(save_location):
                 self.GameSaveEntry.delete(0, Tk.END)
@@ -532,11 +529,20 @@ class Backup:
             self.BackupButton.focus_set()
 
 
+    def close_db(self):
+        '''
+        Closes the database and quits the program when closing the interface.
+        '''
+        self.database.close
+        quit()
+
+
     def run_gui(self):
         # Defaults
         BoldBaseFont = "Arial Bold"
 
         self.main_gui = Tk.Tk()
+        self.main_gui.protocol("WM_DELETE_WINDOW", self.close_db)
         window_width = 670
         window_height = 550
         self.tk_window_options(self.main_gui, window_width, window_height)
@@ -633,10 +639,7 @@ class Backup:
         ClearButton.grid(row=2, column=3, padx=button_padx, pady=button_pady)
 
         self.database_check()
-
         self.main_gui.mainloop()
-
-        self.database.close()
 
 if __name__ == '__main__':
     App = Backup()
