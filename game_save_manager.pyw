@@ -5,51 +5,44 @@ import datetime as dt
 import tkinter as Tk
 import logging as lg
 import subprocess
+import getpass
 import sqlite3
 import shutil
 import json
 import math
 import os
 import re
-import time
 
 
 class Backup:
 
+    # sets script directory in case current working directory is different
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(script_dir)
 
     def __init__(self):
         '''
         Sets up backup configuration, database and logger.
         '''
-        # sets script directory in case current working directory is different
-        self.script_dir = os.path.dirname(os.path.abspath(__file__))
-        if os.getcwd() != self.script_dir:
-            os.chdir(self.script_dir)
         # settings setup
-        Tk.Tk().withdraw() # hides blank tkinter window that pop up otherwise
         with open('settings.json') as json_file:
-            data = json.load(json_file)
+            self.data = json.load(json_file)
         # backup destination setup
-        self.backup_dest = data['settings']['backup_dest']
-        if not os.path.exists(self.backup_dest):
-            msg = 'Do you want to choose a save backup directory instead of using a default within the program folder?'
-            response = messagebox.askyesno(title='Game Save Manager', message=msg)
-            if response:
-                self.backup_dest = filedialog.askdirectory(initialdir="C:/", title="Select Save Backup Directory")
-                if os.path.exists(self.backup_dest):
-                    data['settings']['backup_dest'] = self.backup_dest
-                    json_object = json.dumps(data, indent = 4)  # Serializing json
-                    with open('settings.json', "w") as outfile:  # Writing to sample.json
-                        outfile.write(json_object)
-                else:
-                    messagebox.showwarning(title='Game Save Manager', message='Path does not exist.')
-            else:
-                os.mkdir(self.backup_dest)
-        self.backup_redundancy = data['settings']['backup_redundancy']
+        self.backup_dest = self.data['settings']['backup_dest']
+        self.backup_dest_check()
+
+        self.backup_redundancy = self.data['settings']['backup_redundancy']
         if type(self.backup_redundancy) is not int or self.backup_redundancy > 4:
             self.backup_redundancy = 4
-        self.disable_resize = data['settings']['disable_resize']
-        self.center_window = data['settings']['center_window']
+        self.disable_resize = self.data['settings']['disable_resize']
+        self.center_window = self.data['settings']['center_window']
+
+        # sets up search directories
+        self.username = getpass.getuser()
+        self.initialdir = "C:/"
+        self.search_directories = []
+        self.find_search_directories()
+
         # logger setup
         log_formatter = lg.Formatter('%(asctime)s %(levelname)s %(message)s', datefmt='%m-%d-%Y %I:%M:%S %p')
         self.logger = lg.getLogger(__name__)
@@ -57,6 +50,7 @@ class Backup:
         my_handler = RotatingFileHandler('Game_Backup.log', maxBytes=5*1024*1024, backupCount=2)
         my_handler.setFormatter(log_formatter)
         self.logger.addHandler(my_handler)
+
         # database creation
         self.database = sqlite3.connect('game_list.db')
         self.cursor = self.database.cursor()
@@ -67,6 +61,26 @@ class Backup:
             last_backup text
             )''')
         self.sorted_list = self.sorted_games()
+
+
+    def backup_dest_check(self):
+        '''
+        Checks if backup destination in settings exists and asks if you want to choose one if it does not.
+        '''
+        if not os.path.exists(self.backup_dest):
+            msg = 'Do you want to choose a save backup directory instead of using a default within the program folder?'
+            response = messagebox.askyesno(title='Game Save Manager', message=msg)
+            if response:
+                self.backup_dest = filedialog.askdirectory(initialdir="C:/", title="Select Save Backup Directory")
+                if os.path.exists(self.backup_dest):
+                    self.data['settings']['backup_dest'] = self.backup_dest
+                    json_object = json.dumps(self.data, indent = 4)  # Serializing json
+                    with open('settings.json', "w") as outfile:  # Writing to sample.json
+                        outfile.write(json_object)
+                else:
+                    messagebox.showwarning(title='Game Save Manager', message='Path does not exist.')
+            else:
+                os.mkdir(self.backup_dest)
 
 
     def database_check(self):
@@ -388,17 +402,74 @@ class Backup:
                 messagebox.showwarning(title='Game Save Manager', message=msg)
 
 
-    def browse_for_save(self):
+    def find_search_directories(self):
+        '''
+        Finds the directories to use when searching for games.
+        '''
+        def callback():
+            dirs_to_check = [
+                rf":/Users/{self.username}/Saved Games",
+                rf":/Users/{self.username}/My Documents/My Games",
+                rf":/Users/{self.username}/AppData",
+                r":/Program Files (x86)/Steam/steamapps/common"]
+            for dir in dirs_to_check:
+                for letter in ['C', 'D', 'E', 'F', 'G', 'H', 'I']:
+                    current_dir = letter + dir
+                    if os.path.isdir(current_dir):
+                        self.search_directories.append(current_dir)
+            for saved_dir in self.data['extra_save_directories']:
+                self.search_directories.append(saved_dir)
+        SearchThread = Thread(target=callback)
+        SearchThread.start()
+
+
+    def smart_browse(self):
+        '''
+        Searches for a starting point for the save location browser.
+        '''
+        # removes illegal file characters
+        game_name = self.GameNameEntry.get()
+        game_name.replace('&', 'and')
+        char_removal = re.compile('[^a-zA-Z0-9\s]')
+        string = char_removal.sub('', game_name)
+        game_name = re.sub("\s\s+" , " ", string).strip()[0:50]
+        # checks if no game name is in entry box.
+        if len(game_name) == 0:
+            messagebox.showwarning(
+                title='Game Save Manager',
+                message='Smart Browse requires the a game name to be entered.')
+            return
+        # looks for folders with the games name
+        def callback():
+            possible_path = self.initialdir
+            for directory in self.search_directories:
+                print(directory)
+                for root, dirs, files in os.walk(directory):
+                    for dir in dirs:
+                        if game_name.lower() in dir.lower():
+                            for found_root, found_dirs, found_files in os.walk(directory):
+                                for found_file in found_files:
+                                    # print(found_file)
+                                    if 'save' in found_file.lower():
+                                        possible_path = os.path.join(root, game_name)
+                                        # TODO Break out of all loops
+            save_dir = filedialog.askdirectory(initialdir=possible_path, title="Select Save Directory")
+            self.GameSaveEntry.delete(0, Tk.END)
+            if save_dir != None:
+                self.GameSaveEntry.insert(0, save_dir)
+        SearchThread = Thread(target=callback)
+        SearchThread.start()
+
+
+    def browse(self):
         '''
         Opens a file dialog so a save directory can be chosen.
         It starts in the My Games folder in My Documents if it exists within a limited drive letter search.
         '''
-        initialdir = "C:/"
-        for letter in ['C', 'D', 'E', 'F', 'G', 'H']:
-            my_games_dir = f'{letter}:/My Documents/My Games'
-            if os.path.isdir(my_games_dir):
-                initialdir = my_games_dir
-        save_dir = filedialog.askdirectory(initialdir=initialdir, title="Select Save Directory")
+        game_name = self.GameNameEntry.get()
+        if game_name != None:
+            self.initialdir = self.look_for_save_location(game_name)
+        save_dir = filedialog.askdirectory(initialdir=self.initialdir, title="Select Save Directory")
         self.GameSaveEntry.delete(0, Tk.END)
         self.GameSaveEntry.insert(0, save_dir)
 
@@ -534,7 +605,8 @@ class Backup:
         Closes the database and quits the program when closing the interface.
         '''
         self.database.close
-        quit()
+        # FIXME fails to close if filedialog is left open
+        exit()
 
 
     def run_gui(self):
@@ -612,8 +684,12 @@ class Backup:
         self.GameSaveEntry = Tk.ttk.Entry(Add_Game_Frame, width=entry_width, exportselection=0)
         self.GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5, padx=10)
 
+        SmartBrowseButton = Tk.ttk.Button(Add_Game_Frame, text='Smart Browse',
+            command=self.smart_browse)
+        SmartBrowseButton.grid(row=0, column=4, padx=10)
+
         BrowseButton = Tk.ttk.Button(Add_Game_Frame, text='Browse',
-            command=self.browse_for_save)
+            command=self.browse)
         BrowseButton.grid(row=1, column=4, padx=10)
 
         # Button Frame Row 2
