@@ -443,9 +443,11 @@ class Backup:
         def callback():
             possible_path = self.initialdir
             for directory in self.search_directories:
-                print(directory)
+                # print(directory)
                 for root, dirs, files in os.walk(directory):
                     for dir in dirs:
+                        print(dir)
+                        # FIXME BONEWORKS cant be found
                         if game_name.lower() in dir.lower():
                             for found_root, found_dirs, found_files in os.walk(directory):
                                 for found_file in found_files:
@@ -466,10 +468,11 @@ class Backup:
         Opens a file dialog so a save directory can be chosen.
         It starts in the My Games folder in My Documents if it exists within a limited drive letter search.
         '''
-        game_name = self.GameNameEntry.get()
-        if game_name != None:
-            self.initialdir = self.look_for_save_location(game_name)
-        save_dir = filedialog.askdirectory(initialdir=self.initialdir, title="Select Save Directory")
+        starting_point = self.initialdir
+        current_save_location = self.GameSaveEntry.get()
+        if os.path.exists(current_save_location):
+            starting_point = current_save_location
+        save_dir = filedialog.askdirectory(initialdir=starting_point, title="Select Save Directory")
         self.GameSaveEntry.delete(0, Tk.END)
         self.GameSaveEntry.insert(0, save_dir)
 
@@ -684,7 +687,7 @@ class Backup:
         self.GameSaveEntry = Tk.ttk.Entry(Add_Game_Frame, width=entry_width, exportselection=0)
         self.GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5, padx=10)
 
-        SmartBrowseButton = Tk.ttk.Button(Add_Game_Frame, text='Smart Browse',
+        SmartBrowseButton = Tk.ttk.Button(Add_Game_Frame, text='S-Browse',
             command=self.smart_browse)
         SmartBrowseButton.grid(row=0, column=4, padx=10)
 
