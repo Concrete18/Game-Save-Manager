@@ -12,6 +12,7 @@ Made in Python 3.8.3
 * Easily add, delete and update games in the backup database using the interface.
 * Selecting games shows useful info such as number of saves, size they all take combined and time since last backup.
 * Fully works with python built in modules only.
+* Smart Browse
 
 ## Python Techniques Used
 
@@ -38,3 +39,4 @@ Made in Python 3.8.3
 ## Bugs
 
 * Renaming twice in a row brings up an error.
+* leaving the file dialog open prevents closing interface.
