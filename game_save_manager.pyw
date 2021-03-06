@@ -9,9 +9,11 @@ import getpass
 import sqlite3
 import shutil
 import json
+import time
 import math
 import os
 import re
+from tkinter.constants import CENTER
 
 
 class Backup:
@@ -210,7 +212,7 @@ class Backup:
             self.logger.error(f'Failed to Backed up Save for {game_name}. Save Already Backed up.')
 
 
-    def tk_window_options(self, window_name, window_width, window_height):
+    def tk_window_options(self, window_name, window_width, window_height, define_size=0):
         '''
         Disables window resize and centers window if config enables each.
         '''
@@ -221,7 +223,10 @@ class Backup:
         if self.center_window == 1:
             width_pos = int((window_name.winfo_screenwidth()-window_width)/2)
             height_pos = int((window_name.winfo_screenheight()-window_height)/2)
-            window_name.geometry(f'+{width_pos}+{height_pos}')
+            if define_size:
+                window_name.geometry(f'{window_width}x{window_height}+{width_pos}+{height_pos}')
+            else:
+                window_name.geometry(f'+{width_pos}+{height_pos}')
 
 
     def backup_shortcut(self, event):
@@ -409,13 +414,16 @@ class Backup:
         def callback():
             dirs_to_check = [
                 rf":/Users/{self.username}/Saved Games",
-                rf":/Users/{self.username}/My Documents/My Games",
+                rf":/Users/{self.username}/My Documents",
+                r"D:/My Documents",
                 rf":/Users/{self.username}/AppData",
                 r":/Program Files (x86)/Steam/steamapps/common"]
             for dir in dirs_to_check:
                 for letter in ['C', 'D', 'E', 'F', 'G', 'H', 'I']:
                     current_dir = letter + dir
                     if os.path.isdir(current_dir):
+                        if 'my documents' in current_dir.lower():
+                            self.initialdir = current_dir
                         self.search_directories.append(current_dir)
             for saved_dir in self.data['extra_save_directories']:
                 self.search_directories.append(saved_dir)
@@ -423,10 +431,27 @@ class Backup:
         SearchThread.start()
 
 
+    def open_smart_browse_window(self):
+        self.smart_browse_win = Tk.Toplevel(self.main_gui)
+        self.tk_window_options(self.smart_browse_win, 460, 130, define_size=1)
+        text = '''
+        Smart Browse is currently looking for the game save directory.
+        If nothing is found then your "My Documents" folder will be used.
+        It can take anywhere from 5 to 30 seconds.
+        '''
+        info_label = Tk.Label(self.smart_browse_win, text=text, font=("Arial Bold", 10))
+        info_label.grid(row=0, column=0, padx=(0, 5))
+
+        okbutton = ttk.Button(self.smart_browse_win, text='OK', command=self.smart_browse_win.destroy,
+            width=23)
+        okbutton.grid(row=1, column=0)
+
+
     def smart_browse(self):
         '''
         Searches for a starting point for the save location browser.
         '''
+        overall_start = time.perf_counter() # start time for checking elaspsed runtime
         # removes illegal file characters
         game_name = self.GameNameEntry.get()
         game_name.replace('&', 'and')
@@ -440,26 +465,30 @@ class Backup:
                 message='Smart Browse requires the a game name to be entered.')
             return
         # looks for folders with the games name
+        # TODO open toplevel window and autoclose when callback finishes
+        self.open_smart_browse_window()
         def callback():
             possible_path = self.initialdir
             for directory in self.search_directories:
-                # print(directory)
                 for root, dirs, files in os.walk(directory):
                     for dir in dirs:
-                        print(dir)
                         # FIXME BONEWORKS cant be found
+                        # TODO switch to regex or something that allows checking for matches where spaces do not matter
                         if game_name.lower() in dir.lower():
                             for found_root, found_dirs, found_files in os.walk(directory):
                                 for found_file in found_files:
-                                    # print(found_file)
                                     if 'save' in found_file.lower():
                                         possible_path = os.path.join(root, game_name)
                                         # TODO Break out of all loops
+            self.smart_browse_win.destroy()
+            overall_finish = time.perf_counter() # stop time for checking elaspsed runtime
+            elapsed_time = round(overall_finish-overall_start, 2)
+            print(f'Took {elapsed_time} seconds to find {game_name}.')
             save_dir = filedialog.askdirectory(initialdir=possible_path, title="Select Save Directory")
             self.GameSaveEntry.delete(0, Tk.END)
             if save_dir != None:
                 self.GameSaveEntry.insert(0, save_dir)
-        SearchThread = Thread(target=callback)
+        SearchThread = Thread(target=callback, daemon=True)
         SearchThread.start()
 
 
