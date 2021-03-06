@@ -13,7 +13,6 @@ import time
 import math
 import os
 import re
-from tkinter.constants import CENTER
 
 
 class Backup:
@@ -415,7 +414,7 @@ class Backup:
             dirs_to_check = [
                 rf":/Users/{self.username}/Saved Games",
                 rf":/Users/{self.username}/My Documents",
-                r"D:/My Documents",
+                r":/My Documents",
                 rf":/Users/{self.username}/AppData",
                 r":/Program Files (x86)/Steam/steamapps/common"]
             for dir in dirs_to_check:
@@ -433,14 +432,14 @@ class Backup:
 
     def open_smart_browse_window(self):
         self.smart_browse_win = Tk.Toplevel(self.main_gui)
-        self.tk_window_options(self.smart_browse_win, 460, 130, define_size=1)
+        self.tk_window_options(self.smart_browse_win, 460, 120, define_size=1)
         text = '''
-        Smart Browse is currently looking for the game save directory.
-        If nothing is found then your "My Documents" folder will be used.
-        It can take anywhere from 5 to 30 seconds.
+        Looking for the game save directory.
+        If nothing is found then your "My Documents" will be used.
+        It can take anywhere from 2 to 25 seconds.
         '''
         info_label = Tk.Label(self.smart_browse_win, text=text, font=("Arial Bold", 10))
-        info_label.grid(row=0, column=0, padx=(0, 5))
+        info_label.grid(row=0, column=0)
 
         okbutton = ttk.Button(self.smart_browse_win, text='OK', command=self.smart_browse_win.destroy,
             width=23)
@@ -465,17 +464,17 @@ class Backup:
                 message='Smart Browse requires the a game name to be entered.')
             return
         # looks for folders with the games name
-        # TODO open toplevel window and autoclose when callback finishes
         self.open_smart_browse_window()
         def callback():
             possible_path = self.initialdir
             for directory in self.search_directories:
-                for root, dirs, files in os.walk(directory):
+                for root, dirs, files in os.walk(directory, topdown=False):
                     for dir in dirs:
                         # FIXME BONEWORKS cant be found
                         # TODO switch to regex or something that allows checking for matches where spaces do not matter
                         if game_name.lower() in dir.lower():
-                            for found_root, found_dirs, found_files in os.walk(directory):
+                            # FIXME hades has wrong dir found
+                            for found_root, found_dirs, found_files in os.walk(directory, topdown=False):
                                 for found_file in found_files:
                                     if 'save' in found_file.lower():
                                         possible_path = os.path.join(root, game_name)
