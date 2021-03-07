@@ -406,6 +406,17 @@ class Backup:
                 messagebox.showwarning(title='Game Save Manager', message=msg)
 
 
+    @staticmethod
+    def find_letters():
+        letter_output = os.popen("fsutil fsinfo drives").readlines()[1]
+        words = re.findall('\S+', letter_output)[1:]
+        result = []
+        for letters in words:
+            result.append(letters[0])
+        print(result)
+        return result
+
+
     def find_search_directories(self):
         '''
         Finds the directories to use when searching for games.
@@ -413,19 +424,22 @@ class Backup:
         def callback():
             dirs_to_check = [
                 rf":/Users/{self.username}/Saved Games",
-                rf":/Users/{self.username}/My Documents",
-                r":/My Documents",
+                rf":/Users/{self.username}/Documents",
                 rf":/Users/{self.username}/AppData",
-                r":/Program Files (x86)/Steam/steamapps/common"]
+                r":/Program Files (x86)/Steam/steamapps/common"
+                ]
+            drive_letters = self.find_letters()
             for dir in dirs_to_check:
-                for letter in ['C', 'D', 'E', 'F', 'G', 'H', 'I']:
+                for letter in drive_letters:
                     current_dir = letter + dir
                     if os.path.isdir(current_dir):
-                        if 'my documents' in current_dir.lower():
+                        if 'documents' in current_dir.lower():
                             self.initialdir = current_dir
                         self.search_directories.append(current_dir)
             for saved_dir in self.data['extra_save_directories']:
+                # insert so it is before the steam common
                 self.search_directories.append(saved_dir)
+            print(self.search_directories)
         SearchThread = Thread(target=callback)
         SearchThread.start()
 
@@ -444,6 +458,13 @@ class Backup:
         okbutton = ttk.Button(self.smart_browse_win, text='OK', command=self.smart_browse_win.destroy,
             width=23)
         okbutton.grid(row=1, column=0)
+
+
+    @staticmethod
+    def print_nonascii(string):
+        encoded_string = string.encode("ascii", "ignore")
+        decode_string = encoded_string.decode()
+        print(decode_string)
 
 
     def smart_browse(self):
@@ -466,24 +487,67 @@ class Backup:
         # looks for folders with the games name
         self.open_smart_browse_window()
         def callback():
+            best_score = 0
+            print(f'\nGame: {game_name}')
+            current_score = 0
             possible_path = self.initialdir
+            possible_root = ''
+            possible_dir = ''
             for directory in self.search_directories:
+                print(f'Current Search Directory: {directory}')
+                current_score = 0
                 for root, dirs, files in os.walk(directory, topdown=False):
+                    # directory scoring
                     for dir in dirs:
-                        # FIXME BONEWORKS cant be found
-                        # TODO switch to regex or something that allows checking for matches where spaces do not matter
-                        if game_name.lower() in dir.lower():
-                            # FIXME hades has wrong dir found
+                        # + scorers
+                        if 'screenshot' in dir.lower():
+                            current_score += 1
+                        # - scorers
+                        if 'nvidia' in dir.lower():
+                            current_score -= 50
+                        if game_name.lower().replace(' ', '') in dir.lower().replace(' ', ''):
+                            print('\nName match')
+                            self.print_nonascii(os.path.join(root, dir))
+                            possible_root = root
+                            possible_dir = dir
                             for found_root, found_dirs, found_files in os.walk(directory, topdown=False):
+                                # file scoring
                                 for found_file in found_files:
+                                    # + scorers
                                     if 'save' in found_file.lower():
-                                        possible_path = os.path.join(root, game_name)
-                                        # TODO Break out of all loops
+                                        current_score += 1
+                                    if 'autosave' in found_file.lower():
+                                        current_score += 50
+                                    if 'saveslot' in found_file.lower():
+                                        current_score += 10
+                                    if 'config' in found_file.lower():
+                                        current_score += 1
+                                    if '.data' in found_file.lower():
+                                        current_score += 1
+                                    if 'profile' in found_file.lower():
+                                        current_score += 1
+                                    if 'sav.' in found_file.lower():
+                                        current_score += 1
+                                    # - scorers
+                                    if 'nvidia' in found_file.lower():
+                                        current_score -= 10
+                                    if found_file.endswith('.exe'):
+                                        current_score -= 50
+                # update based on high score
+                if current_score > best_score:
+                    print(f'\n{os.path.join(possible_root, possible_dir)}\nScore {best_score}')
+                    best_score = current_score
+                    possible_path = os.path.join(possible_root, possible_dir)
             self.smart_browse_win.destroy()
             overall_finish = time.perf_counter() # stop time for checking elaspsed runtime
             elapsed_time = round(overall_finish-overall_start, 2)
-            print(f'Took {elapsed_time} seconds to find {game_name}.')
-            save_dir = filedialog.askdirectory(initialdir=possible_path, title="Select Save Directory")
+            print(f'\nTook {elapsed_time} seconds to find {game_name}.')
+            print('Path Used', os.path.abspath(possible_path))
+            print(f'Path Score: {best_score}')
+            if possible_path == self.initialdir:
+                print('Nothing Found')
+                return
+            save_dir = filedialog.askdirectory(initialdir=os.path.abspath(possible_path), title="Select Save Directory")
             self.GameSaveEntry.delete(0, Tk.END)
             if save_dir != None:
                 self.GameSaveEntry.insert(0, save_dir)
