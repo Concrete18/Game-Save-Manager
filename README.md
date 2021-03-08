@@ -12,7 +12,7 @@ Made in Python 3.8.3
 * Easily add, delete and update games in the backup database using the interface.
 * Selecting games shows useful info such as number of saves, size they all take combined and time since last backup.
 * Fully works with python built in modules only.
-* Smart Browse
+* Smart Browse will use a game name to search for the best starting point for selecting the games save location.
 
 ## Python Techniques Used
 
@@ -25,10 +25,17 @@ Made in Python 3.8.3
 ## Config
 
 ```json
-"backup_dest":"Save Backup",
-"backup_redundancy":3,
-"disable_resize":1,
-"center_window":1
+{
+    "settings": {
+        "backup_dest": "Save Backup",
+        "backup_redundancy": 3,
+        "disable_resize": 1,
+        "center_window": 1
+    },
+    "extra_save_directories":[
+        "D:/My Documents"
+    ]
+}
 ```
 
 ## Todo
@@ -40,3 +47,4 @@ Made in Python 3.8.3
 
 * Renaming twice in a row brings up an error.
 * leaving the file dialog open prevents closing interface.
+* Wrong error messagebox if you clear the entry boxes and then click add game.
