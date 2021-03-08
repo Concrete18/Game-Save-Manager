@@ -450,7 +450,7 @@ class Backup:
         text = '''
         Looking for the game save directory.
         If nothing is found then your "My Documents" will be used.
-        It can take anywhere from 2 to 25 seconds.
+        It can takes and average of 6 seconds.
         '''
         info_label = Tk.Label(self.smart_browse_win, text=text, font=("Arial Bold", 10))
         info_label.grid(row=0, column=0)
@@ -485,38 +485,30 @@ class Backup:
                 message='Smart Browse requires the a game name to be entered.')
             return
         # looks for folders with the games name
+        topdown = False
         self.open_smart_browse_window()
         def callback():
             best_score = 0
             print(f'\nGame: {game_name}')
             current_score = 0
-            possible_path = self.initialdir
-            possible_root = ''
+            best_dir = self.initialdir
             possible_dir = ''
             for directory in self.search_directories:
-                print(f'Current Search Directory: {directory}')
-                current_score = 0
-                for root, dirs, files in os.walk(directory, topdown=False):
-                    # directory scoring
+                print(f'\nCurrent Search Directory: {directory}\n')
+                for root, dirs, files in os.walk(directory, topdown=topdown):
                     for dir in dirs:
-                        # + scorers
-                        if 'screenshot' in dir.lower():
-                            current_score += 1
-                        # - scorers
-                        if 'nvidia' in dir.lower():
-                            current_score -= 50
                         if game_name.lower().replace(' ', '') in dir.lower().replace(' ', ''):
-                            print('\nName match')
-                            self.print_nonascii(os.path.join(root, dir))
-                            possible_root = root
-                            possible_dir = dir
-                            for found_root, found_dirs, found_files in os.walk(directory, topdown=False):
-                                # file scoring
+                            possible_dir = os.path.join(root, dir)
+                            print(f'\n{possible_dir}')
+                            for found_root, found_dirs, found_files in os.walk(possible_dir, topdown=topdown):
                                 for found_file in found_files:
+                                    # file scoring
                                     # + scorers
                                     if 'save' in found_file.lower():
                                         current_score += 1
                                     if 'autosave' in found_file.lower():
+                                        current_score += 50
+                                    if 'quicksave' in found_file.lower():
                                         current_score += 50
                                     if 'saveslot' in found_file.lower():
                                         current_score += 10
@@ -527,27 +519,36 @@ class Backup:
                                     if 'profile' in found_file.lower():
                                         current_score += 1
                                     if 'sav.' in found_file.lower():
+                                        current_score += 50
+                                    if '.sav' in found_file.lower():
+                                        current_score += 50
+                                    if 'screenshot' in dir.lower():
                                         current_score += 1
                                     # - scorers
                                     if 'nvidia' in found_file.lower():
-                                        current_score -= 10
+                                        current_score -= 50
+                                    # if 'nvidia' in found_dirs.lower():
+                                    #     print('Found nvidia')
+                                    #     current_score -= 50
                                     if found_file.endswith('.exe'):
                                         current_score -= 50
+                            print(f'Score {current_score}')
+                            break
                 # update based on high score
                 if current_score > best_score:
-                    print(f'\n{os.path.join(possible_root, possible_dir)}\nScore {best_score}')
                     best_score = current_score
-                    possible_path = os.path.join(possible_root, possible_dir)
+                    best_dir = possible_dir
+                current_score = 0
             self.smart_browse_win.destroy()
             overall_finish = time.perf_counter() # stop time for checking elaspsed runtime
             elapsed_time = round(overall_finish-overall_start, 2)
             print(f'\nTook {elapsed_time} seconds to find {game_name}.')
-            print('Path Used', os.path.abspath(possible_path))
+            print('Path Used', os.path.abspath(best_dir))
             print(f'Path Score: {best_score}')
-            if possible_path == self.initialdir:
+            if best_dir == self.initialdir:
                 print('Nothing Found')
                 return
-            save_dir = filedialog.askdirectory(initialdir=os.path.abspath(possible_path), title="Select Save Directory")
+            save_dir = filedialog.askdirectory(initialdir=os.path.abspath(best_dir), title="Select Save Directory")
             self.GameSaveEntry.delete(0, Tk.END)
             if save_dir != None:
                 self.GameSaveEntry.insert(0, save_dir)
