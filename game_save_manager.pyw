@@ -1,5 +1,7 @@
 from logging.handlers import RotatingFileHandler
 from tkinter import ttk, filedialog, messagebox
+from tkinter.constants import CENTER
+from tkinter.ttk import Progressbar
 from threading import Thread
 import datetime as dt
 import tkinter as Tk
@@ -422,10 +424,11 @@ class Backup:
         Finds the directories to use when searching for games.
         '''
         def callback():
+            start = time.perf_counter()
             dirs_to_check = [
+                rf":/Users/{self.username}/AppData",
                 rf":/Users/{self.username}/Saved Games",
                 rf":/Users/{self.username}/Documents",
-                rf":/Users/{self.username}/AppData",
                 r":/Program Files (x86)/Steam/steamapps/common"
                 ]
             drive_letters = self.find_letters()
@@ -436,35 +439,44 @@ class Backup:
                         if 'documents' in current_dir.lower():
                             self.initialdir = current_dir
                         self.search_directories.append(current_dir)
-            for saved_dir in self.data['extra_save_directories']:
-                # insert so it is before the steam common
-                self.search_directories.append(saved_dir)
+            for custom_saved_dir in self.data['custom_save_directories']:
+                self.search_directories.append(custom_saved_dir)
             print(self.search_directories)
+            finish = time.perf_counter() # stop time for checking elaspsed runtime
+            elapsed_time = round(finish-start, 2)
+            print(f'find_search_directories: {elapsed_time} seconds')
         SearchThread = Thread(target=callback)
         SearchThread.start()
 
 
     def open_smart_browse_window(self):
-        self.smart_browse_win = Tk.Toplevel(self.main_gui)
-        self.tk_window_options(self.smart_browse_win, 460, 120, define_size=1)
-        text = '''
-        Looking for the game save directory.
-        If nothing is found then your "My Documents" will be used.
-        It can takes and average of 6 seconds.
         '''
-        info_label = Tk.Label(self.smart_browse_win, text=text, font=("Arial Bold", 10))
-        info_label.grid(row=0, column=0)
+        Smart Browse Progress window
+        '''
+        self.smart_browse_win = Tk.Toplevel(self.main_gui)
+        self.tk_window_options(self.smart_browse_win, 340, 130, define_size=0)
 
-        okbutton = ttk.Button(self.smart_browse_win, text='OK', command=self.smart_browse_win.destroy,
-            width=23)
-        okbutton.grid(row=1, column=0)
+        text = 'Looking for the game save directory.\n'
+        self.info_label = Tk.Label(self.smart_browse_win, text=text, font=("Arial Bold", 10))
+        self.info_label.grid(row=0, column=0, pady=(7))
+
+        self.progress = Progressbar(self.smart_browse_win, orient=Tk.HORIZONTAL, length=350, mode='determinate')
+        self.progress.grid(row=1, column=0, pady=(5,10), padx=20)
+        # self.progress['maximum'] = 200
+
+        self.s_browse = ttk.Button(self.smart_browse_win, text='Browse', command=lambda: self.browse(self.best_dir), width=23)
+        self.s_browse.grid(row=2, column=0, pady=(5,10))
+        self.s_browse.config(state='disabled')
 
 
     @staticmethod
-    def print_nonascii(string):
+    def nonascii(string):
+        '''
+        Removes ASCII characters.
+        '''
         encoded_string = string.encode("ascii", "ignore")
         decode_string = encoded_string.decode()
-        print(decode_string)
+        return decode_string
 
 
     def smart_browse(self):
@@ -491,80 +503,90 @@ class Backup:
             best_score = 0
             print(f'\nGame: {game_name}')
             current_score = 0
-            best_dir = self.initialdir
+            self.best_dir = self.initialdir
             possible_dir = ''
+            self.progress['maximum'] = len(self.search_directories) + 1
+            increment = self.progress['maximum'] / len(self.search_directories)
             for directory in self.search_directories:
-                print(f'\nCurrent Search Directory: {directory}\n')
+                # self.progress.step(1)
+                self.progress['value'] += 1
+                print(self.progress['value'])
+                print(f'\nCurrent Search Directory: {directory}')
                 for root, dirs, files in os.walk(directory, topdown=topdown):
                     for dir in dirs:
                         if game_name.lower().replace(' ', '') in dir.lower().replace(' ', ''):
                             possible_dir = os.path.join(root, dir)
-                            print(f'\n{possible_dir}')
+                            if possible_dir != '':
+                                print(f'\n{possible_dir}')
                             for found_root, found_dirs, found_files in os.walk(possible_dir, topdown=topdown):
                                 for found_file in found_files:
                                     # file scoring
                                     # + scorers
-                                    if 'save' in found_file.lower():
-                                        current_score += 1
-                                    if 'autosave' in found_file.lower():
-                                        current_score += 50
-                                    if 'quicksave' in found_file.lower():
-                                        current_score += 50
-                                    if 'saveslot' in found_file.lower():
-                                        current_score += 10
-                                    if 'config' in found_file.lower():
-                                        current_score += 1
-                                    if '.data' in found_file.lower():
-                                        current_score += 1
-                                    if 'profile' in found_file.lower():
-                                        current_score += 1
-                                    if 'sav.' in found_file.lower():
-                                        current_score += 50
-                                    if '.sav' in found_file.lower():
-                                        current_score += 50
-                                    if 'screenshot' in dir.lower():
-                                        current_score += 1
+                                    positive_scoring = {
+                                        'autosave': 50,
+                                        'quicksave': 50,
+                                        'saveslot': 10,
+                                        'sav.': 50,
+                                        '.sav': 50,
+                                        'screenshot': 10,  # TODO verify for false positives
+                                        'save': 10,
+                                        'steam_autocloud':10,
+                                        '.data': 1,
+                                        'profile': 1,
+                                        }
+                                    for item, score in positive_scoring.items():
+                                        if item in found_file.lower():
+                                            current_score += score
                                     # - scorers
-                                    if 'nvidia' in found_file.lower():
-                                        current_score -= 50
-                                    # if 'nvidia' in found_dirs.lower():
-                                    #     print('Found nvidia')
-                                    #     current_score -= 50
-                                    if found_file.endswith('.exe'):
-                                        current_score -= 50
+                                    negative_scoring = {
+                                        'nvidia': 50,
+                                        '.exe': 50,
+                                        }
+                                    for item, score in negative_scoring.items():
+                                        if item in found_file.lower():
+                                            current_score -= score
                             print(f'Score {current_score}')
                             break
                 # update based on high score
                 if current_score > best_score:
                     best_score = current_score
-                    best_dir = possible_dir
+                    self.best_dir = possible_dir
                 current_score = 0
-            self.smart_browse_win.destroy()
             overall_finish = time.perf_counter() # stop time for checking elaspsed runtime
             elapsed_time = round(overall_finish-overall_start, 2)
-            print(f'\nTook {elapsed_time} seconds to find {game_name}.')
-            print('Path Used', os.path.abspath(best_dir))
+            print(f'\n{game_name}\nSearch Time: {elapsed_time} seconds')
+            print(f'Path Used: {os.path.abspath(self.best_dir)}')
             print(f'Path Score: {best_score}')
-            if best_dir == self.initialdir:
-                print('Nothing Found')
-                return
-            save_dir = filedialog.askdirectory(initialdir=os.path.abspath(best_dir), title="Select Save Directory")
-            self.GameSaveEntry.delete(0, Tk.END)
-            if save_dir != None:
-                self.GameSaveEntry.insert(0, save_dir)
+            self.progress['value'] = self.progress['maximum']
+            print(self.progress['value'])
+            limit = 50
+            if self.best_dir == self.initialdir:
+                msg = 'Nothing Found\nBrowse will open in the default folder'
+                print(msg)
+                info = msg
+            elif len(self.best_dir) > limit:
+                info = f'Path Found in {elapsed_time} seconds\n...{self.best_dir[-limit:]}'
+            else:
+                info = f'Path Found in {elapsed_time} seconds\n{self.best_dir[-limit:]}'
+            self.s_browse.config(state='normal')
+            self.info_label.config(text=info)
         SearchThread = Thread(target=callback, daemon=True)
         SearchThread.start()
 
 
-    def browse(self):
+    def browse(self, initial_dir=None):
         '''
         Opens a file dialog so a save directory can be chosen.
         It starts in the My Games folder in My Documents if it exists within a limited drive letter search.
         '''
-        starting_point = self.initialdir
-        current_save_location = self.GameSaveEntry.get()
-        if os.path.exists(current_save_location):
-            starting_point = current_save_location
+        if initial_dir == None:
+            starting_point = self.initialdir
+            current_save_location = self.GameSaveEntry.get()
+            if os.path.exists(current_save_location):
+                starting_point = current_save_location
+        else:
+            starting_point = initial_dir
+            self.smart_browse_win.destroy()
         save_dir = filedialog.askdirectory(initialdir=starting_point, title="Select Save Directory")
         self.GameSaveEntry.delete(0, Tk.END)
         self.GameSaveEntry.insert(0, save_dir)
@@ -780,11 +802,12 @@ class Backup:
         self.GameSaveEntry = Tk.ttk.Entry(Add_Game_Frame, width=entry_width, exportselection=0)
         self.GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5, padx=10)
 
-        SmartBrowseButton = Tk.ttk.Button(Add_Game_Frame, text='S-Browse',
+        browse_button_width = 13
+        SmartBrowseButton = Tk.ttk.Button(Add_Game_Frame, text='Smart Browse', width=browse_button_width,
             command=self.smart_browse)
         SmartBrowseButton.grid(row=0, column=4, padx=10)
 
-        BrowseButton = Tk.ttk.Button(Add_Game_Frame, text='Browse',
+        BrowseButton = Tk.ttk.Button(Add_Game_Frame, text='Browse', width=browse_button_width,
             command=self.browse)
         BrowseButton.grid(row=1, column=4, padx=10)
 
