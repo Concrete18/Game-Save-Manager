@@ -39,8 +39,10 @@ Made in Python 3.8.3
         "disable_resize": 1,
         "center_window": 1
     },
-    "extra_save_directories":[
-        "D:/My Documents"
+    "custom_save_directories":
+    [
+        "D:/My Documents",
+        "D:/My Installed Games/Steam Games/steamapps/common"
     ]
 }
 ```
