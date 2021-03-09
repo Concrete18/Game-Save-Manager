@@ -12,6 +12,7 @@ import shutil
 import json
 import time
 import math
+import sys
 import os
 import re
 
@@ -455,7 +456,9 @@ class Backup:
         def callback():
             start = time.perf_counter()
             dirs_to_check = [
-                rf":/Users/{self.username}/AppData",
+                rf":/Users/{self.username}/AppData/Local",
+                rf":/Users/{self.username}/AppData/LocalLow",
+                rf":/Users/{self.username}/AppData/Roaming",
                 rf":/Users/{self.username}/Saved Games",
                 rf":/Users/{self.username}/Documents",
                 r":/Program Files (x86)/Steam/steamapps/common",
@@ -483,10 +486,16 @@ class Backup:
         '''
         Smart Browse Progress window
         '''
+        # closes window if it is already open so a new one can be created
+        try:
+            self.smart_browse_win.destroy()
+        except AttributeError:
+            pass
+        # opens window
         self.smart_browse_win = Tk.Toplevel(self.main_gui)
         self.tk_window_options(self.smart_browse_win, 340, 130, define_size=0)
 
-        text = 'Looking for the game save directory.\n'
+        text = f'Looking for the game save directory for\n{self.GameNameEntry.get()}'
         self.info_label = Tk.Label(self.smart_browse_win, text=text, font=("Arial Bold", 10))
         self.info_label.grid(row=0, column=0, pady=(9))
 
@@ -497,6 +506,7 @@ class Backup:
             width=23)
         self.s_browse.grid(row=2, column=0, pady=(5,10))
         self.s_browse.config(state='disabled')
+        self.smart_browse_win.focus_force()
 
 
     @staticmethod
@@ -527,7 +537,6 @@ class Backup:
                 message='Smart Browse requires the a game name to be entered.')
             return
         # looks for folders with the games name
-        topdown = False
         self.open_smart_browse_window()
         def callback():
             best_score = 0
@@ -538,81 +547,50 @@ class Backup:
             self.progress['maximum'] = len(self.search_directories) + 1
             for directory in self.search_directories:
                 print(f'\nCurrent Search Directory: {directory}')
-                for root, dirs, files in os.walk(directory, topdown=topdown):
+                directory_start = time.perf_counter()
+                for root, dirs, files in os.walk(directory, topdown=False):
                     for dir in dirs:
                         if game_name.lower().replace(' ', '') in dir.lower().replace(' ', ''):
                             possible_dir = os.path.join(root, dir)
                             if possible_dir != '':
                                 print(f'\n{possible_dir}')
-                            for found_root, found_dirs, found_files in os.walk(possible_dir, topdown=topdown):
+                            for found_root, found_dirs, found_files in os.walk(possible_dir, topdown=False):
                                 for found_file in found_files:
                                 # file scoring TODO add a way to track scoring that applies
                                     # + scorers
-                                    positive_scoring = {  # FIXME Desperados is tying on local and locallow
-                                        'autosave': 50,
-                                        'quicksave': 50,
-                                        'manualsave': 50,
-                                        'saveslot': 50,
-                                        'sav.': 50,
-                                        '.sav': 50,
-                                        'config.ini': 50,
-                                        'userdata':50,
-                                        'steam_autocloud':50,
-                                        'slot': 10,
-                                        'screenshot': 10,  # TODO verify for false positives
-                                        'save': 10,
-                                        '.zip': 5,
-                                        '.dat': 1,
-                                        # '.data': 1,
-                                        'profile': 1,
-                                        }
-                                    for item, score in positive_scoring.items():
+                                    for item, score in self.data['file_positive_scoring'].items():
                                         if item in found_file.lower():
                                             current_score += score
                                     # - scorers
-                                    negative_scoring = {
-                                        'nvidia': 50,
-                                        '.exe': 70,
-                                        }
-                                    for item, score in negative_scoring.items():
+                                    for item, score in self.data['file_negative_scoring'].items():
                                         if item in found_file.lower():
                                             current_score -= score
                                 for found_dir in found_dirs:
                                 # folder scoring
                                     # + scorers
-                                    positive_scoring = {
-                                        'autosave': 50,
-                                        'quicksave': 50,
-                                        'saveslot': 10,
-                                        'slot': 10,
-                                        'screenshot': 10,
-                                        'save': 10,
-                                        'steam_autocloud':10,
-                                        '.dat': 1,
-                                        'profile': 1,
-                                        }
-                                    for item, score in positive_scoring.items():
+                                    for item, score in self.data['folder_positive_scoring'].items():
                                         if item in found_dir.lower():
                                             current_score += score
                                     # - scorers
-                                    negative_scoring = {
-                                        'nvidia': 50,
-                                        }
-                                    for item, score in negative_scoring.items():
+                                    for item, score in self.data['folder_negative_scoring'].items():
                                         if item in found_dir.lower():
                                             current_score -= score
                             print(f'Score {current_score}')
                             break
                 # update based on high score
+                directory_finish = time.perf_counter()
+                print(f'Dir Search Time: {round(directory_finish-directory_start, 2)} seconds')
                 self.progress['value'] += 1
                 if current_score > best_score:
                     best_score = current_score
                     self.best_dir = possible_dir
-                    # TODO end search if score threshold is achieved
+                    # early break if threshold is met TODO verify for premature breaks
+                    if current_score > 700:
+                        break
                 current_score = 0
             overall_finish = time.perf_counter() # stop time for checking elaspsed runtime
             elapsed_time = round(overall_finish-overall_start, 2)
-            print(f'\n{game_name}\nSearch Time: {elapsed_time} seconds')
+            print(f'\n{game_name}\nOverall Search Time: {elapsed_time} seconds')
             print(f'Path Used: {os.path.abspath(self.best_dir)}')
             print(f'Path Score: {best_score}')
             self.progress['value'] = self.progress['maximum']
@@ -902,5 +880,7 @@ class Backup:
         self.main_gui.mainloop()
 
 if __name__ == '__main__':
+    sys.stdout = open("output.txt", "w")
     App = Backup()
     App.run_gui()
+    sys.stdout.close()
