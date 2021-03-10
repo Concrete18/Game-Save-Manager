@@ -134,3 +134,4 @@ dmypy.json
 /Save Backup
 /.vscode
 *.lnk
+*output.txt
