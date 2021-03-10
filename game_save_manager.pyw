@@ -540,6 +540,7 @@ class Backup:
         self.open_smart_browse_window()
         def callback():
             best_score = 0
+            break_used = 0
             print(f'\nGame: {game_name}')
             current_score = 0
             self.best_dir = self.initialdir
@@ -585,7 +586,8 @@ class Backup:
                     best_score = current_score
                     self.best_dir = possible_dir
                     # early break if threshold is met TODO verify for premature breaks
-                    if current_score > 700:
+                    if current_score > 600:
+                        break_used = 1
                         break
                 current_score = 0
             overall_finish = time.perf_counter() # stop time for checking elaspsed runtime
@@ -593,6 +595,8 @@ class Backup:
             print(f'\n{game_name}\nOverall Search Time: {elapsed_time} seconds')
             print(f'Path Used: {os.path.abspath(self.best_dir)}')
             print(f'Path Score: {best_score}')
+            if break_used:
+                print('Early Break Used')
             self.progress['value'] = self.progress['maximum']
             limit = 50
             if self.best_dir == self.initialdir:
@@ -878,6 +882,7 @@ class Backup:
 
         self.database_check()
         self.main_gui.mainloop()
+
 
 if __name__ == '__main__':
     sys.stdout = open("output.txt", "w")
