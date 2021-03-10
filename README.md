@@ -2,7 +2,7 @@
 
 Tkinter Interface for running through an SQLite Database that allows backing up game saves easily.
 
-![Image of Game Save Manager](https://github.com/Concrete18/Game-Save-Manager/blob/master/images/Screenshot.png)
+![Image of Game Save Manager](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/images/Screenshot.png)
 
 Made in Python 3.8.3
 
@@ -15,6 +15,9 @@ Made in Python 3.8.3
 * Selecting games shows useful info such as number of saves, size they all take combined and time since last backup.
 
 ### Smart Browse
+
+![Image of Smart Browse](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/images/Smart%20Browse%20Progress.png)
+![Image of Smart Browse](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/images/Smart%20Browse%20Complete.png)
 
 * Smart Browse will use a game name to search for the best starting point for selecting the games save location.
 * Progress bar showing progress for Smart Browse Search.
@@ -45,6 +48,7 @@ Made in Python 3.8.3
         "D:/My Installed Games/Steam Games/steamapps/common"
     ]
 }
+......
 ```
 
 ## Todo
