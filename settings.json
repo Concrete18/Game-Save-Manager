@@ -4,7 +4,8 @@
         "backup_dest": "Save Backup",
         "backup_redundancy": 3,
         "disable_resize": 1,
-        "center_window": 1
+        "center_window": 1,
+        "text_output": 0
     },
     "custom_save_directories":
     [
