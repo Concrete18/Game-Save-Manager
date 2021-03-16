@@ -22,6 +22,8 @@ Made in Python 3.8.3
 * Smart Browse will use a game name to search for the best starting point for selecting the games save location.
 * Progress bar showing progress for Smart Browse Search.
 * Some games do not include the name in the save directory path so they can't be found.
+* If Smart Browse is uses while the Save Entry has a path, a pop up will let you know if the search found a
+different directory then what is currently entered.
 
 ## Python Techniques Used
 
