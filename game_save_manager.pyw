@@ -454,14 +454,16 @@ class Backup:
                     message=f'Save Location for {cls.selected_game} does not exist.')
 
 
-    @staticmethod
-    def find_letters():
+    @classmethod
+    def find_letters(cls):
+        # TODO add with open
         letter_output = os.popen("fsutil fsinfo drives").readlines()[1]
         words = re.findall('\S+', letter_output)[1:]
         result = []
         for letters in words:
             result.append(letters[0])
-        print(result)
+        if cls.debug:
+            print(result)
         return result
 
 
@@ -491,10 +493,12 @@ class Backup:
                         cls.search_directories.append(current_dir)
             for custom_saved_dir in cls.data['custom_save_directories']:
                 cls.search_directories.append(custom_saved_dir)
-            print(cls.search_directories)
+            if cls.debug:
+                print(cls.search_directories)
             finish = time.perf_counter() # stop time for checking elaspsed runtime
             elapsed_time = round(finish-start, 2)
-            print(f'find_search_directories: {elapsed_time} seconds')
+            if cls.debug:
+                print(f'find_search_directories: {elapsed_time} seconds')
         SearchThread = Thread(target=callback)
         if test == 0:
             SearchThread.start()
