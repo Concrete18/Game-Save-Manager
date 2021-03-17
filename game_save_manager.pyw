@@ -223,8 +223,7 @@ class Backup:
                 cls.game_listbox.delete(Tk.ACTIVE)
                 cls.game_listbox.insert(0, game_name)
                 cls.logger.info(f'Backed up Save for {game_name}.')
-            BackupThread = Thread(target=backup)
-            BackupThread.start()
+            Thread(target=backup).start()
             cls.cursor.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
             {'game_name': game_name, 'last_backup': last_backup})
             cls.database.commit()
@@ -471,42 +470,36 @@ class Backup:
 
 
     @classmethod
-    def find_search_directories(cls, test=0):
+    def find_search_directories(cls):
         '''
         Finds the directories to use when searching for games.
         '''
-        def callback():
-            start = time.perf_counter()
-            dirs_to_check = [
-                rf":/Users/{cls.username}/AppData/Local",
-                rf":/Users/{cls.username}/AppData/LocalLow",
-                rf":/Users/{cls.username}/AppData/Roaming",
-                rf":/Users/{cls.username}/Saved Games",
-                rf":/Users/{cls.username}/Documents",
-                r":/Program Files (x86)/Steam/steamapps/common",
-                r":/Program Files/Steam/steamapps/common"
-                ]
-            drive_letters = cls.find_letters()
-            for dir in dirs_to_check:
-                for letter in drive_letters:
-                    current_dir = letter + dir
-                    if os.path.isdir(current_dir):
-                        if 'documents' in current_dir.lower():
-                            cls.initialdir = current_dir
-                        cls.search_directories.append(current_dir)
-            for custom_saved_dir in cls.data['custom_save_directories']:
-                cls.search_directories.append(custom_saved_dir)
-            if cls.debug:
-                print(cls.search_directories)
-            finish = time.perf_counter() # stop time for checking elaspsed runtime
-            elapsed_time = round(finish-start, 2)
-            if cls.debug:
-                print(f'find_search_directories: {elapsed_time} seconds')
-        SearchThread = Thread(target=callback)
-        if test == 0:
-            SearchThread.start()
-        else:
-            callback()
+        start = time.perf_counter()
+        dirs_to_check = [
+            rf":/Users/{cls.username}/AppData/Local",
+            rf":/Users/{cls.username}/AppData/LocalLow",
+            rf":/Users/{cls.username}/AppData/Roaming",
+            rf":/Users/{cls.username}/Saved Games",
+            rf":/Users/{cls.username}/Documents",
+            r":/Program Files (x86)/Steam/steamapps/common",
+            r":/Program Files/Steam/steamapps/common"
+            ]
+        drive_letters = cls.find_letters()
+        for dir in dirs_to_check:
+            for letter in drive_letters:
+                current_dir = letter + dir
+                if os.path.isdir(current_dir):
+                    if 'documents' in current_dir.lower():
+                        cls.initialdir = current_dir
+                    cls.search_directories.append(current_dir)
+        for custom_saved_dir in cls.data['custom_save_directories']:
+            cls.search_directories.append(custom_saved_dir)
+        if cls.debug:
+            print(cls.search_directories)
+        finish = time.perf_counter() # stop time for checking elaspsed runtime
+        elapsed_time = round(finish-start, 2)
+        if cls.debug:
+            print(f'find_search_directories: {elapsed_time} seconds')
 
 
     @classmethod
@@ -660,8 +653,7 @@ class Backup:
             return
         cls.open_smart_browse_window()
         # looks for folders with the games name
-        SearchThread = Thread(target=cls.game_save_location_search, args=(game_name,), daemon=True)
-        SearchThread.start()
+        Thread(target=cls.game_save_location_search, args=(game_name,), daemon=True).start()
 
 
     @classmethod
@@ -951,7 +943,7 @@ class Backup:
         if cls.output:
             sys.stdout = open("output.txt", "w")
         cls.backup_dest_check()
-        cls.find_search_directories()
+        Thread(target=cls.find_search_directories).start()
         cls.open_interface_window()
         if cls.output:
             sys.stdout.close()
