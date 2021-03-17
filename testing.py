@@ -43,7 +43,6 @@ class TestGameSaveManager(unittest.TestCase):
 
         Backup.debug = 0
         print('\nSetting up search directories')
-        print()
         Backup.find_search_directories(test=1)
         print('\nStarting check for each game.')
         for game, path in game_dict.items():

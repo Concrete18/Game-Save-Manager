@@ -456,8 +456,8 @@ class Backup:
 
     @classmethod
     def find_letters(cls):
-        # TODO add with open
-        letter_output = os.popen("fsutil fsinfo drives").readlines()[1]
+        with os.popen("fsutil fsinfo drives") as data:
+            letter_output = data.readlines()[1]
         words = re.findall('\S+', letter_output)[1:]
         result = []
         for letters in words:
