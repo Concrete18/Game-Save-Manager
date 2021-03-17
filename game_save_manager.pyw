@@ -18,7 +18,10 @@ import re
 
 # TODO test older version to see if init needs to be sped up
 
-# TODO switch to gui class and functions class
+class Interface:
+    pass
+    # TODO switch to gui class and functions class
+
 
 class Backup:
 
@@ -545,128 +548,120 @@ class Backup:
 
 
     @classmethod
-    def smart_browse(cls, game=None):
+    def game_save_location_search(cls, game_name, test=0):
+        overall_start = time.perf_counter() # start time for checking elaspsed runtime
+        best_score = 0
+        break_used = 0
+        if cls.debug:
+            print(f'\nGame: {game_name}')
+        current_score = 0
+        cls.best_dir = cls.initialdir
+        possible_dir = ''
+        if test == 0:
+            cls.progress['maximum'] = len(cls.search_directories) + 1
+        for directory in cls.search_directories:
+            if cls.debug:
+                print(f'\nCurrent Search Directory: {directory}')
+            directory_start = time.perf_counter()
+            for root, dirs, files in os.walk(directory, topdown=False):
+                for dir in dirs:
+                    if game_name.lower().replace(' ', '') in dir.lower().replace(' ', ''):
+                        possible_dir = os.path.join(root, dir)
+                        if possible_dir != '':
+                            if cls.debug:
+                                print(f'\n{possible_dir}')
+                        for found_root, found_dirs, found_files in os.walk(possible_dir, topdown=False):
+                            for found_file in found_files:
+                            # file scoring TODO add a way to track scoring that applies
+                                # + scorers
+                                for item, score in cls.data['file_positive_scoring'].items():
+                                    if item in found_file.lower():
+                                        current_score += score
+                                # - scorers
+                                for item, score in cls.data['file_negative_scoring'].items():
+                                    if item in found_file.lower():
+                                        current_score -= score
+                            for found_dir in found_dirs:
+                            # folder scoring
+                                # + scorers
+                                for item, score in cls.data['folder_positive_scoring'].items():
+                                    if item in found_dir.lower():
+                                        current_score += score
+                                # - scorers
+                                for item, score in cls.data['folder_negative_scoring'].items():
+                                    if item in found_dir.lower():
+                                        current_score -= score
+                        if cls.debug:
+                            print(f'Score {current_score}')
+                        break
+            # update based on high score
+            directory_finish = time.perf_counter()
+            if cls.debug:
+                print(f'Dir Search Time: {round(directory_finish-directory_start, 2)} seconds')
+            if test == 0:
+                cls.progress['value'] += 1
+            if current_score > best_score:
+                best_score = current_score
+                cls.best_dir = os.path.abspath(possible_dir)
+                # early break if threshold is met TODO verify for premature breaks
+                if current_score > 600:
+                    break_used = 1
+                    break
+            current_score = 0
+        overall_finish = time.perf_counter() # stop time for checking elaspsed runtime
+        elapsed_time = round(overall_finish-overall_start, 2)
+        if cls.debug:
+            print(f'\n{game_name}\nOverall Search Time: {elapsed_time} seconds')
+            print(f'Path Used: {cls.best_dir}')
+            print(f'Path Score: {best_score}')
+        if test == 0:
+            # FIXME test more
+            game_save = os.path.abspath(cls.GameSaveEntry.get())
+            if game_save != None:
+                if cls.best_dir in game_save:
+                    print('Found save is correct.')
+                else:
+                    print('Found save is incorrect.')
+                    messagebox.showinfo(
+                        title=cls.title,
+                        message=f'Smart Browse found a different directory for the current game.')
+        else:
+            return cls.best_dir
+        if break_used:
+            print('Early Break Used')
+        cls.progress['value'] = cls.progress['maximum']
+        limit = 50
+        if cls.best_dir == cls.initialdir:
+            msg = 'Nothing Found\nBrowse will open in the default folder'
+            print(msg)
+            info = msg
+        elif len(cls.best_dir) > limit:
+            info = f'Path Found in {elapsed_time} seconds\n...{cls.best_dir[-limit:]}'
+        else:
+            info = f'Path Found in {elapsed_time} seconds\n{cls.best_dir[-limit:]}'
+        cls.s_browse.config(state='normal')
+        cls.info_label.config(text=info)
+        winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
+
+
+    @classmethod
+    def smart_browse(cls):
         '''
         Searches for a starting point for the save location browser.
         '''
-        if game == None:
-            game_name = cls.GameNameEntry.get()
-        else:
-            game_name = game
-        overall_start = time.perf_counter() # start time for checking elaspsed runtime
         # removes illegal file characters
-        # TODO switch to function
-        game_name.replace('&', 'and')
-        char_removal = re.compile(cls.allowed_filename_characters)
-        string = char_removal.sub('', game_name)
-        game_name = re.sub("\s\s+" , " ", string).strip()[0:50]
+        game_name = cls.get_selected_game_filename(cls.GameNameEntry.get())
+        print(game_name)
         # checks if no game name is in entry box.
         if len(game_name) == 0:
             messagebox.showwarning(
                 title=cls.title,
-                message='Smart Browse requires the a game name to be entered.')
+                message='Smart Browse requires a game name to be entered.')
             return
+        cls.open_smart_browse_window()
         # looks for folders with the games name
-        if game == None:
-            cls.open_smart_browse_window()
-        def callback():
-            best_score = 0
-            break_used = 0
-            if cls.debug:
-                print(f'\nGame: {game_name}')
-            current_score = 0
-            cls.best_dir = cls.initialdir
-            possible_dir = ''
-            if game == None:
-                cls.progress['maximum'] = len(cls.search_directories) + 1
-            for directory in cls.search_directories:
-                if cls.debug:
-                    print(f'\nCurrent Search Directory: {directory}')
-                directory_start = time.perf_counter()
-                for root, dirs, files in os.walk(directory, topdown=False):
-                    for dir in dirs:
-                        if game_name.lower().replace(' ', '') in dir.lower().replace(' ', ''):
-                            possible_dir = os.path.join(root, dir)
-                            if possible_dir != '':
-                                if cls.debug:
-                                    print(f'\n{possible_dir}')
-                            for found_root, found_dirs, found_files in os.walk(possible_dir, topdown=False):
-                                for found_file in found_files:
-                                # file scoring TODO add a way to track scoring that applies
-                                    # + scorers
-                                    for item, score in cls.data['file_positive_scoring'].items():
-                                        if item in found_file.lower():
-                                            current_score += score
-                                    # - scorers
-                                    for item, score in cls.data['file_negative_scoring'].items():
-                                        if item in found_file.lower():
-                                            current_score -= score
-                                for found_dir in found_dirs:
-                                # folder scoring
-                                    # + scorers
-                                    for item, score in cls.data['folder_positive_scoring'].items():
-                                        if item in found_dir.lower():
-                                            current_score += score
-                                    # - scorers
-                                    for item, score in cls.data['folder_negative_scoring'].items():
-                                        if item in found_dir.lower():
-                                            current_score -= score
-                            if cls.debug:
-                                print(f'Score {current_score}')
-                            break
-                # update based on high score
-                directory_finish = time.perf_counter()
-                if cls.debug:
-                    print(f'Dir Search Time: {round(directory_finish-directory_start, 2)} seconds')
-                if game == None:
-                    cls.progress['value'] += 1
-                if current_score > best_score:
-                    best_score = current_score
-                    cls.best_dir = os.path.abspath(possible_dir)
-                    # early break if threshold is met TODO verify for premature breaks
-                    if current_score > 600:
-                        break_used = 1
-                        break
-                current_score = 0
-            overall_finish = time.perf_counter() # stop time for checking elaspsed runtime
-            elapsed_time = round(overall_finish-overall_start, 2)
-            if cls.debug:
-                print(f'\n{game_name}\nOverall Search Time: {elapsed_time} seconds')
-                print(f'Path Used: {cls.best_dir}')
-                print(f'Path Score: {best_score}')
-            if game == None:
-                # FIXME test more
-                game_save = os.path.abspath(cls.GameSaveEntry.get())
-                if game_save != None:
-                    if cls.best_dir in game_save:
-                        print('Found save is correct.')
-                    else:
-                        print('Found save is incorrect.')
-                        messagebox.showinfo(
-                            title=cls.title,
-                            message=f'Smart Browse found a different directory for the current game.')
-            else:
-                return cls.best_dir
-            if break_used:
-                print('Early Break Used')
-            cls.progress['value'] = cls.progress['maximum']
-            limit = 50
-            if cls.best_dir == cls.initialdir:
-                msg = 'Nothing Found\nBrowse will open in the default folder'
-                print(msg)
-                info = msg
-            elif len(cls.best_dir) > limit:
-                info = f'Path Found in {elapsed_time} seconds\n...{cls.best_dir[-limit:]}'
-            else:
-                info = f'Path Found in {elapsed_time} seconds\n{cls.best_dir[-limit:]}'
-            cls.s_browse.config(state='normal')
-            cls.info_label.config(text=info)
-            winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
-        SearchThread = Thread(target=callback, daemon=True)
-        if game == None:
-            SearchThread.start()
-        else:
-            return callback()
+        SearchThread = Thread(target=cls.game_save_location_search, args=(game_name,), daemon=True)
+        SearchThread.start()
 
 
     @classmethod
@@ -836,9 +831,7 @@ class Backup:
 
 
     @classmethod
-    def run_gui(cls):
-        cls.backup_dest_check()
-        cls.find_search_directories()
+    def open_interface_window(cls):
         cls.sorted_list = cls.sorted_games()
 
         # Defaults
@@ -950,9 +943,19 @@ class Backup:
         cls.main_gui.mainloop()
 
 
+    @classmethod
+    def run(cls):
+        '''
+        Runs everything needed to make the program work.
+        '''
+        if cls.output:
+            sys.stdout = open("output.txt", "w")
+        cls.backup_dest_check()
+        cls.find_search_directories()
+        cls.open_interface_window()
+        if cls.output:
+            sys.stdout.close()
+
+
 if __name__ == '__main__':
-    if Backup.output:
-        sys.stdout = open("output.txt", "w")
-    Backup.run_gui()
-    if Backup.output:
-        sys.stdout.close()
+    Backup.run()

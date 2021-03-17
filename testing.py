@@ -2,10 +2,7 @@ from game_save_manager import Backup
 import unittest
 import os
 
-
 class TestGameSaveManager(unittest.TestCase):
-
-    print('Starting Test')
 
 
     def test_selected_game_filename(self):
@@ -16,7 +13,6 @@ class TestGameSaveManager(unittest.TestCase):
         '  This       is  a *&^%^ space *(&^test    ':'This is a space test',
         }
         for test_value, answer in tests.items():
-            print(answer)
             self.assertEqual(Backup.get_selected_game_filename(test_value), answer)
 
 
@@ -39,15 +35,16 @@ class TestGameSaveManager(unittest.TestCase):
             'Cyberpunk 2077':r'C:\Users\Michael\Saved Games\CD Projekt Red\Cyberpunk 2077',
             'Boneworks':r'C:\Users\Michael\AppData\LocalLow\Stress Level Zero\BONEWORKS',
             'Factorio':r'C:\Users\Michael\AppData\Roaming\Factorio',
-            'Desperados III':r'C:\Users\Michael\AppData\Local\Desperados III'}
+            'Desperados III':r'C:\Users\Michael\AppData\Local\Desperados III',
+            'XCOM 2 War of the Chosen':r'D:\My Documents\My Games\XCOM2 War of the Chosen'}
 
         Backup.debug = 0
-        print('\nSetting up search directories')
+        print('\n   Setting up search directories')
         Backup.find_search_directories(test=1)
-        print('\nStarting check for each game.')
+        print('\n   Starting check for each game.')
         for game, path in game_dict.items():
-            print(game)
-            self.assertEqual(Backup.smart_browse(game), path)
+            print(f'   > {game}')
+            self.assertEqual(Backup.game_save_location_search(game, test=1), path)
 
 
 if __name__ == '__main__':
