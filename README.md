@@ -24,6 +24,7 @@ Made in Python 3.8.3
 * Some games do not include the name in the save directory path so they can't be found.
 * If Smart Browse is uses while the Save Entry has a path, a pop up will let you know if the search found a
 different directory then what is currently entered.
+* If a game save is entered when searching, you will be told if the found save is different from the current.
 
 ## Python Techniques Used
 
@@ -42,7 +43,9 @@ different directory then what is currently entered.
         "backup_dest": "Save Backup",
         "backup_redundancy": 3,
         "disable_resize": 1,
-        "center_window": 1
+        "center_window": 1,
+        "text_output": 0,
+        "debug": 1
     },
     "custom_save_directories":
     [
