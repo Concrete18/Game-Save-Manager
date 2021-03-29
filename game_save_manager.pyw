@@ -30,8 +30,9 @@ class Backup:
     # backup destination setup
     backup_dest = data['settings']['backup_dest']
 
+    redundancy_limit = 4
     backup_redundancy = data['settings']['backup_redundancy']
-    if type(backup_redundancy) is not int or backup_redundancy > 4:
+    if type(backup_redundancy) is not int or backup_redundancy in range(1, redundancy_limit + 1):
         backup_redundancy = 4
     disable_resize = data['settings']['disable_resize']
     center_window = data['settings']['center_window']
@@ -526,6 +527,7 @@ class Backup:
         overall_start = time.perf_counter() # start time for checking elaspsed runtime
         best_score = 0
         break_used = 0
+        dir_changed = 0
         if self.debug:
             print(f'\nGame: {game_name}')
         current_score = 0
@@ -590,14 +592,12 @@ class Backup:
             print(f'Path Score: {best_score}')
         if test == 0:
             game_save = os.path.abspath(self.GameSaveEntry.get())
-            if game_save != None:
+            if game_save != self.script_dir:
                 if self.best_dir in game_save:
                     print('Found save is correct.')
                 else:
                     print('Found save is incorrect.')
-                    messagebox.showinfo(
-                        title=self.title,
-                        message=f'Smart Browse found a different directory for the current game.')
+                    dir_changed = 1
         else:
             return self.best_dir
         if break_used:
@@ -612,6 +612,8 @@ class Backup:
             info = f'Path Found in {elapsed_time} seconds\n...{self.best_dir[-limit:]}'
         else:
             info = f'Path Found in {elapsed_time} seconds\n{self.best_dir[-limit:]}'
+        if dir_changed:
+            info += f'\nFound directory is different then entered directory.'
         self.s_browse.config(state='normal')
         self.info_label.config(text=info)
         winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
