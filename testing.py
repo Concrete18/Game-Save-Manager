@@ -1,4 +1,5 @@
 from game_save_manager import Backup
+import datetime as dt
 import unittest
 import time
 import os
@@ -47,13 +48,17 @@ class TestGameSaveManager(unittest.TestCase):
         print('\n   Setting up search directories')
         self.test.find_search_directories()
         print('\n   Starting search for each game.')
-        start = time.perf_counter()
+        elapsed_total = 0
         for game, path in game_dict.items():
-            print(f'   > {game}')
+            print(f'    > {game}', end="")
+            start = time.perf_counter()
             self.assertEqual(self.test.game_save_location_search(game, test=1), path)
-        finish = time.perf_counter()
-        average = round((finish-start)/len(game_dict), 2)
-        print(f'Average search time: {average}')
+            finish = time.perf_counter()
+            elapsed_single = finish-start
+            elapsed_total += elapsed_single
+            print(f' | {round(elapsed_single, 2)} seconds')
+        average = round(elapsed_total/len(game_dict), 2)
+        print(f'   Average search time: {average} seconds')
 
 
 if __name__ == '__main__':
