@@ -1,21 +1,10 @@
-import datetime as dt
-import tkinter as Tk
-import logging as lg
-from logging.handlers import RotatingFileHandler
-from tkinter import ttk, filedialog, messagebox
+import getpass, sqlite3, shutil, json, time, os, re, sys, subprocess, math, winsound
 from threading import Thread
-import getpass, sqlite3, shutil, json, time
-import subprocess
-import winsound
-import math
-import sys
-import os
-import re
-
-
-class Interface:
-    pass
-    # TODO switch to gui class and functions class
+from logging.handlers import RotatingFileHandler
+import logging as lg
+from tkinter import ttk, filedialog, messagebox
+import tkinter as Tk
+import datetime as dt
 
 
 class Backup:
@@ -605,7 +594,7 @@ class Backup:
         self.progress['value'] = self.progress['maximum']
         limit = 50
         if self.best_dir == self.initialdir:
-            msg = 'Nothing Found\nBrowse will open in the default folder'
+            msg = 'Nothing Found\nPressing browse will open in the default folder'
             print(msg)
             info = msg
         elif len(self.best_dir) > limit:
