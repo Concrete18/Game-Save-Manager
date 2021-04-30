@@ -36,6 +36,7 @@ class Backup:
     username = getpass.getuser()
     initialdir = "C:/"
     search_directories = []
+    search_directories_incomplete = 1
     best_dir = ''
 
     # logger setup
@@ -473,11 +474,13 @@ class Backup:
         elapsed_time = round(finish-start, 2)
         if self.debug:
             print(f'find_search_directories: {elapsed_time} seconds')
+        self.search_directories_incomplete = 0
 
 
     def open_smart_browse_window(self):
         '''
         Smart Browse Progress window
+        TODO create index of each directory and use changes in directory to see if a new index should be done.
         '''
         # closes window if it is already open so a new one can be created
         try:
@@ -486,6 +489,7 @@ class Backup:
             pass
         # opens window
         self.smart_browse_win = Tk.Toplevel(self.main_gui)
+        self.smart_browse_win.attributes('-topmost', 'true')
         self.tk_window_options(self.smart_browse_win, 340, 130, define_size=0)
 
         text = f'Looking for the game save directory for\n{self.GameNameEntry.get()}'
@@ -508,8 +512,8 @@ class Backup:
         Removes ASCII characters.
         '''
         encoded_string = string.encode("ascii", "ignore")
-        decode_string = encoded_string.decode()
-        return decode_string
+        decoded_string = encoded_string.decode()
+        return decoded_string
 
 
     def game_save_location_search(self, game_name, test=0):
@@ -522,6 +526,8 @@ class Backup:
         current_score = 0
         self.best_dir = self.initialdir
         possible_dir = ''
+        while self.search_directories_incomplete:
+            time.sleep(.1)
         if test == 0:
             self.progress['maximum'] = len(self.search_directories) + 1
         for directory in self.search_directories:
@@ -594,18 +600,18 @@ class Backup:
         self.progress['value'] = self.progress['maximum']
         limit = 50
         if self.best_dir == self.initialdir:
-            msg = 'Nothing Found\nPressing browse will open in the default folder'
-            print(msg)
-            info = msg
+            info = 'Nothing Found.\nIf the game name has colons in it.\nTry searching only for the text on the left of the colons.'
+            print('Nothing Found')
         elif len(self.best_dir) > limit:
             info = f'Path Found in {elapsed_time} seconds\n...{self.best_dir[-limit:]}'
         else:
             info = f'Path Found in {elapsed_time} seconds\n{self.best_dir[-limit:]}'
-        if dir_changed:
-            info += f'\nFound directory is different then entered directory.'
-        self.s_browse.config(state='normal')
         self.info_label.config(text=info)
         winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
+        if self.best_dir != self.initialdir:
+            if dir_changed:
+                info += f'\nFound directory is different then entered directory.'
+            self.s_browse.config(state='normal')
 
 
     def smart_browse(self):
@@ -785,7 +791,6 @@ class Backup:
         self.database.close
         # FIXME fails to close if filedialog is left open
         exit()
-
 
 
     def open_interface_window(self):
