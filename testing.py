@@ -1,5 +1,4 @@
 from game_save_manager import Backup
-import datetime as dt
 import unittest
 import time
 import os
@@ -29,6 +28,7 @@ class TestGameSaveManager(unittest.TestCase):
     def test_smart_browse(self):
         print('\nTesting smart_browse function')
         game_dict = {
+            # TODO fix entry | 'Superliminal':r'C:\Users\Michael\AppData\LocalLow\PillowCastle\SuperliminalSteam\',
             'Factorio':r'C:\Users\Michael\AppData\Roaming\Factorio',
             'Surviving Mars':r'C:\Users\Michael\AppData\Roaming\Surviving Mars',
             'Wildfire':r'C:\Users\Michael\AppData\Local\wildfire',
