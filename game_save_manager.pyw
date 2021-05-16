@@ -26,6 +26,10 @@ class Backup:
     output = data['settings']['text_output']
     debug = data['settings']['debug']
 
+    # scoring init
+    with open('scoring.json') as json_file:
+        scoring = json.load(json_file)
+
     # var init
     title = 'Game Save Manager'
     allowed_filename_characters = '[^a-zA-Z0-9.,\s]'
@@ -150,7 +154,6 @@ class Backup:
             ordered_games.append(game_name[0])
         self.database.commit()
         return ordered_games
-
 
 
     def delete_oldest(self, game):
@@ -545,21 +548,21 @@ class Backup:
                             for found_file in found_files:
                             # file scoring TODO add a way to track scoring that applies
                                 # + scorers
-                                for item, score in self.data['file_positive_scoring'].items():
+                                for item, score in self.scoring['file_positive_scoring'].items():
                                     if item in found_file.lower():
                                         current_score += score
                                 # - scorers
-                                for item, score in self.data['file_negative_scoring'].items():
+                                for item, score in self.scoring['file_negative_scoring'].items():
                                     if item in found_file.lower():
                                         current_score -= score
                             for found_dir in found_dirs:
                             # folder scoring
                                 # + scorers
-                                for item, score in self.data['folder_positive_scoring'].items():
+                                for item, score in self.scoring['folder_positive_scoring'].items():
                                     if item in found_dir.lower():
                                         current_score += score
                                 # - scorers
-                                for item, score in self.data['folder_negative_scoring'].items():
+                                for item, score in self.scoring['folder_negative_scoring'].items():
                                     if item in found_dir.lower():
                                         current_score -= score
                         if self.debug:
