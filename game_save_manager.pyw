@@ -16,12 +16,10 @@ class Backup:
     # settings setup
     with open('settings.json') as json_file:
         data = json.load(json_file)
-    # backup destination setup
-    backup_dest = data['settings']['backup_dest']
-
+    backup_dest = data['settings']['backup_dest']  # backup destination setup
     redundancy_limit = 4
     backup_redundancy = data['settings']['backup_redundancy']
-    if type(backup_redundancy) is not int or backup_redundancy in range(1, redundancy_limit + 1):
+    if type(backup_redundancy) is not int or backup_redundancy not in range(1, redundancy_limit + 1):
         backup_redundancy = 4
     disable_resize = data['settings']['disable_resize']
     center_window = data['settings']['center_window']
@@ -62,7 +60,6 @@ class Backup:
         '''
         Checks if backup destination in settings exists and asks if you want to choose one if it does not.
         '''
-        # FIXME first run so blank windows does not show up
         Tk.Tk().withdraw()
         if not os.path.exists(self.backup_dest):
             msg = 'Do you want to choose a save backup directory instead of using a default within the program folder?'
@@ -130,7 +127,6 @@ class Backup:
         return re.sub("\s\s+" , " ", string).strip()[0:50]
 
 
-
     def get_selected_game_save(self):
         '''
         Returns the save location of the selected game from the SQLite Database.
@@ -193,8 +189,9 @@ class Backup:
         total_size = self.convert_size(os.path.join(self.backup_dest, self.selected_game))
         dest = os.path.join(self.base_backup_folder, current_time)
         last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-        self.ActionInfo.config(text=f'Backing up {game_name}\n')
+        self.ActionInfo.config(text=f'Backing up {game_name}\nDo not close program.')
         try:
+
             def backup():
                 shutil.copytree(self.selected_game_save, dest)
                 self.delete_oldest(self.game_filename)
@@ -204,6 +201,7 @@ class Backup:
                 self.game_listbox.delete(Tk.ACTIVE)
                 self.game_listbox.insert(0, game_name)
                 self.logger.info(f'Backed up Save for {game_name}.')
+
             Thread(target=backup).start()
             self.cursor.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
             {'game_name': game_name, 'last_backup': last_backup})
@@ -218,6 +216,8 @@ class Backup:
                 title=self.title,
                 message='Action Failed - Save Already Backed up.')
             self.logger.error(f'Failed to Backed up Save for {game_name}. Save Already Backed up.')
+        except SystemExit:
+            print('Cancelled Backup.')
 
 
     def tk_window_options(self, window_name, window_width, window_height, define_size=0):
@@ -704,7 +704,6 @@ class Backup:
             self.cursor.execute(sql_update_query , data)
             self.database.commit()
             new_name = os.path.join(self.backup_dest, self.get_selected_game_filename(game_name))
-            # FIXME renaming twice in a row brings up an error
             os.rename(self.base_backup_folder, new_name)
             index = self.game_listbox.curselection()
             print(index)
@@ -761,7 +760,7 @@ class Backup:
             self.GameSaveEntry.insert(0, self.selected_game_save)
             self.base_backup_folder = os.path.join(self.backup_dest, self.game_filename)
             # enables all buttons to be pressed once a selection is made
-            for button in [self.BackupButton, self.ExploreSaveButton]: #  TODO only works with 2 or more games
+            for button in [self.BackupButton, self.ExploreSaveButton]:
                 button.config(state='normal')
             if os.path.isdir(self.base_backup_folder):
                 set_state = 'normal'

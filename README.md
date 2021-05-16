@@ -63,6 +63,4 @@ different directory then what is currently entered.
 
 ## Bugs
 
-* Renaming twice in a row brings up an error.
 * leaving the file dialog open prevents closing interface.
-* Wrong error messagebox if you clear the entry boxes and then click add game.
