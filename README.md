@@ -26,6 +26,17 @@ Made in Python 3.8.3
 different directory then what is currently entered.
 * If a game save is entered when searching, you will be told if the found save is different from the current.
 
+### Backup Compression
+
+* Backup compression for saving space can be enabled in the config.
+* When restoring, compressed files are detected regardless of compression setting.
+* Use below command to view available compression formats.
+
+```python
+shutil.get_archive_formats()
+```
+
+
 ## Python Techniques Used
 
 * Tkinter messagebox and directory dialog
@@ -39,16 +50,17 @@ different directory then what is currently entered.
 
 ```json
 {
-    "settings": {
-        "backup_dest": "Save Backup",
-        "backup_redundancy": 3,
-        "disable_resize": 1,
-        "center_window": 1,
-        "text_output": 0,
-        "debug": 1
+    "settings":{
+        "backup_dest":"Save Backup",
+        "backup_redundancy":3,
+        "enable_compression":1,
+        "compression_type":"zip",
+        "disable_resize":1,
+        "center_window":1,
+        "text_output":0,
+        "debug":1
     },
-    "custom_save_directories":
-    [
+    "custom_save_directories":[
         "D:/My Documents",
         "D:/My Installed Games/Steam Games/steamapps/common"
     ]
@@ -64,3 +76,4 @@ different directory then what is currently entered.
 ## Bugs
 
 * leaving the file dialog open prevents closing interface.
+* Game backup size shows as 0 after finishing a backup until it is clicked again.
