@@ -2,6 +2,8 @@
     "settings":{
         "backup_dest":"Save Backup",
         "backup_redundancy":3,
+        "enable_compression":1,
+        "compression_type":"zip",
         "disable_resize":1,
         "center_window":1,
         "text_output":0,
