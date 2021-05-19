@@ -36,7 +36,6 @@ different directory then what is currently entered.
 shutil.get_archive_formats()
 ```
 
-
 ## Python Techniques Used
 
 * Tkinter messagebox and directory dialog

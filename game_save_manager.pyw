@@ -7,7 +7,7 @@ import tkinter as Tk
 import datetime as dt
 
 
-class Backup:
+class Backup_Class:
 
     # sets script directory in case current working directory is different
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -19,6 +19,8 @@ class Backup:
     backup_dest = data['settings']['backup_dest']  # backup destination setup
     redundancy_limit = 4
     backup_redundancy = data['settings']['backup_redundancy']
+    enable_compression = data['settings']['enable_compression']
+    compression_type = data['settings']['compression_type']
     if type(backup_redundancy) is not int or backup_redundancy not in range(1, redundancy_limit + 1):
         backup_redundancy = 4
     disable_resize = data['settings']['disable_resize']
@@ -33,6 +35,11 @@ class Backup:
     # var init
     title = 'Game Save Manager'
     allowed_filename_characters = '[^a-zA-Z0-9.,\s]'
+    backup_restore_in_progress = 0
+    # compression setup
+    available_compression = []
+    for item in shutil.get_archive_formats():
+        available_compression.append(f'.{item[0]}')
 
     # sets up search directories
     username = getpass.getuser()
@@ -178,36 +185,49 @@ class Backup:
             self.logger.info(f'{game} had more then {self.backup_redundancy} Saves. Deleted oldest saves.')
 
 
-    def backup_save(self):
+    def backup(self, game_name):
+        '''
+        Runs a single backup for the entered arg.
+        Also sets self.backup_restore_in_progress to True so the program wont quick during a backup.
+        '''
+        self.backup_restore_in_progress = 1
+        current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
+        dest = os.path.join(self.base_backup_folder, current_time)
+        # TODO add progress bar for backup
+        if self.enable_compression:
+            # TODO add compression
+            shutil.make_archive(dest, self.compression_type, self.selected_game_save)
+        else:
+            shutil.copytree(self.selected_game_save, dest)
+        self.delete_oldest(self.game_filename)
+        time.sleep(.3)
+        total_size = self.convert_size(os.path.join(self.backup_dest, self.selected_game))
+        # FIXME total_size is wrong for some games right after it finishes backing up
+        info1 = f'{game_name} has been backed up.\n'
+        info2 = f'Game Backup Size: {total_size} from {len(os.listdir(self.base_backup_folder))} backups'
+        print(info2)
+        self.ActionInfo.config(text=info1 + info2)
+        self.game_listbox.delete(Tk.ACTIVE)
+        self.game_listbox.insert(0, game_name)
+        self.logger.info(f'Backed up Save for {game_name}.')
+        self.backup_restore_in_progress = 0
+
+
+    def run_full_backup(self):
         '''
         Backups up the game entered based on SQLite save location data to the specified backup folder.
         '''
         if self.selected_game == None:
-            messagebox.showwarning(
-                title=self.title,
-                message='No game is selected yet.')
+            messagebox.showwarning(title=self.title, message='No game is selected yet.')
             return
-        current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
         game_name = self.selected_game
-        total_size = self.convert_size(os.path.join(self.backup_dest, self.selected_game))
-        dest = os.path.join(self.base_backup_folder, current_time)
-        last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
         self.ActionInfo.config(text=f'Backing up {game_name}\nDo not close program.')
         try:
-
-            def backup():
-                shutil.copytree(self.selected_game_save, dest)
-                self.delete_oldest(self.game_filename)
-                info1 = f'{game_name} has been backed up.\n'
-                info2 = f'Game Backup Size: {total_size} from {len(os.listdir(self.base_backup_folder))} backups'
-                self.ActionInfo.config(text=info1 + info2)
-                self.game_listbox.delete(Tk.ACTIVE)
-                self.game_listbox.insert(0, game_name)
-                self.logger.info(f'Backed up Save for {game_name}.')
-
-            Thread(target=backup).start()
-            self.cursor.execute("""UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
-            {'game_name': game_name, 'last_backup': last_backup})
+            Thread(target=self.backup, args=(game_name, )).start()
+            last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+            self.cursor.execute(
+                """UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
+                {'game_name': game_name, 'last_backup': last_backup})
             self.database.commit()
         except FileNotFoundError:
             messagebox.showwarning(
@@ -248,7 +268,7 @@ class Backup:
             title=self.title,
             message=f'Are you sure you want to backup {self.selected_game}')
         if response == 'yes':
-            self.backup_save()
+            self.run_full_backup()
         else:
             self.game_listbox.activate(0)
             return
@@ -259,10 +279,13 @@ class Backup:
         '''
         Opens an interface for picking the dated backup of the selected game to restore.
         '''
+        # TODO add progress bar for restore
+        self.backup_restore_in_progress = 1
         if self.selected_game == None:
             messagebox.showwarning(
                 title=self.title,
                 message='No game is selected yet.')
+            self.backup_restore_in_progress = 0
             return
         backup_path = self.base_backup_folder
         self.save_dic = {}
@@ -280,6 +303,7 @@ class Backup:
             messagebox.showwarning(
                 title=self.title,
                 message=f'No backed up saves exist for {self.selected_game}.')
+            self.backup_restore_in_progress = 0
             return
 
 
@@ -318,8 +342,19 @@ class Backup:
                     return
             # TODO Move old file to special backup folder instead of renaming to .old
             os.rename(self.selected_game_save, f'{self.selected_game_save}.old')
-            shutil.copytree(backup_path, self.selected_game_save)
-            self.logger.info(f'Restored save for {self.selected_game}.')
+            # TODO test with different types of compression
+            if save_name.name in self.available_compression:
+                # decompresses the backup and sends it to the save location
+                try:
+                    shutil.unpack_archive(backup_path, self.selected_game_save)
+                    self.logger.info(f'Restored save for {self.selected_game} from compressed backup.')
+                except ValueError:
+                    filetype = os.path.splitext(save_name.name)[1]
+                    msg = f'Decompression failed, {filetype} is not actually a valid compression type.'
+                    response = messagebox.showwarning(title=self.title, message=msg)
+            else:
+                shutil.copytree(backup_path, self.selected_game_save)
+                self.logger.info(f'Restored save for {self.selected_game}from backup.')
             Restore_Game_Window.destroy()
 
 
@@ -362,20 +397,15 @@ class Backup:
         folder -- Set to "Game Save" or "Backup" to determine folder that is opened in explorer
         '''
         if self.selected_game == None:
-            messagebox.showwarning(
-                title=self.title,
-                message='No game is selected yet.')
+            messagebox.showwarning(title=self.title, message='No game is selected yet.')
         elif folder == 'Game Save':  # open game save location in explorer
             if not os.path.isdir(self.selected_game_save):
-                messagebox.showwarning(
-                    title=self.title,
-                    message=f'Save location for {self.selected_game} no longer exists')
+                msg = f'Save location for {self.selected_game} no longer exists'
+                messagebox.showwarning(title=self.title, message=msg)
             subprocess.Popen(f'explorer "{self.selected_game_save}"')
         elif folder == 'Backup':  # open game backup location in explorer
             if not os.path.isdir(self.base_backup_folder):
-                messagebox.showwarning(
-                    title=self.title,
-                    message=f'{self.selected_game} has not been backed up yet.')
+                messagebox.showwarning(title=self.title, message=f'{self.selected_game} has not been backed up yet.')
             subprocess.Popen(f'explorer "{self.base_backup_folder}"')
 
 
@@ -393,13 +423,16 @@ class Backup:
             for f in files:
                 fp = os.path.join(path, f)
                 total_size += os.path.getsize(fp)
-        size_name = ("B", "KB", "MB", "GB", "TB")
-        try:
-            i = int(math.floor(math.log(total_size, 1024)))
-            p = math.pow(1024, i)
-            s = round(total_size / p, 2)
-            return f'{s} {size_name[i]}'
-        except ValueError:
+        if total_size > 0:
+            size_name = ("B", "KB", "MB", "GB", "TB")
+            try:
+                i = int(math.floor(math.log(total_size, 1024)))
+                p = math.pow(1024, i)
+                s = round(total_size / p, 2)
+                return f'{s} {size_name[i]}'
+            except ValueError:
+                return '0 bits'
+        else:
             return '0 bits'
 
 
@@ -410,16 +443,13 @@ class Backup:
         game_name = self.GameNameEntry.get()
         save_location = self.GameSaveEntry.get().replace('/', '\\')
         if len(self.get_selected_game_filename(game_name)) == 0:
-            messagebox.showwarning(
-                title=self.title,
-                message=f'Game name has no legal characters for a filename')
+            messagebox.showwarning(title=self.title,message=f'Game name has no legal characters for a filename')
             return
         self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
         database_save_location = self.cursor.fetchone()
         if database_save_location != None:
-            messagebox.showwarning(
-                title=self.title,
-                message=f"Can't add {self.selected_game} to database.\nGame already exists.")
+            msg = f"Can't add {self.selected_game} to database.\nGame already exists."
+            messagebox.showwarning(title=self.title, message=msg)
         else:
             if os.path.isdir(save_location):
                 self.GameSaveEntry.delete(0, Tk.END)
@@ -430,9 +460,8 @@ class Backup:
                 self.game_listbox.insert(0, game_name)
                 self.logger.info(f'Added {game_name} to database.')
             else:
-                messagebox.showwarning(
-                    title=self.title,
-                    message=f'Save Location for {self.selected_game} does not exist.')
+                msg = f'Save Location for {self.selected_game} does not exist.'
+                messagebox.showwarning(title=self.title, message=msg)
 
 
     def find_letters(self):
@@ -790,8 +819,13 @@ class Backup:
         '''
         Closes the database and quits the program when closing the interface.
         '''
+        if self.backup_restore_in_progress:
+            msg = f'Backup/Restore in progress.\n{self.title} will close after completion when you close this message.'
+            messagebox.showerror(title=self.title, message=msg)
+        while self.backup_restore_in_progress:
+            time.sleep(.1)
         self.database.close
-        # FIXME fails to close if filedialog is left open
+        # FIXME fails to exit if filedialog is left open
         exit()
 
 
@@ -808,6 +842,9 @@ class Backup:
         self.tk_window_options(self.main_gui, window_width, window_height)
         # self.main_gui.geometry(f'{window_width}x{window_height}+{width}+{height}')
 
+        # binding
+        self.main_gui.bind('<Return>', self.backup_shortcut)
+
         # Main Row 0
         Backup_Frame = Tk.Frame(self.main_gui)
         Backup_Frame.grid(columnspan=4, column=0, row=0,  padx=(20, 20), pady=(5, 0))
@@ -818,7 +855,7 @@ class Backup:
 
         button_width = 23
         self.BackupButton = ttk.Button(Backup_Frame, text='Backup Save', state='disabled',
-            command=self.backup_save, width=button_width)
+            command=self.run_full_backup, width=button_width)
         self.BackupButton.grid(row=3, column=1, padx=5, pady=5)
 
         self.RestoreButton = ttk.Button(Backup_Frame, text='Restore Save', state='disabled',
@@ -921,4 +958,4 @@ class Backup:
 
 
 if __name__ == '__main__':
-    Backup().run()
+    Backup_Class().run()

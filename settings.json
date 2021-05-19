@@ -7,7 +7,7 @@
         "disable_resize":1,
         "center_window":1,
         "text_output":0,
-        "debug":1
+        "debug":0
     },
     "custom_save_directories":[
         "D:/My Documents",
