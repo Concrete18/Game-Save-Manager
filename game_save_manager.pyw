@@ -181,49 +181,52 @@ class Backup_Class:
         else:
             sorted_list = sorted(saves_list, key=os.path.getctime, reverse=True)
             for i in range(self.backup_redundancy, len(saves_list)):
-                shutil.rmtree(sorted_list[i])
+                if os.path.isdir(sorted_list[i]):
+                    shutil.rmtree(sorted_list[i])
+                else:
+                    os.remove(sorted_list[i])
             self.logger.info(f'{game} had more then {self.backup_redundancy} Saves. Deleted oldest saves.')
-
-
-    def backup(self, game_name):
-        '''
-        Runs a single backup for the entered arg.
-        Also sets self.backup_restore_in_progress to True so the program wont quick during a backup.
-        '''
-        self.backup_restore_in_progress = 1
-        current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
-        dest = os.path.join(self.base_backup_folder, current_time)
-        # TODO add progress bar for backup
-        if self.enable_compression:
-            # TODO add compression
-            shutil.make_archive(dest, self.compression_type, self.selected_game_save)
-        else:
-            shutil.copytree(self.selected_game_save, dest)
-        self.delete_oldest(self.game_filename)
-        time.sleep(.3)
-        total_size = self.convert_size(os.path.join(self.backup_dest, self.selected_game))
-        # FIXME total_size is wrong for some games right after it finishes backing up
-        info1 = f'{game_name} has been backed up.\n'
-        info2 = f'Game Backup Size: {total_size} from {len(os.listdir(self.base_backup_folder))} backups'
-        print(info2)
-        self.ActionInfo.config(text=info1 + info2)
-        self.game_listbox.delete(Tk.ACTIVE)
-        self.game_listbox.insert(0, game_name)
-        self.logger.info(f'Backed up Save for {game_name}.')
-        self.backup_restore_in_progress = 0
 
 
     def run_full_backup(self):
         '''
         Backups up the game entered based on SQLite save location data to the specified backup folder.
         '''
+        def backup(game_name):
+            '''
+            Runs a single backup for the entered arg.
+            Also sets self.backup_restore_in_progress to True so the program wont quick during a backup.
+            '''
+            self.backup_restore_in_progress = 1
+            current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
+            dest = os.path.join(self.base_backup_folder, current_time)
+            # TODO add progress bar for backup
+            if self.enable_compression:
+                shutil.make_archive(dest, self.compression_type, self.selected_game_save)
+            else:
+                shutil.copytree(self.selected_game_save, dest)
+            self.delete_oldest(self.game_filename)
+            time.sleep(.3)
+            total_size = self.convert_size(os.path.join(self.backup_dest, self.selected_game))
+            # FIXME total_size is wrong for some games right after it finishes backing up
+            info1 = f'{game_name} has been backed up.\n'
+            info2 = f'Game Backup Size: {total_size} from {len(os.listdir(self.base_backup_folder))} backups'
+            if self.debug:
+                print(info2)
+            self.ActionInfo.config(text=info1 + info2)
+            self.game_listbox.delete(Tk.ACTIVE)
+            self.game_listbox.insert(0, game_name)
+            self.logger.info(f'Backed up Save for {game_name}.')
+            self.backup_restore_in_progress = 0
+            winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
+
         if self.selected_game == None:
             messagebox.showwarning(title=self.title, message='No game is selected yet.')
             return
         game_name = self.selected_game
         self.ActionInfo.config(text=f'Backing up {game_name}\nDo not close program.')
         try:
-            Thread(target=self.backup, args=(game_name, )).start()
+            Thread(target=backup, args=(game_name, )).start()
             last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
             self.cursor.execute(
                 """UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name""",
@@ -782,6 +785,8 @@ class Backup_Class:
         # clears entry boxes
         self.GameNameEntry.delete(0, Tk.END)
         self.GameSaveEntry.delete(0, Tk.END)
+        if self.backup_restore_in_progress:
+            return
         # updates entry boxes to show currently selected game in listbox
         if Update == 1:
             # script wide variables for selected game
