@@ -1,11 +1,11 @@
-from game_save_manager import Backup
+from game_save_manager import Backup_Class
 import unittest
 import time
 import os
 
 class TestGameSaveManager(unittest.TestCase):
 
-    test = Backup()
+    test = Backup_Class()
 
 
     def test_selected_game_filename(self):
