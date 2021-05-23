@@ -1,11 +1,15 @@
-import getpass, sqlite3, shutil, json, time, os, re, sys, subprocess, math, winsound
+import getpass, sqlite3, shutil, json, time, os, re, sys, subprocess, math
 from threading import Thread
 from logging.handlers import RotatingFileHandler
 import logging as lg
 from tkinter import ttk, filedialog, messagebox
 import tkinter as Tk
 import datetime as dt
-
+# optional imports
+try:
+    import winsound
+except ModuleNotFoundError:
+    pass
 
 class Backup_Class:
 
@@ -31,6 +35,7 @@ class Backup_Class:
     # scoring init
     with open('scoring.json') as json_file:
         scoring = json.load(json_file)
+
 
     # var init
     title = 'Game Save Manager'
@@ -218,7 +223,7 @@ class Backup_Class:
             self.game_listbox.insert(0, game_name)
             self.logger.info(f'Backed up Save for {game_name}.')
             self.backup_restore_in_progress = 0
-            winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
+            self.completion_sound()
 
         if self.selected_game == None:
             messagebox.showwarning(title=self.title, message='No game is selected yet.')
@@ -544,11 +549,21 @@ class Backup_Class:
     @staticmethod
     def nonascii(string):
         '''
-        Removes ASCII characters.
+        Returns the given string with ASCII characters removed.
         '''
-        encoded_string = string.encode("ascii", "ignore")
-        decoded_string = encoded_string.decode()
-        return decoded_string
+        return string.encode("ascii", "ignore").decode()
+
+
+    @staticmethod
+    def completion_sound():
+        '''
+        Makes a sound denoting a task completion.
+        '''
+        if sys.platform == 'win32':
+            try:
+                winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
+            except ModuleNotFoundError:
+                pass
 
 
     def game_save_location_search(self, game_name, test=0):
@@ -642,7 +657,7 @@ class Backup_Class:
         else:
             info = f'Path Found in {elapsed_time} seconds\n{self.best_dir[-limit:]}'
         self.info_label.config(text=info)
-        winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
+        self.completion_sound()
         if self.best_dir != self.initialdir:
             if dir_changed:
                 info += f'\nFound directory is different then entered directory.'
