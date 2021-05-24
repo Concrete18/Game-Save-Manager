@@ -287,6 +287,8 @@ class Backup_Class:
     def restore_save(self):
         '''
         Opens an interface for picking the dated backup of the selected game to restore.
+
+        First it checks if an existing save exists or if a game is even selected(Exits function if no game is selected).
         '''
         # TODO add progress bar for restore
         self.backup_restore_in_progress = 1
@@ -300,13 +302,14 @@ class Backup_Class:
         self.save_dic = {}
         if os.path.exists(backup_path):
             for file in os.scandir(backup_path):
+                file_name = os.path.splitext(file.name)[0]
                 try:
-                    updated_name = dt.datetime.strptime(file.name, '%m-%d-%y %H-%M-%S').strftime('%b %d, %Y %I:%M %p')
+                    updated_name = dt.datetime.strptime(file_name, '%m-%d-%y %H-%M-%S').strftime('%b %d, %Y %I:%M %p')
                 except ValueError:
-                    updated_name = file.name
+                    updated_name = file_name
                 self.save_dic[updated_name] = file
             for file in os.scandir(os.path.split(self.selected_game_save)[0]):
-                if file.name.endswith('.old'):
+                if file_name.endswith('.old'):
                     self.save_dic['Undo Last Restore'] = file
         else:
             messagebox.showwarning(
@@ -316,12 +319,19 @@ class Backup_Class:
             return
 
 
+        def cancel_restore():
+            self.backup_restore_in_progress = 0
+            self.Restore_Game_Window.destroy()
+
+
         def restore_selected_save():
             '''
             Restores selected game save based on save clicked.
+
             Restores by renaming current save folder to "save.old" and then copying the backup to replace it.
             '''
             save_name = self.save_dic[save_listbox.get(save_listbox.curselection())]
+            print(save_name)
             backup_path = os.path.join(self.backup_dest, self.selected_game, save_name.name)
             if save_name.name.endswith('.old'):
                 msg1 = 'This will delete the previously restored save and revert to the original.'
@@ -332,8 +342,8 @@ class Backup_Class:
                 if response:
                     shutil.rmtree(save_name.path[:-4])
                     os.rename(save_name.path, save_name.path[:-4])
-                    Restore_Game_Window.grab_release()
-                    Restore_Game_Window.destroy()
+                    self.Restore_Game_Window.grab_release()
+                    self.Restore_Game_Window.destroy()
                     self.logger.info(f'Restored original save for {self.selected_game}.')
                 return
             if os.path.exists(f'{self.selected_game_save}.old'):
@@ -347,10 +357,11 @@ class Backup_Class:
                     self.logger.info(f'Deleted original save before last restore for {self.selected_game}.')
                 else:
                     print('Canceling Restore.')
-                    Restore_Game_Window.grab_release()
+                    self.Restore_Game_Window.grab_release()
                     return
             # TODO Move old file to special backup folder instead of renaming to .old
             os.rename(self.selected_game_save, f'{self.selected_game_save}.old')
+            # shutil.move(self.selected_game_save, os.path.join(self.selected_game_save))
             # TODO test with different types of compression
             if save_name.name in self.available_compression:
                 # decompresses the backup and sends it to the save location
@@ -364,37 +375,38 @@ class Backup_Class:
             else:
                 shutil.copytree(backup_path, self.selected_game_save)
                 self.logger.info(f'Restored save for {self.selected_game}from backup.')
-            Restore_Game_Window.destroy()
+            cancel_restore()
 
 
-        Restore_Game_Window = Tk.Toplevel(takefocus=True)
+        self.Restore_Game_Window = Tk.Toplevel(takefocus=True)
+        self.Restore_Game_Window.protocol("WM_DELETE_WINDOW", cancel_restore)
         window_width = 300
         window_height = 220
-        self.tk_window_options(Restore_Game_Window, window_width, window_height)
-        Restore_Game_Window.grab_set()
+        self.tk_window_options(self.Restore_Game_Window, window_width, window_height)
+        self.Restore_Game_Window.grab_set()
 
-        RestoreInfo = ttk.Label(Restore_Game_Window,
+        RestoreInfo = ttk.Label(self.Restore_Game_Window,
             text='Select save to restore for', font=("Arial Bold", 10))
         RestoreInfo.grid(columnspan=2, row=0, column=0, pady=(10,0), padx=10)
 
-        RestoreGame = ttk.Label(Restore_Game_Window,
+        RestoreGame = ttk.Label(self.Restore_Game_Window,
             text=self.selected_game, font=("Arial Bold", 10))
         RestoreGame.grid(columnspan=2, row=1, column=0, pady=(0,10), padx=10)
 
-        save_listbox = Tk.Listbox(Restore_Game_Window, exportselection=False, font=("Arial Bold", 12), height=5,
+        save_listbox = Tk.Listbox(self.Restore_Game_Window, exportselection=False, font=("Arial Bold", 12), height=5,
             width=30)
         save_listbox.grid(columnspan=2, row=2, column=0, pady=5, padx=10)
 
         for item in self.save_dic:
             save_listbox.insert(Tk.END, item)
 
-        confirm_button = ttk.Button(Restore_Game_Window, text='Confirm', command=restore_selected_save, width=20)
+        confirm_button = ttk.Button(self.Restore_Game_Window, text='Confirm', command=restore_selected_save, width=20)
         confirm_button.grid(row=3, column=0, padx=10, pady=10)
 
-        CancelButton = ttk.Button(Restore_Game_Window, text='Cancel', command=Restore_Game_Window.destroy, width=20)
+        CancelButton = ttk.Button(self.Restore_Game_Window, text='Cancel', command=cancel_restore, width=20)
         CancelButton.grid(row=3, column=1, padx=10, pady=10)
 
-        Restore_Game_Window.mainloop()
+        self.Restore_Game_Window.mainloop()
 
 
     def explore_folder(self, folder):
