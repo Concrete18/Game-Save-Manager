@@ -256,7 +256,8 @@ class Backup_Class:
         Disables window resize and centers window if config enables each.
         '''
         window_name.title(self.title)
-        window_name.iconbitmap(window_name, 'images\Save_icon.ico')
+        if sys.platform == 'win32':
+            window_name.iconbitmap(window_name, 'images\Save_icon.ico')
         if self.disable_resize:  # sets window to not resize if disable_resize is set to 1
             window_name.resizable(width=False, height=False)
         if self.center_window == 1:
@@ -489,16 +490,23 @@ class Backup_Class:
         Finds the directories to use when searching for games.
         '''
         start = time.perf_counter()
-        dirs_to_check = [
-            rf":/Users/{self.username}/AppData/Local",
-            rf":/Users/{self.username}/AppData/LocalLow",
-            rf":/Users/{self.username}/AppData/Roaming",
-            rf":/Users/{self.username}/Saved Games",
-            rf":/Users/{self.username}/Documents",
-            r":/Program Files (x86)/Steam/steamapps/common",
-            r":/Program Files/Steam/steamapps/common"
-            ]
-        drive_letters = self.find_letters()
+        # os specific settings
+        platform = sys.platform
+        if platform == 'win32':
+            dirs_to_check = [
+                rf":/Users/{self.username}/AppData/Local",
+                rf":/Users/{self.username}/AppData/LocalLow",
+                rf":/Users/{self.username}/AppData/Roaming",
+                rf":/Users/{self.username}/Saved Games",
+                rf":/Users/{self.username}/Documents",
+                r":/Program Files (x86)/Steam/steamapps/common",
+                r":/Program Files/Steam/steamapps/common"
+                ]
+            drive_letters = self.find_letters()
+        elif platform == 'linux':
+            # TODO add linux support to find_search_directories
+            dirs_to_check = ['$HOME/.local/share/Steam/userdata']
+        # starts directory check
         for dir in dirs_to_check:
             for letter in drive_letters:
                 current_dir = letter + dir
@@ -846,6 +854,7 @@ class Backup_Class:
             time.sleep(.1)
         self.database.close
         # FIXME fails to exit if filedialog is left open
+        # fix using subclassed filedialog commands that can close it
         exit()
 
 
@@ -909,6 +918,7 @@ class Backup_Class:
         self.game_listbox.grid(columnspan=3, row=0, column=0)
         self.scrollbar.config(command=self.game_listbox.yview)
 
+        # add search bar above listbox
         for item in self.sorted_list:
             self.game_listbox.insert(Tk.END, item)
 
