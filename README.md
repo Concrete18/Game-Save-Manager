@@ -26,6 +26,11 @@ Made in Python 3.8.3
 different directory then what is currently entered.
 * If a game save is entered when searching, you will be told if the found save is different from the current.
 
+### Game Search
+
+* Full game database search above game list.
+* Instant search results as you type without having to hit enter.
+
 ### Backup Compression
 
 * Backup compression for saving space can be enabled in the config.
@@ -39,7 +44,7 @@ shutil.get_archive_formats()
 ## Python Techniques Used
 
 * Tkinter messagebox and directory dialog
-* Fully works with python built in modules only.
+* Fully works with python built in modules only
 * SQLite Database
 * File copying and other manipulations
 * Object oriented design
