@@ -587,6 +587,9 @@ class Backup_Class:
 
 
     def game_save_location_search(self, game_name, test=0):
+        '''
+        ph
+        '''
         overall_start = time.perf_counter() # start time for checking elaspsed runtime
         best_score = 0
         break_used = 0
@@ -736,7 +739,7 @@ class Backup_Class:
             self.cursor.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.selected_game})
             self.database.commit()
             self.game_listbox.delete(self.game_listbox.curselection()[0])
-            self.delete_update_entry()
+            self.select_entry()
             if os.path.isdir(self.base_backup_folder):
                 response = messagebox.askyesno(
                     title=self.title,
@@ -808,7 +811,33 @@ class Backup_Class:
             return f' {days} days ago'
 
 
-    def delete_update_entry(self, Update = 0):
+    def update_listbox(self, data):
+        '''
+        Deletes current listbox items and adds the given data in.
+        '''
+        self.game_listbox.delete(0, Tk.END)
+        for item in data:
+            self.game_listbox.insert(Tk.END, item)
+
+
+    def entry_search(self, e):
+        '''
+        Finds all items in the sorted_list that have the search box data in it.
+        It then updates the listbox data to only include matching results.
+        '''
+        typed = self.search_entry.get()
+        if typed == '':
+            data = self.sorted_list
+        else:
+            data = []
+            for item in self.sorted_list:
+                if typed.lower() in item.lower():
+                    data.append(item)
+        # update our listbox with selected items
+        self.update_listbox(data)
+
+
+    def select_entry(self, Update = 0):
         '''
         Updates Game Data into Name and Save Entry for viewing.
         Allows for updating specific entries in the database as well.
@@ -828,9 +857,13 @@ class Backup_Class:
             self.selected_game = self.game_listbox.get(self.game_listbox.curselection())
             self.game_filename = self.get_selected_game_filename()
             self.selected_game_save = self.get_selected_game_save()
+            self.base_backup_folder = os.path.join(self.backup_dest, self.game_filename)
+            # game name and entry box update
             self.GameNameEntry.insert(0, self.selected_game)
             self.GameSaveEntry.insert(0, self.selected_game_save)
-            self.base_backup_folder = os.path.join(self.backup_dest, self.game_filename)
+            # search box update
+            self.search_entry.delete(0, Tk.END)
+            self.search_entry.insert(0, self.selected_game)
             # enables all buttons to be pressed once a selection is made
             for button in [self.BackupButton, self.ExploreSaveButton]:
                 button.config(state='normal')
@@ -878,7 +911,7 @@ class Backup_Class:
 
         self.main_gui = Tk.Tk()
         self.main_gui.protocol("WM_DELETE_WINDOW", self.close_db)
-        window_width = 670
+        window_width = 680
         window_height = 550
         self.tk_window_options(self.main_gui, window_width, window_height)
         # self.main_gui.geometry(f'{window_width}x{window_height}+{width}+{height}')
@@ -921,18 +954,19 @@ class Backup_Class:
         self.ListboxFrame.grid(columnspan=4, row=2, column=0,  padx=(20, 20), pady=(5, 10))
 
         self.scrollbar = Tk.Scrollbar(self.ListboxFrame, orient=Tk.VERTICAL)
-        self.scrollbar.grid(row=0, column=3, sticky='ns', rowspan=3)
+        self.scrollbar.grid(row=1, column=3, sticky='ns', rowspan=3)
 
-        self.game_listbox = Tk.Listbox(self.ListboxFrame, exportselection=False,
-            yscrollcommand=self.scrollbar.set, font=(BoldBaseFont, 12), height=10, width=60)
-        self.game_listbox.bind('<<ListboxSelect>>', lambda event, game_listbox=self.game_listbox,:
-            self.delete_update_entry(1))
-        self.game_listbox.grid(columnspan=3, row=0, column=0)
+        self.search_entry = Tk.ttk.Entry(self.ListboxFrame, width=90, exportselection=0)
+        self.search_entry.grid(columnspan=3, row=0, column=0, pady=(0, 10))
+        self.search_entry.bind('<KeyRelease>', self.entry_search)
+
+        self.game_listbox = Tk.Listbox(self.ListboxFrame, exportselection=False, yscrollcommand=self.scrollbar.set,
+            font=(BoldBaseFont, 12), height=10, width=60)
+        self.game_listbox.bind('<<ListboxSelect>>', lambda event, game_listbox=self.game_listbox,:self.select_entry(1))
+        self.game_listbox.grid(columnspan=3, row=1, column=0)
+
         self.scrollbar.config(command=self.game_listbox.yview)
-
-        # add search bar above listbox
-        for item in self.sorted_list:
-            self.game_listbox.insert(Tk.END, item)
+        self.update_listbox(self.sorted_list)
 
         # Main Row 3
         Add_Game_Frame = Tk.LabelFrame(self.main_gui, text='Manage Games')
@@ -979,7 +1013,7 @@ class Backup_Class:
         RemoveButton.grid(row=2, column=2, padx=button_padx, pady=button_pady)
 
         ClearButton = Tk.ttk.Button(Button_Frame, text='Clear Entries',
-            command=self.delete_update_entry, width=20)
+            command=self.select_entry, width=20)
         ClearButton.grid(row=2, column=3, padx=button_padx, pady=button_pady)
 
         self.database_check()
