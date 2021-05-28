@@ -5,6 +5,7 @@ import logging as lg
 from tkinter import ttk, filedialog, messagebox
 import tkinter as Tk
 import datetime as dt
+
 # optional imports
 try:
     import winsound
@@ -36,11 +37,11 @@ class Backup_Class:
     with open('scoring.json') as json_file:
         scoring = json.load(json_file)
 
-
     # var init
     title = 'Game Save Manager'
     allowed_filename_characters = '[^a-zA-Z0-9.,\s]'
     backup_restore_in_progress = 0
+    default_entry_value = 'Type Search Here'
     # compression setup
     available_compression = []
     for item in shutil.get_archive_formats():
@@ -739,7 +740,7 @@ class Backup_Class:
             self.cursor.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.selected_game})
             self.database.commit()
             self.game_listbox.delete(self.game_listbox.curselection()[0])
-            self.select_entry()
+            self.select_listbox_entry()
             if os.path.isdir(self.base_backup_folder):
                 response = messagebox.askyesno(
                     title=self.title,
@@ -837,7 +838,23 @@ class Backup_Class:
         self.update_listbox(data)
 
 
-    def select_entry(self, Update = 0):
+    def select_entry(self, e):
+        '''
+        Deletes only search box default text on click.
+        '''
+        if self.search_entry.get() == self.default_entry_value:
+            self.search_entry.delete(0, Tk.END)
+
+
+    def unfocus_entry(self, e):
+        '''
+        Resets search box to default_entry_value when it loses focus.
+        '''
+        self.search_entry.delete(0, Tk.END)
+        self.search_entry.insert(0, self.default_entry_value)
+
+
+    def select_listbox_entry(self, Update = 0):
         '''
         Updates Game Data into Name and Save Entry for viewing.
         Allows for updating specific entries in the database as well.
@@ -863,7 +880,7 @@ class Backup_Class:
             self.GameSaveEntry.insert(0, self.selected_game_save)
             # search box update
             self.search_entry.delete(0, Tk.END)
-            self.search_entry.insert(0, self.selected_game)
+            self.search_entry.insert(0, self.default_entry_value)
             # enables all buttons to be pressed once a selection is made
             for button in [self.BackupButton, self.ExploreSaveButton]:
                 button.config(state='normal')
@@ -958,11 +975,14 @@ class Backup_Class:
 
         self.search_entry = Tk.ttk.Entry(self.ListboxFrame, width=90, exportselection=0)
         self.search_entry.grid(columnspan=3, row=0, column=0, pady=(0, 10))
+        self.search_entry.insert(0, self.default_entry_value)
+        self.search_entry.bind('<1>', self.select_entry)
+        self.search_entry.bind('<FocusOut>', self.unfocus_entry)
         self.search_entry.bind('<KeyRelease>', self.entry_search)
 
         self.game_listbox = Tk.Listbox(self.ListboxFrame, exportselection=False, yscrollcommand=self.scrollbar.set,
             font=(BoldBaseFont, 12), height=10, width=60)
-        self.game_listbox.bind('<<ListboxSelect>>', lambda event, game_listbox=self.game_listbox,:self.select_entry(1))
+        self.game_listbox.bind('<<ListboxSelect>>', lambda event, game_listbox=self.game_listbox,:self.select_listbox_entry(1))
         self.game_listbox.grid(columnspan=3, row=1, column=0)
 
         self.scrollbar.config(command=self.game_listbox.yview)
@@ -1013,7 +1033,7 @@ class Backup_Class:
         RemoveButton.grid(row=2, column=2, padx=button_padx, pady=button_pady)
 
         ClearButton = Tk.ttk.Button(Button_Frame, text='Clear Entries',
-            command=self.select_entry, width=20)
+            command=self.select_listbox_entry, width=20)
         ClearButton.grid(row=2, column=3, padx=button_padx, pady=button_pady)
 
         self.database_check()
