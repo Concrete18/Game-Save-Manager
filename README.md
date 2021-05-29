@@ -28,6 +28,8 @@ different directory then what is currently entered.
 
 ### Game Search
 
+![Image of Smart Browse](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/images/Search%20Example.png)
+
 * Full game database search above game list.
 * Instant search results as you type without having to hit enter.
 
@@ -76,6 +78,7 @@ shutil.get_archive_formats()
 
 * Total Games and Total size only updates on program restart.
 * Change location that the current save is backed up to before restoring to current backup location.
+* Arrow Key listbox navigation
 
 ## Bugs
 
