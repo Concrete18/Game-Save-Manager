@@ -1,13 +1,20 @@
 {
-    "settings":{
-        "backup_dest":"Save Backup",
-        "backup_redundancy":3,
-        "enable_compression":1,
-        "compression_type":"zip",
+    "setup":{
+        "backup_dest":"Save Backup"
+    },
+    "optional_settings":{
+        "enter_to_quick_backup":1,
         "disable_resize":1,
-        "center_window":1,
+        "backup_redundancy":3,
+        "center_window":1
+    },
+    "compression":{
+        "enable_compression":1,
+        "compression_type":"zip"
+    },
+    "debug":{
         "text_output":0,
-        "debug":0
+        "enable_debug":0
     },
     "custom_save_directories":[
         "D:/My Documents",

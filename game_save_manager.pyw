@@ -21,17 +21,22 @@ class Backup_Class:
     # settings setup
     with open('settings.json') as json_file:
         data = json.load(json_file)
-    backup_dest = data['settings']['backup_dest']  # backup destination setup
+    backup_dest = data['setup']['backup_dest']  # backup destination setup
+    # redundancy settings
     redundancy_limit = 4
-    backup_redundancy = data['settings']['backup_redundancy']
-    enable_compression = data['settings']['enable_compression']
-    compression_type = data['settings']['compression_type']
+    backup_redundancy = data['optional_settings']['backup_redundancy']
     if type(backup_redundancy) is not int or backup_redundancy not in range(1, redundancy_limit + 1):
         backup_redundancy = 4
-    disable_resize = data['settings']['disable_resize']
-    center_window = data['settings']['center_window']
-    output = data['settings']['text_output']
-    debug = data['settings']['debug']
+    # optional settings
+    enter_to_quick_backup = data['optional_settings']['enter_to_quick_backup']
+    disable_resize = data['optional_settings']['disable_resize']
+    center_window = data['optional_settings']['center_window']
+    # compression
+    enable_compression = data['compression']['enable_compression']
+    compression_type = data['compression']['compression_type']
+    # debug
+    output = data['debug']['text_output']
+    enable_debug = data['debug']['enable_debug']
 
     # scoring init
     with open('scoring.json') as json_file:
@@ -217,7 +222,7 @@ class Backup_Class:
             # FIXME total_size is wrong for some games right after it finishes backing up
             info1 = f'{game_name} has been backed up.\n'
             info2 = f'Game Backup Size: {total_size} from {len(os.listdir(self.base_backup_folder))} backups'
-            if self.debug:
+            if self.enable_debug:
                 print(info2)
             self.ActionInfo.config(text=info1 + info2)
             self.game_listbox.delete(Tk.ACTIVE)
@@ -493,7 +498,7 @@ class Backup_Class:
         result = []
         for letters in words:
             result.append(letters[0])
-        if self.debug:
+        if self.enable_debug:
             print(result)
         return result
 
@@ -529,11 +534,11 @@ class Backup_Class:
                     self.search_directories.append(current_dir)
         for custom_saved_dir in self.data['custom_save_directories']:
             self.search_directories.append(custom_saved_dir)
-        if self.debug:
+        if self.enable_debug:
             print(self.search_directories)
         finish = time.perf_counter() # stop time for checking elaspsed runtime
         elapsed_time = round(finish-start, 2)
-        if self.debug:
+        if self.enable_debug:
             print(f'find_search_directories: {elapsed_time} seconds')
         self.search_directories_incomplete = 0
 
@@ -596,7 +601,7 @@ class Backup_Class:
         best_score = 0
         break_used = 0
         dir_changed = 0
-        if self.debug:
+        if self.enable_debug:
             print(f'\nGame: {game_name}')
         current_score = 0
         self.best_dir = self.initialdir
@@ -606,7 +611,7 @@ class Backup_Class:
         if test == 0:
             self.progress['maximum'] = len(self.search_directories) + 1
         for directory in self.search_directories:
-            if self.debug:
+            if self.enable_debug:
                 print(f'\nCurrent Search Directory: {directory}')
             directory_start = time.perf_counter()
             for root, dirs, files in os.walk(directory, topdown=False):
@@ -614,7 +619,7 @@ class Backup_Class:
                     if game_name.lower().replace(' ', '') in dir.lower().replace(' ', ''):
                         possible_dir = os.path.join(root, dir)
                         if possible_dir != '':
-                            if self.debug:
+                            if self.enable_debug:
                                 print(f'\n{possible_dir}')
                         for found_root, found_dirs, found_files in os.walk(possible_dir, topdown=False):
                             for found_file in found_files:
@@ -637,12 +642,12 @@ class Backup_Class:
                                 for item, score in self.scoring['folder_negative_scoring'].items():
                                     if item in found_dir.lower():
                                         current_score -= score
-                        if self.debug:
+                        if self.enable_debug:
                             print(f'Score {current_score}')
                         break
             # update based on high score
             directory_finish = time.perf_counter()
-            if self.debug:
+            if self.enable_debug:
                 print(f'Dir Search Time: {round(directory_finish-directory_start, 2)} seconds')
             if test == 0:
                 self.progress['value'] += 1
@@ -656,7 +661,7 @@ class Backup_Class:
             current_score = 0
         overall_finish = time.perf_counter() # stop time for checking elaspsed runtime
         elapsed_time = round(overall_finish-overall_start, 2)
-        if self.debug:
+        if self.enable_debug:
             print(f'\n{game_name}\nOverall Search Time: {elapsed_time} seconds')
             print(f'Path Used: {self.best_dir}')
             print(f'Path Score: {best_score}')
@@ -950,7 +955,8 @@ class Backup_Class:
         # self.main_gui.geometry(f'{window_width}x{window_height}+{width}+{height}')
 
         # binding
-        self.main_gui.bind('<Return>', self.backup_shortcut)
+        if self.enter_to_quick_backup:
+            self.main_gui.bind('<Return>', self.backup_shortcut)
 
         # Main Row 0
         Backup_Frame = Tk.Frame(self.main_gui)
