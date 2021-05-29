@@ -41,7 +41,7 @@ class Backup_Class:
     title = 'Game Save Manager'
     allowed_filename_characters = '[^a-zA-Z0-9.,\s]'
     backup_restore_in_progress = 0
-    default_entry_value = 'Type Search Here'
+    default_entry_value = 'Type Search Query Here'
     # compression setup
     available_compression = []
     for item in shutil.get_archive_formats():
@@ -589,7 +589,8 @@ class Backup_Class:
 
     def game_save_location_search(self, game_name, test=0):
         '''
-        ph
+        Searches for possible save game locations for the given name using a point based system.
+        The highes scoring directory is chosen.
         '''
         overall_start = time.perf_counter() # start time for checking elaspsed runtime
         best_score = 0
@@ -834,7 +835,6 @@ class Backup_Class:
             for item in self.sorted_list:
                 if typed.lower() in item.lower():
                     data.append(item)
-        # update our listbox with selected items
         self.update_listbox(data)
 
 
@@ -844,6 +844,22 @@ class Backup_Class:
         '''
         if self.search_entry.get() == self.default_entry_value:
             self.search_entry.delete(0, Tk.END)
+
+
+    def listbox_nav(self, e):
+        '''
+        TODO Allows Up and Down arrow keys to navigate the listbox.
+        '''
+        index = self.game_listbox.curselection()[0]
+        if e.keysym == 'Up':
+            index += -1
+        if e.keysym == 'Down':
+            index += 1
+        if 0 <= index < self.game_listbox.size():
+            self.game_listbox.selection_clear(0, Tk.END)
+            self.game_listbox.select_set(index)
+            self.game_listbox.selection_anchor(index)
+            self.game_listbox.activate(index)
 
 
     def unfocus_entry(self, e):
@@ -973,8 +989,8 @@ class Backup_Class:
         self.scrollbar = Tk.Scrollbar(self.ListboxFrame, orient=Tk.VERTICAL)
         self.scrollbar.grid(row=1, column=3, sticky='ns', rowspan=3)
 
-        self.search_entry = Tk.ttk.Entry(self.ListboxFrame, width=90, exportselection=0)
-        self.search_entry.grid(columnspan=3, row=0, column=0, pady=(0, 10))
+        self.search_entry = Tk.ttk.Entry(self.ListboxFrame, width=89, exportselection=0)
+        self.search_entry.grid(columnspan=3, row=0, column=0, pady=(0, 3))
         self.search_entry.insert(0, self.default_entry_value)
         self.search_entry.bind('<1>', self.select_entry)
         self.search_entry.bind('<FocusOut>', self.unfocus_entry)
@@ -982,10 +998,17 @@ class Backup_Class:
 
         self.game_listbox = Tk.Listbox(self.ListboxFrame, exportselection=False, yscrollcommand=self.scrollbar.set,
             font=(BoldBaseFont, 12), height=10, width=60)
-        self.game_listbox.bind('<<ListboxSelect>>', lambda event, game_listbox=self.game_listbox,:self.select_listbox_entry(1))
         self.game_listbox.grid(columnspan=3, row=1, column=0)
+        self.game_listbox.bind('<<ListboxSelect>>', lambda event, game_listbox=self.game_listbox,:self.select_listbox_entry(1))
 
+        # TODO finish or delete below code
+        # full interface bind for lisxtbox navigation
+        # self.main_gui.bind('<Up>', lambda event,arg=.1:self.listbox_nav(event))
+        # self.main_gui.bind('<Down>', lambda event,arg=.1:self.listbox_nav(event))
+
+        # scrollbar config
         self.scrollbar.config(command=self.game_listbox.yview)
+        # listbox fill
         self.update_listbox(self.sorted_list)
 
         # Main Row 3
