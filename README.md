@@ -82,5 +82,6 @@ shutil.get_archive_formats()
 
 ## Bugs
 
+* Restoring a game after a restore already left a .old save file fails.
 * leaving the file dialog open prevents closing interface.
 * Game backup size shows as 0 after finishing a backup until it is clicked again.
