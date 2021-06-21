@@ -121,12 +121,11 @@ class Backup_Class:
             else:
                 plural = 's'
             msg1 = f'{total} save location{plural} currently no longer exists.\n'
-            msg2 = f'Do you want to show only the missing game{plural}?'
-            response = messagebox.askyesno(title=self.title, message=msg1 + msg2)
+            msg2 = f'Do you want to show only the missing game{plural}?\n'
+            msg3 = 'Click Refresh Games to show all entries again.'
+            response = messagebox.askyesno(title=self.title, message=msg1 + msg2 + msg3)
             if response:
-                messagebox.showinfo(title=self.title, message='Restart to show all entries again.')
                 self.update_listbox(missing_save_list)
-            # TODO make it possible to reset view after fixing errors
 
 
     def get_selected_game_filename(self, game=None):
@@ -836,6 +835,7 @@ class Backup_Class:
         self.game_listbox.delete(0, Tk.END)
         for item in data:
             self.game_listbox.insert(Tk.END, item)
+        self.ActionInfo.config(text='Select a Game\nto continue')
 
 
     def entry_search(self, e):
@@ -895,6 +895,9 @@ class Backup_Class:
 
         Update -- 1 or 0 (default = 0)
         '''
+        # ignores function if listbox is empty
+        if self.game_listbox.size() == 0:
+            return
         # clears entry boxes
         self.GameNameEntry.delete(0, Tk.END)
         self.GameSaveEntry.delete(0, Tk.END)
@@ -1061,20 +1064,24 @@ class Backup_Class:
         button_padx = 4
         button_pady = 5
         ConfirmAddButton = Tk.ttk.Button(Button_Frame, text='Add Game',
-            command=self.add_game_to_database, width=20)
+            command=self.add_game_to_database, width=16)
         ConfirmAddButton.grid(row=2, column=0, padx=button_padx, pady=button_pady)
 
         UpdateButton = Tk.ttk.Button(Button_Frame, text='Update Game',
-            command=self.update_game, width=20)
+            command=self.update_game, width=16)
         UpdateButton.grid(row=2, column=1, padx=button_padx, pady=button_pady)
 
         RemoveButton = ttk.Button(Button_Frame, text='Remove Game',
-            command=self.delete_game_from_db, width=20)
+            command=self.delete_game_from_db, width=16)
         RemoveButton.grid(row=2, column=2, padx=button_padx, pady=button_pady)
 
         ClearButton = Tk.ttk.Button(Button_Frame, text='Clear Entries',
-            command=self.select_listbox_entry, width=20)
+            command=self.select_listbox_entry, width=16)
         ClearButton.grid(row=2, column=3, padx=button_padx, pady=button_pady)
+
+        ClearButton = Tk.ttk.Button(Button_Frame, text='Refresh Games',
+            command=lambda: self.update_listbox(self.sorted_games()), width=16)
+        ClearButton.grid(row=2, column=4, padx=button_padx, pady=button_pady)
 
         self.database_check()
         self.main_gui.mainloop()
