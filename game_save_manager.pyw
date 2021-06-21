@@ -85,9 +85,7 @@ class Backup_Class:
         Tk.Tk().withdraw()
         if not os.path.exists(self.backup_dest):
             msg = 'Do you want to choose a save backup directory instead of using a default within the program folder?'
-            response = messagebox.askyesno(
-                title=self.title,
-                message=msg)
+            response = messagebox.askyesno(title=self.title, message=msg)
             if response:
                 self.backup_dest = filedialog.askdirectory(initialdir="C:/", title="Select Save Backup Directory")
                 if os.path.exists(self.backup_dest):
@@ -96,20 +94,18 @@ class Backup_Class:
                     with open('settings.json', "w") as outfile:  # Writing to sample.json
                         outfile.write(json_object)
                 else:
-                    messagebox.showwarning(
-                        title=self.title,
-                        message='Path does not exist.')
+                    messagebox.showwarning(title=self.title, message='Path does not exist.')
             else:
                 os.mkdir(self.backup_dest)
 
 
     def database_check(self):
         '''
-        Checks for no longer existing save directories from database.
+        Checks for no longer existing save directories from the database and
+        allows showing the missing entries for fixing.
         '''
         self.cursor.execute("SELECT save_location FROM games")
         missing_save_list = []
-        missing_save_string = ''
         for save_location in self.cursor.fetchall():  # appends all save locations that do not exist to a list
             if not os.path.isdir(save_location[0]):
                 self.cursor.execute('''
@@ -118,23 +114,19 @@ class Backup_Class:
                 WHERE save_location=:save_location''', {'save_location': save_location[0]})
                 game_name = self.cursor.fetchone()[0]
                 missing_save_list.append(game_name)
-        total_missing_saves = len(missing_save_list)
-        if total_missing_saves == 1:
-            missing_save_string = missing_save_list[0]
-        elif total_missing_saves == 2:
-            missing_save_string = f'{missing_save_list[0]} and {missing_save_list[1]}'
-        else:
-            missing_save_string = ", ".join(missing_save_list)
-        if total_missing_saves in range(1, 6):  # shows unfound save locations if list has 1-5 entries
-            messagebox.showwarning(
-                title=self.title,
-                message=f'Save Locations for the following games do not exist.\n{missing_save_string}')
-            self.logger.debug(f'Missing Save Locations:{missing_save_string}')
-        elif total_missing_saves > 5: # warns of unfound save locations if list is greater then 5 entries
-            messagebox.showwarning(
-                title=self.title,
-                message='More than 5 save locations do not exist.')
-            self.logger.debug(f'More then 5 save locations in the database do not exist.')
+        total = len(missing_save_list)
+        if total > 0:
+            if total == 1:
+                plural = ''
+            else:
+                plural = 's'
+            msg1 = f'{total} save location{plural} currently no longer exists.\n'
+            msg2 = f'Do you want to show only the missing game{plural}?'
+            response = messagebox.askyesno(title=self.title, message=msg1 + msg2)
+            if response:
+                messagebox.showinfo(title=self.title, message='Restart to show all entries again.')
+                self.update_listbox(missing_save_list)
+            # TODO make it possible to reset view after fixing errors
 
 
     def get_selected_game_filename(self, game=None):
@@ -244,14 +236,10 @@ class Backup_Class:
                 {'game_name': game_name, 'last_backup': last_backup})
             self.database.commit()
         except FileNotFoundError:
-            messagebox.showwarning(
-                title=self.title,
-                message='Action Failed - File location does not exist.')
+            messagebox.showwarning(title=self.title,  message='Action Failed - File location does not exist.')
             self.logger.error(f'Failed to Backed up Save for {game_name}. File location does not exist.')
         except FileExistsError:
-            messagebox.showwarning(
-                title=self.title,
-                message='Action Failed - Save Already Backed up.')
+            messagebox.showwarning(title=self.title, message='Action Failed - Save Already Backed up.')
             self.logger.error(f'Failed to Backed up Save for {game_name}. Save Already Backed up.')
         except SystemExit:
             print('Cancelled Backup.')
@@ -797,9 +785,7 @@ class Backup_Class:
         The last selected game in the Listbox gets updated with the info from the Add/Update Game entries.
         '''
         if self.selected_game == None:
-            messagebox.showwarning(
-                title=self.title,
-                message='No game is selected yet.')
+            messagebox.showwarning(title=self.title, message='No game is selected yet.')
             return
         game_name = self.GameNameEntry.get()
         save_location = self.GameSaveEntry.get().replace('/', '\\')
@@ -818,9 +804,7 @@ class Backup_Class:
             self.game_listbox.insert(index, game_name)
             self.logger.info(f'Updated {self.selected_game} in database.')
         else:
-            messagebox.showwarning(
-                title=self.title,
-                message='Save Location does not exist.')
+            messagebox.showwarning(title=self.title, message='Save Location does not exist.')
 
 
     @staticmethod
