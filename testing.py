@@ -25,10 +25,23 @@ class TestGameSaveManager(unittest.TestCase):
         self.assertEqual(self.test.convert_size('ValueError'), '0 bits')
 
 
+    def test_compressed(self):
+        print('\nTesting compressed function')
+        tests = {
+        'Post-Restore Save.zip':True,
+        'Post-Restore Save':False,
+        'Post-Restore Save.tar':True,
+        'Post-Restore Save.gztar':True,
+        'Post-Restore Save.bztar':True,
+        'Post-Restore Save.xztar':True,
+        }
+        for test_value, answer in tests.items():
+            self.assertEqual(self.test.compressed(test_value), answer)
+
+
     def test_smart_browse(self):
         print('\nTesting smart_browse function')
         game_dict = {
-            # TODO fix entry | 'Superliminal':r'C:\Users\Michael\AppData\LocalLow\PillowCastle\SuperliminalSteam\',
             'Factorio':r'C:\Users\Michael\AppData\Roaming\Factorio',
             'Surviving Mars':r'C:\Users\Michael\AppData\Roaming\Surviving Mars',
             'Wildfire':r'C:\Users\Michael\AppData\Local\wildfire',
