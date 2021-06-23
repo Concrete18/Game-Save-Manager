@@ -43,6 +43,10 @@ different directory then what is currently entered.
 shutil.get_archive_formats()
 ```
 
+### Misc
+
+* Detects any games with no longer existing save paths. (Allows listing only missing games for removing/updating)
+
 ## Python Techniques Used
 
 * Tkinter messagebox and directory dialog
@@ -71,7 +75,6 @@ shutil.get_archive_formats()
         "D:/My Installed Games/Steam Games/steamapps/common"
     ]
 }
-......
 ```
 
 ## Todo
@@ -82,6 +85,7 @@ shutil.get_archive_formats()
 
 ## Bugs
 
+* Restore is currently broken after adding compression
 * Restoring a game after a restore already left a .old save file fails.
 * leaving the file dialog open prevents closing interface.
 * Game backup size shows as 0 after finishing a backup until it is clicked again.
