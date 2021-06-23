@@ -337,7 +337,7 @@ class Backup_Class:
             return
 
 
-        def cancel_restore():
+        def close_restore_win():
             self.backup_restore_in_progress = 0
             self.Restore_Game_Window.destroy()
 
@@ -354,12 +354,15 @@ class Backup_Class:
             # check if the last post restore save is being restored
             if post_save_name in selected_backup.name:
                 msg1 = 'This will delete the previously restored save and revert to the backup.'
-                msg2 = 'Are you sure? This will not send to the recycle bin.'
+                msg2 = '\nAre you sure? This will not send to the recycle bin.'
                 response = messagebox.askyesno(title=self.title, message=msg1 + msg2)
                 if response:
                     # deletes the current save within the games save folder
                     for f in os.scandir(self.selected_save_path):
-                        os.remove(f)
+                        if os.path.isdir(f):
+                            shutil.rmtree(f)
+                        else:
+                            os.remove(f)
                     # unpacks or copies the backup depending on if it is compressed or not
                     if self.compressed(selected_backup.name):
                         self.decompress(selected_backup.path, self.selected_save_path)
@@ -369,51 +372,48 @@ class Backup_Class:
                     self.Restore_Game_Window.grab_release()
                     self.Restore_Game_Window.destroy()
                     self.logger.info(f'Restored {post_save_name} for {self.selected_game}.')
-                else:
-                    return
-            # check if a last restore backup exists already
-            # FIXME this section does not work yet
-            for item in os.scandir(os.path.join(self.backup_dest, self.selected_game)):
-                if post_save_name in item.name:
-                    msg1 = f'Backup of Post-Restore Save already exists.'
-                    msg2 = 'Do you want to delete it? This will cancel the restore if you do not delete it.'
-                    # response = messagebox.askyesno(title=self.title, message=msg1 + msg2)
-                    response = 1
-                    if response:
-                        # finds the post_save_name
-                        for f in os.scandir(os.path.join(self.backup_dest, self.selected_game)):
-                            if post_save_name in f.name:
-                                # deletes the compressed file or deletes the entire folder tree
-                                if self.compressed(f.name):
-                                    os.remove(f)
-                                else:
-                                    shutil.rmtree(f)
-                        self.logger.info(f'Deleted original save before last restore for {self.selected_game}.')
-                    else:
-                        print('Canceling Restore.')
-                        self.Restore_Game_Window.grab_release()
-                        return
-            dest = os.path.join(self.backup_dest, self.selected_game)
-            self.compress(self.selected_save_path, dest)
-            # delete existing save
-            for f in os.scandir(self.selected_save_path):
-                if os.path.isdir(f):
-                    shutil.rmtree(f)
-                else:
-                    os.remove(f)
-            # checks if the backup is compressed
-            if self.compressed(selected_backup.name):
-                # decompresses the backup and sends it to the save location
-                self.decompress(selected_backup.path, self.selected_save_path)
-                self.logger.info(f'Restored save for {self.selected_game} from compressed backup.')
             else:
-                shutil.copytree(full_save_path, self.selected_save_path)
-                self.logger.info(f'Restored save for {self.selected_game}from backup.')
-            cancel_restore()
+                # check if a last restore backup exists already
+                for item in os.scandir(os.path.join(self.backup_dest, self.selected_game)):
+                    if post_save_name in item.name:
+                        msg1 = f'Backup of Post-Restore Save already exists.'
+                        msg2 = 'Do you want to delete it? This will cancel the restore if you do not delete it.'
+                        response = messagebox.askyesno(title=self.title, message=msg1 + msg2)
+                        if response:
+                            # finds the post_save_name
+                            for f in os.scandir(os.path.join(self.backup_dest, self.selected_game)):
+                                if post_save_name in f.name:
+                                    # deletes the compressed file or deletes the entire folder tree
+                                    if self.compressed(f.name):
+                                        os.remove(f)
+                                    else:
+                                        shutil.rmtree(f)
+                            self.logger.info(f'Deleted original save before last restore for {self.selected_game}.')
+                        else:
+                            print('Canceling Restore.')
+                            self.Restore_Game_Window.grab_release()
+                            return
+                dest = os.path.join(self.backup_dest, self.selected_game, post_save_name)
+                self.compress(self.selected_save_path, dest)
+                # delete existing save
+                for f in os.scandir(self.selected_save_path):
+                    if os.path.isdir(f):
+                        shutil.rmtree(f)
+                    else:
+                        os.remove(f)
+                # checks if the backup is compressed
+                if self.compressed(selected_backup.name):
+                    # decompresses the backup and sends it to the save location
+                    self.decompress(selected_backup.path, self.selected_save_path)
+                    self.logger.info(f'Restored save for {self.selected_game} from compressed backup.')
+                else:
+                    shutil.copytree(full_save_path, self.selected_save_path)
+                    self.logger.info(f'Restored save for {self.selected_game}from backup.')
+            close_restore_win()
 
 
         self.Restore_Game_Window = Tk.Toplevel(takefocus=True)
-        self.Restore_Game_Window.protocol("WM_DELETE_WINDOW", cancel_restore)
+        self.Restore_Game_Window.protocol("WM_DELETE_WINDOW", close_restore_win)
         window_width = 300
         window_height = 220
         self.tk_window_options(self.Restore_Game_Window, window_width, window_height)
@@ -437,7 +437,7 @@ class Backup_Class:
         confirm_button = ttk.Button(self.Restore_Game_Window, text='Confirm', command=restore_selected_save, width=20)
         confirm_button.grid(row=3, column=0, padx=10, pady=10)
 
-        CancelButton = ttk.Button(self.Restore_Game_Window, text='Cancel', command=cancel_restore, width=20)
+        CancelButton = ttk.Button(self.Restore_Game_Window, text='Cancel', command=close_restore_win, width=20)
         CancelButton.grid(row=3, column=1, padx=10, pady=10)
 
         self.Restore_Game_Window.mainloop()

@@ -80,12 +80,9 @@ shutil.get_archive_formats()
 ## Todo
 
 * Total Games and Total size only updates on program restart.
-* Change location that the current save is backed up to before restoring to current backup location.
 * Arrow Key listbox navigation
 
 ## Bugs
 
-* Restore is currently broken after adding compression
-* Restoring a game after a restore already left a .old save file fails.
 * leaving the file dialog open prevents closing interface.
 * Game backup size shows as 0 after finishing a backup until it is clicked again.
