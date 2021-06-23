@@ -13,7 +13,8 @@ except ModuleNotFoundError:
     pass
 
 class Restore:
-    # WIP
+    # WIP move everything related to restore to its own class
+    # optional
     pass
 
 class Backup_Class:
@@ -190,6 +191,24 @@ class Backup_Class:
             self.logger.info(f'{game} had more then {self.backup_redundancy} Saves. Deleted oldest saves.')
 
 
+    def compress(self, file_path, destination):
+        '''
+        Compresses the file given as the file path into the destination path.
+        '''
+        shutil.make_archive(base_name=destination, format=self.compression_type, root_dir=file_path)
+
+
+    def decompress(self,file, destination, format='unknown filetype'):
+        '''
+        Decompresses the given file into the given destination.
+        '''
+        try:
+            shutil.unpack_archive(file, destination)
+        except ValueError:
+            msg = f'Decompression failed, {format} is not actually a valid compression type.'
+            messagebox.showwarning(title=self.title, message=msg)
+
+
     def run_full_backup(self):
         '''
         Backups up the game entered based on SQLite save location data to the specified backup folder.
@@ -204,7 +223,7 @@ class Backup_Class:
             dest = os.path.join(self.base_backup_folder, current_time)
             # TODO add progress bar for backup
             if self.enable_compression:
-                shutil.make_archive(dest, self.compression_type, self.selected_save_path)
+                self.compress(self.selected_save_path, dest)
             else:
                 shutil.copytree(self.selected_save_path, dest)
             self.delete_oldest(self.game_filename)
@@ -270,11 +289,26 @@ class Backup_Class:
             title=self.title,
             message=f'Are you sure you want to backup {self.selected_game}')
         if response == 'yes':
+            # TODO move some variables to here as arguments to make sure everything stays the same
             self.run_full_backup()
         else:
             self.game_listbox.activate(0)
             return
         print(event)
+
+
+    def compressed(self, file):
+        '''
+        Returns True if the file is compressed with a valid compression type.
+        '''
+        available_compression = []
+        for item in shutil.get_archive_formats():
+            available_compression.append(f'.{item[0]}')
+        filetype = os.path.splitext(file)[1]
+        if filetype in available_compression:
+            return True
+        else:
+            return False
 
 
     def restore_save(self):
@@ -284,12 +318,11 @@ class Backup_Class:
         First it checks if an existing save exists or if a game is even selected(Exits function if no game is selected).
         '''
         # TODO add progress bar for restore
-        self.backup_restore_in_progress = 1  # disables closing the interface until restore completes
         # exits if no game is selected
         if self.selected_game == None:
             messagebox.showwarning(title=self.title, message='No game is selected yet.')
-            self.backup_restore_in_progress = 0
             return
+        self.backup_restore_in_progress = 1  # disables closing the interface until restore completes
         # checks if the game has a backup folder
         if os.path.exists(self.base_backup_folder):
             # creates list of backups that can be restored
@@ -316,81 +349,61 @@ class Backup_Class:
             self.Restore_Game_Window.destroy()
 
 
-        def is_compressed(file):
-            '''
-            Returns True if the file is compressed with a valid compression type.
-            '''
-            available_compression = []
-            for item in shutil.get_archive_formats():
-                available_compression.append(f'.{item[0]}')
-            filetype = os.path.splitext(file)[1]
-            if filetype in available_compression:
-                return True
-            else:
-                return False
-
-
-        def decompress(file, destination, filetype='unknown'):
-            '''
-            ph
-            '''
-            try:
-                shutil.unpack_archive(file, destination)
-            except ValueError:
-                msg = f'Decompression failed, {filetype} is not actually a valid compression type.'
-                messagebox.showwarning(title=self.title, message=msg)
-
-
         def restore_selected_save():
             '''
             Restores selected game save based on save clicked within the Restore_Game_Window window.
             '''
-            # selected_backup_name | <DirEntry '05-31-21 16-43-22.zip'>
-            selected_backup_name = self.save_dic[save_listbox.get(save_listbox.curselection())]
+            # selected_backup | <DirEntry '05-31-21 16-43-22.zip'>
+            selected_backup = self.save_dic[save_listbox.get(save_listbox.curselection())]
             # full_save_path       | Save Backup\Testing\05-31-21 16-43-22.zip
-            full_save_path = os.path.join(self.backup_dest, self.selected_game, selected_backup_name.name)
-            # post_restore_save    | Save Backup\Testing\Post-Restore Save
-            post_restore_save = os.path.join(self.backup_dest, self.selected_game, 'Post-Restore Save')
-            print('selected_backup_name |', selected_backup_name)
-            print('full_save_path       |', full_save_path)
-            # selected_save_path   | C:\Users\Michael\Documents\Shadow of the Tomb Raider\76561197982626192
-            print('selected_save_path   |', self.selected_save_path)
-            print('post_restore_save    |', post_restore_save)
-            input()
+            full_save_path = os.path.join(self.backup_dest, self.selected_game, selected_backup.name)
+            post_save_name = 'Post-Restore Save'
             # check if the last post restore save is being restored
-            if selected_backup_name.name == 'Post-Restore Save':
-                msg1 = 'This will delete the previously restored save and revert to the original.'
-                msg2 = 'Are you sure? This will skip the recycle bin.'
+            if post_save_name in selected_backup.name:
+                msg1 = 'This will delete the previously restored save and revert to the backup.'
+                msg2 = 'Are you sure? This will not send to the recycle bin.'
                 response = messagebox.askyesno(title=self.title, message=msg1 + msg2)
                 if response:
-                    shutil.rmtree(post_restore_save)
-                    decompress(selected_backup_name.path, full_save_path)
+                    # deletes the current save within the games save folder
+                    for f in os.scandir(self.selected_save_path):
+                        os.remove(f)
+                    # unpacks or copies the backup depending on if it is compressed or not
+                    if self.compressed(selected_backup.name):
+                        print(full_save_path)
+                        self.decompress(selected_backup.path, self.selected_save_path)
+                    else:
+                        shutil.copytree(full_save_path, self.selected_save_path)
+                    # closes restore window on completion
                     self.Restore_Game_Window.grab_release()
                     self.Restore_Game_Window.destroy()
-                    self.logger.info(f'Restored original save for {self.selected_game}.')
-            # check if a last restore backup exists already
-            if os.path.exists(post_restore_save):
-                msg1 = f'Backup of Post-Restore Save already exists.'
-                msg2 = 'Do you want to delete it? This will cancel the restore if you do not delete it.'
-                response = messagebox.askyesno(
-                    title=self.title,
-                    message=msg1 + msg2)
-                if response:
-                    shutil.rmtree(post_restore_save)
-                    self.logger.info(f'Deleted original save before last restore for {self.selected_game}.')
+                    self.logger.info(f'Restored {post_save_name} for {self.selected_game}.')
                 else:
-                    print('Canceling Restore.')
-                    self.Restore_Game_Window.grab_release()
                     return
-            # WIP Move old file to special backup folder
-            post_restore_save = os.path.join(self.backup_dest, selected_backup_name.name, 'Post-Restore Save')
-            shutil.move(self.selected_save_path, )
-            # TODO test with different types of compression
-            if is_compressed(selected_backup_name.name):
+            # check if a last restore backup exists already
+            for item in os.scandir(os.path.join(self.backup_dest, self.selected_game)):
+                if post_save_name in item.name:
+                    msg1 = f'Backup of Post-Restore Save already exists.'
+                    msg2 = 'Do you want to delete it? This will cancel the restore if you do not delete it.'
+                    response = messagebox.askyesno(title=self.title, message=msg1 + msg2)
+                    if response:
+                        # finds the post_save_name
+                        for f in os.scandir(os.path.join(self.backup_dest, self.selected_game)):
+                            if post_save_name in f.name:
+                                # deletes the compressed file or deletes the entire folder tree
+                                if self.compressed(f.name):
+                                    os.remove(f)
+                                else:
+                                    shutil.rmtree(f)
+                        self.logger.info(f'Deleted original save before last restore for {self.selected_game}.')
+                    else:
+                        print('Canceling Restore.')
+                        self.Restore_Game_Window.grab_release()
+                        return
+            dest = os.path.join(self.backup_dest, self.selected_game)
+            self.compress(self.selected_save_path, dest)
+            if self.compressed(selected_backup.name):
                 # decompresses the backup and sends it to the save location
-                filetype = os.path.splitext(selected_backup_name.name)[1]
-                save_path = os.path.split(self.selected_save_path)[0]
-                decompress(full_save_path, save_path, filetype)
+                self.decompress(selected_backup.path, self.selected_save_path)
                 self.logger.info(f'Restored save for {self.selected_game} from compressed backup.')
             else:
                 shutil.copytree(full_save_path, self.selected_save_path)
