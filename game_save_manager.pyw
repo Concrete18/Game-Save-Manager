@@ -342,10 +342,19 @@ class Backup_Class:
             self.Restore_Game_Window.destroy()
 
 
+        def delete_dir_contents(dir):
+            for f in os.scandir(dir):
+                if os.path.isdir(f):
+                    shutil.rmtree(f)
+                else:
+                    os.remove(f)
+
+
         def restore_selected_save():
             '''
             Restores selected game save based on save clicked within the Restore_Game_Window window.
             '''
+            # TODO shorten code so it uses less repeated lines
             # selected_backup | <DirEntry '05-31-21 16-43-22.zip'>
             selected_backup = self.save_dic[save_listbox.get(save_listbox.curselection())]
             # full_save_path       | Save Backup\Testing\05-31-21 16-43-22.zip
@@ -358,16 +367,14 @@ class Backup_Class:
                 response = messagebox.askyesno(title=self.title, message=msg1 + msg2)
                 if response:
                     # deletes the current save within the games save folder
-                    for f in os.scandir(self.selected_save_path):
-                        if os.path.isdir(f):
-                            shutil.rmtree(f)
-                        else:
-                            os.remove(f)
+                    delete_dir_contents(self.selected_save_path)
                     # unpacks or copies the backup depending on if it is compressed or not
                     if self.compressed(selected_backup.name):
                         self.decompress(selected_backup.path, self.selected_save_path)
+                        self.logger.info(f'Restored save for {self.selected_game} from compressed backup.')
                     else:
                         shutil.copytree(full_save_path, self.selected_save_path)
+                        self.logger.info(f'Restored save for {self.selected_game}from backup.')
                     # closes restore window on completion
                     self.Restore_Game_Window.grab_release()
                     self.Restore_Game_Window.destroy()
@@ -396,14 +403,10 @@ class Backup_Class:
                 dest = os.path.join(self.backup_dest, self.selected_game, post_save_name)
                 self.compress(self.selected_save_path, dest)
                 # delete existing save
-                for f in os.scandir(self.selected_save_path):
-                    if os.path.isdir(f):
-                        shutil.rmtree(f)
-                    else:
-                        os.remove(f)
+                delete_dir_contents(self.selected_save_path)
                 # checks if the backup is compressed
+                # TODO turn into function
                 if self.compressed(selected_backup.name):
-                    # decompresses the backup and sends it to the save location
                     self.decompress(selected_backup.path, self.selected_save_path)
                     self.logger.info(f'Restored save for {self.selected_game} from compressed backup.')
                 else:
