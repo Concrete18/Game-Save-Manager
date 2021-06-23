@@ -12,11 +12,6 @@ try:
 except ModuleNotFoundError:
     pass
 
-class Restore:
-    # WIP move everything related to restore to its own class
-    # optional
-    pass
-
 class Backup_Class:
 
     # sets script directory in case current working directory is different
@@ -221,7 +216,6 @@ class Backup_Class:
             self.backup_restore_in_progress = 1
             current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
             dest = os.path.join(self.base_backup_folder, current_time)
-            # TODO add progress bar for backup
             if self.enable_compression:
                 self.compress(self.selected_save_path, dest)
             else:
@@ -317,7 +311,6 @@ class Backup_Class:
 
         First it checks if an existing save exists or if a game is even selected(Exits function if no game is selected).
         '''
-        # TODO add progress bar for restore
         # exits if no game is selected
         if self.selected_game == None:
             messagebox.showwarning(title=self.title, message='No game is selected yet.')
@@ -369,7 +362,6 @@ class Backup_Class:
                         os.remove(f)
                     # unpacks or copies the backup depending on if it is compressed or not
                     if self.compressed(selected_backup.name):
-                        print(full_save_path)
                         self.decompress(selected_backup.path, self.selected_save_path)
                     else:
                         shutil.copytree(full_save_path, self.selected_save_path)
@@ -380,11 +372,13 @@ class Backup_Class:
                 else:
                     return
             # check if a last restore backup exists already
+            # FIXME this section does not work yet
             for item in os.scandir(os.path.join(self.backup_dest, self.selected_game)):
                 if post_save_name in item.name:
                     msg1 = f'Backup of Post-Restore Save already exists.'
                     msg2 = 'Do you want to delete it? This will cancel the restore if you do not delete it.'
-                    response = messagebox.askyesno(title=self.title, message=msg1 + msg2)
+                    # response = messagebox.askyesno(title=self.title, message=msg1 + msg2)
+                    response = 1
                     if response:
                         # finds the post_save_name
                         for f in os.scandir(os.path.join(self.backup_dest, self.selected_game)):
@@ -401,6 +395,13 @@ class Backup_Class:
                         return
             dest = os.path.join(self.backup_dest, self.selected_game)
             self.compress(self.selected_save_path, dest)
+            # delete existing save
+            for f in os.scandir(self.selected_save_path):
+                if os.path.isdir(f):
+                    shutil.rmtree(f)
+                else:
+                    os.remove(f)
+            # checks if the backup is compressed
             if self.compressed(selected_backup.name):
                 # decompresses the backup and sends it to the save location
                 self.decompress(selected_backup.path, self.selected_save_path)
@@ -1034,7 +1035,7 @@ class Backup_Class:
         self.game_listbox.grid(columnspan=3, row=1, column=0)
         self.game_listbox.bind('<<ListboxSelect>>', lambda event, game_listbox=self.game_listbox,:self.select_listbox_entry(1))
 
-        # TODO finish or delete below code
+        # TODO finish or delete up and down control of listbox
         # full interface bind for lisxtbox navigation
         # self.main_gui.bind('<Up>', lambda event,arg=.1:self.listbox_nav(event))
         # self.main_gui.bind('<Down>', lambda event,arg=.1:self.listbox_nav(event))
