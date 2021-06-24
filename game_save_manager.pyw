@@ -116,10 +116,10 @@ class Backup_Class:
                 plural = ''
             else:
                 plural = 's'
-            msg1 = f'{total} save location{plural} currently no longer exists.\n'
-            msg2 = f'Do you want to show only the missing game{plural}?\n'
-            msg3 = 'Click Refresh Games to show all entries again.'
-            response = messagebox.askyesno(title=self.title, message=msg1 + msg2 + msg3)
+            msg = f'{total} save location{plural} currently no longer exists.\n'\
+                  f'Do you want to show only the missing game{plural}?\n'\
+                   'Click Refresh Games to show all entries again.'
+            response = messagebox.askyesno(title=self.title, message=msg)
             if response:
                 self.update_listbox(missing_save_list)
 
@@ -378,9 +378,10 @@ class Backup_Class:
             post_save_name = 'Post-Restore Save'
             # check if the last post restore save is being restored
             if post_save_name in selected_backup.name:
-                msg1 = 'This will delete the previously restored save and revert to the backup.'
-                msg2 = '\nAre you sure? This will not send to the recycle bin.'
-                response = messagebox.askyesno(title=self.title, message=msg1 + msg2)
+                msg = 'This will delete the previously restored backup.'\
+                      '\nAre you sure that you revert to the backup?'\
+                      '\nThis will not send to the recycle bin.'
+                response = messagebox.askyesno(title=self.title, message=msg)
                 if response:
                     delete_dir_contents(self.selected_save_path)
                     self.backup_orignal_save(selected_backup, full_save_path)
@@ -389,9 +390,9 @@ class Backup_Class:
                 # check if a last restore backup exists already
                 for item in os.scandir(os.path.join(self.backup_dest, self.selected_game)):
                     if post_save_name in item.name:
-                        msg1 = f'Backup of Post-Restore Save already exists.'
-                        msg2 = '\nDo you want to delete it? This will cancel the restore if you do not delete it.'
-                        response = messagebox.askyesno(title=self.title, message=msg1 + msg2)
+                        msg = f'Backup of Post-Restore Save already exists.'\
+                              '\nDo you want to delete it in order to continue?'
+                        response = messagebox.askyesno(title=self.title, message=msg)
                         if response:
                             # finds the post_save_name
                             for f in os.scandir(os.path.join(self.backup_dest, self.selected_game)):
