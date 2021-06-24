@@ -2,7 +2,7 @@ import getpass, sqlite3, shutil, json, time, os, re, sys, subprocess, math
 from threading import Thread
 from logging.handlers import RotatingFileHandler
 import logging as lg
-from tkinter import PhotoImage, ttk, filedialog, messagebox
+from tkinter import ttk, filedialog, messagebox
 import tkinter as Tk
 import datetime as dt
 
@@ -880,7 +880,7 @@ class Backup_Class:
 
     def listbox_nav(self, e):
         '''
-        WIP Allows Up and Down arrow keys to navigate the listbox.
+        Allows Up and Down arrow keys to navigate the listbox.
         '''
         index = self.game_listbox.curselection()[0]
         if e.keysym == 'Up':
