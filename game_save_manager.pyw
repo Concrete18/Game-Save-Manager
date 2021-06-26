@@ -514,14 +514,19 @@ class Backup_Class:
                 self.cursor.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
                     {'game_name': game_name, 'save_location': save_location, 'last_backup': 'Never'})
                 self.database.commit()
+                self.sorted_list.insert(0, game_name)
                 self.game_listbox.insert(0, game_name)
                 self.logger.info(f'Added {game_name} to database.')
+                self.update_listbox()
             else:
                 msg = f'Save Location for {self.selected_game} does not exist.'
                 messagebox.showwarning(title=self.title, message=msg)
 
 
-    def find_letters(self):
+    def find__drive_letters(self):
+        '''
+        Finds the active drive letters for storage.
+        '''
         with os.popen("fsutil fsinfo drives") as data:
             letter_output = data.readlines()[1]
         words = re.findall('\S+', letter_output)[1:]
@@ -550,7 +555,7 @@ class Backup_Class:
                 r":/Program Files (x86)/Steam/steamapps/common",
                 r":/Program Files/Steam/steamapps/common"
                 ]
-            drive_letters = self.find_letters()
+            drive_letters = self.find__drive_letters()
         elif platform == 'linux':
             # TODO add linux support to find_search_directories
             dirs_to_check = ['$HOME/.local/share/Steam/userdata']
@@ -765,9 +770,7 @@ class Backup_Class:
         Deletes selected game from SQLite Database.
         '''
         if self.selected_game == None:
-            messagebox.showwarning(
-                title=self.title,
-                message='No game is selected yet.')
+            messagebox.showwarning(title=self.title, message='No game is selected yet.')
             return
         delete_check = messagebox.askyesno(
             title=self.title,
@@ -775,8 +778,13 @@ class Backup_Class:
         if delete_check:
             self.cursor.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.selected_game})
             self.database.commit()
-            self.game_listbox.delete(self.game_listbox.curselection()[0])
+            # deletes game from game_listbox and sorted_list
+            selected_game = self.game_listbox.curselection()[0]
+            self.game_listbox.delete(selected_game)
+            self.sorted_list.pop(selected_game)
+            self.update_listbox()
             self.select_listbox_entry()
+            # checks if you want to delete the games save backups as well
             if os.path.isdir(self.base_backup_folder):
                 response = messagebox.askyesno(
                     title=self.title,
@@ -844,14 +852,20 @@ class Backup_Class:
             return f' {days} days ago'
 
 
-    def update_listbox(self, data):
+    def update_listbox(self, data=None):
         '''
         Deletes current listbox items and adds the given data in.
         '''
+        if data == None:
+            # refreshes the value of sorted_list
+            data = self.sorted_list
         self.game_listbox.delete(0, Tk.END)
         for item in data:
             self.game_listbox.insert(Tk.END, item)
         self.ActionInfo.config(text='Select a Game\nto continue')
+        # updates title info label
+        info_text = f'Total Games: {len(self.sorted_list)}\nTotal Backup Size: {self.convert_size(self.backup_dest)}'
+        self.Title.config(text=info_text)
 
 
     def entry_search(self, e):
@@ -972,8 +986,9 @@ class Backup_Class:
 
 
     def open_interface_window(self):
-        self.sorted_list = self.sorted_games()
-
+        '''
+        Opens the main Game Save Manager interface.
+        '''
         # Defaults
         BoldBaseFont = "Arial Bold"
 
@@ -992,9 +1007,8 @@ class Backup_Class:
         Backup_Frame = Tk.Frame(self.main_gui)
         Backup_Frame.grid(columnspan=4, column=0, row=0,  padx=(20, 20), pady=(5, 0))
 
-        info_text = f'Total Games: {len(self.sorted_list)}\nTotal Backup Size: {self.convert_size(self.backup_dest)}'
-        Title = Tk.Label(Backup_Frame, text=info_text, font=(BoldBaseFont, 10))
-        Title.grid(columnspan=4, row=0, column=1)
+        self.Title = Tk.Label(Backup_Frame, text='\n', font=(BoldBaseFont, 10))
+        self.Title.grid(columnspan=4, row=0, column=1)
 
         button_width = 23
         self.BackupButton = ttk.Button(Backup_Frame, text='Backup Save', state='disabled',
@@ -1045,7 +1059,8 @@ class Backup_Class:
         # scrollbar config
         self.scrollbar.config(command=self.game_listbox.yview)
         # listbox fill
-        self.update_listbox(self.sorted_list)
+        self.sorted_list = self.sorted_games()
+        self.update_listbox()
 
         # Main Row 3
         Add_Game_Frame = Tk.LabelFrame(self.main_gui, text='Manage Games')
@@ -1095,8 +1110,7 @@ class Backup_Class:
             command=self.select_listbox_entry, width=16)
         ClearButton.grid(row=2, column=3, padx=button_padx, pady=button_pady)
 
-        ClearButton = Tk.ttk.Button(Button_Frame, text='Refresh Games',
-            command=lambda: self.update_listbox(self.sorted_games()), width=16)
+        ClearButton = Tk.ttk.Button(Button_Frame, text='Refresh Games', command=self.update_listbox, width=16)
         ClearButton.grid(row=2, column=4, padx=button_padx, pady=button_pady)
 
         self.database_check()

@@ -79,7 +79,6 @@ shutil.get_archive_formats()
 
 ## Todo
 
-* Total Games and Total size only updates on program restart.
 * Arrow Key listbox navigation
 
 ## Bugs
