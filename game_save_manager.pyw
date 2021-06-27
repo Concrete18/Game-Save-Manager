@@ -627,6 +627,46 @@ class Backup_Class:
                 pass
 
 
+    def dir_scoring(self, possible_dir):
+        '''
+        ph
+        '''
+        # check for dir blacklist
+        # TODO add skip for possible_dirs with blacklist keywords within it
+        dir_blacklist = ['IndexedDB', 'Nvidia', 'Google\Chrome']
+        for string in dir_blacklist:
+            if string.lower() in possible_dir.lower():
+                return 0
+        if possible_dir != '':
+            if self.enable_debug:
+                print(f'\n{possible_dir}')
+        current_score = 0
+        for found_root, found_dirs, found_files in os.walk(possible_dir, topdown=False):
+            for found_file in found_files:
+            # file scoring TODO add a way to track scoring that applies
+                # + scorers
+                for item, score in self.scoring['file_positive_scoring'].items():
+                    if item in found_file.lower():
+                        current_score += score
+                # - scorers
+                for item, score in self.scoring['file_negative_scoring'].items():
+                    if item in found_file.lower():
+                        current_score -= score
+            for found_dir in found_dirs:
+            # folder scoring
+                # + scorers
+                for item, score in self.scoring['folder_positive_scoring'].items():
+                    if item in found_dir.lower():
+                        current_score += score
+                # - scorers
+                for item, score in self.scoring['folder_negative_scoring'].items():
+                    if item in found_dir.lower():
+                        current_score -= score
+        if self.enable_debug:
+            print(f'Score {current_score}')
+        return current_score
+
+
     def game_save_location_search(self, game_name, test=0):
         '''
         Searches for possible save game locations for the given name using a point based system.
@@ -653,33 +693,7 @@ class Backup_Class:
                 for dir in dirs:
                     if game_name.lower().replace(' ', '') in dir.lower().replace(' ', ''):
                         possible_dir = os.path.join(root, dir)
-                        if possible_dir != '':
-                            if self.enable_debug:
-                                print(f'\n{possible_dir}')
-                        for found_root, found_dirs, found_files in os.walk(possible_dir, topdown=False):
-                            for found_file in found_files:
-                            # file scoring TODO add a way to track scoring that applies
-                                # + scorers
-                                for item, score in self.scoring['file_positive_scoring'].items():
-                                    if item in found_file.lower():
-                                        current_score += score
-                                # - scorers
-                                for item, score in self.scoring['file_negative_scoring'].items():
-                                    if item in found_file.lower():
-                                        current_score -= score
-                            for found_dir in found_dirs:
-                            # folder scoring
-                                # + scorers
-                                for item, score in self.scoring['folder_positive_scoring'].items():
-                                    if item in found_dir.lower():
-                                        current_score += score
-                                # - scorers
-                                for item, score in self.scoring['folder_negative_scoring'].items():
-                                    if item in found_dir.lower():
-                                        current_score -= score
-                        if self.enable_debug:
-                            print(f'Score {current_score}')
-                        break
+                        current_score = self.dir_scoring(possible_dir)
             # update based on high score
             directory_finish = time.perf_counter()
             if self.enable_debug:
