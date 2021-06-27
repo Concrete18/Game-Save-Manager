@@ -1,4 +1,10 @@
 {
+    "dir_blacklist":[
+        "IndexedDB",
+        "Nvidia",
+        "Google\\Chrome",
+        "Google/Chrome"
+    ],
     "file_positive_scoring":{
         "autosave":50,
         "quicksave":50,
