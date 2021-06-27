@@ -1,4 +1,5 @@
-import getpass, sqlite3, shutil, json, time, os, re, sys, subprocess, math
+import getpass, sqlite3, shutil, json, os, re, sys, subprocess, math
+from time import sleep, perf_counter
 from threading import Thread
 from logging.handlers import RotatingFileHandler
 import logging as lg
@@ -221,7 +222,7 @@ class Backup_Class:
             else:
                 shutil.copytree(self.selected_save_path, dest)
             self.delete_oldest(self.game_filename)
-            time.sleep(.3)
+            sleep(.3)
             total_size = self.convert_size(os.path.join(self.backup_dest, self.selected_game))
             # BUG total_size is wrong for some games right after it finishes backing up
             info1 = f'{game_name} has been backed up.\n'
@@ -542,7 +543,7 @@ class Backup_Class:
         '''
         Finds the directories to use when searching for games.
         '''
-        start = time.perf_counter()
+        start = perf_counter()
         # os specific settings
         platform = sys.platform
         if platform == 'win32':
@@ -571,7 +572,7 @@ class Backup_Class:
             self.search_directories.append(custom_saved_dir)
         if self.enable_debug:
             print(self.search_directories)
-        finish = time.perf_counter() # stop time for checking elaspsed runtime
+        finish = perf_counter() # stop time for checking elaspsed runtime
         elapsed_time = round(finish-start, 2)
         if self.enable_debug:
             print(f'find_search_directories: {elapsed_time} seconds')
@@ -633,7 +634,7 @@ class Backup_Class:
         '''
         # check for dir blacklist
         # TODO add skip for possible_dirs with blacklist keywords within it
-        dir_blacklist = ['IndexedDB', 'Nvidia', 'Google\Chrome']
+        dir_blacklist = self.scoring['dir_blacklist']
         for string in dir_blacklist:
             if string.lower() in possible_dir.lower():
                 return 0
@@ -672,7 +673,7 @@ class Backup_Class:
         Searches for possible save game locations for the given name using a point based system.
         The highes scoring directory is chosen.
         '''
-        overall_start = time.perf_counter() # start time for checking elaspsed runtime
+        overall_start = perf_counter() # start time for checking elaspsed runtime
         best_score = 0
         break_used = 0
         dir_changed = 0
@@ -682,20 +683,20 @@ class Backup_Class:
         self.best_dir = self.initialdir
         possible_dir = ''
         while self.search_directories_incomplete:
-            time.sleep(.1)
+            sleep(.1)
         if test == 0:
             self.progress['maximum'] = len(self.search_directories) + 1
         for directory in self.search_directories:
             if self.enable_debug:
                 print(f'\nCurrent Search Directory: {directory}')
-            directory_start = time.perf_counter()
+            directory_start = perf_counter()
             for root, dirs, files in os.walk(directory, topdown=False):
                 for dir in dirs:
                     if game_name.lower().replace(' ', '') in dir.lower().replace(' ', ''):
                         possible_dir = os.path.join(root, dir)
                         current_score = self.dir_scoring(possible_dir)
             # update based on high score
-            directory_finish = time.perf_counter()
+            directory_finish = perf_counter()
             if self.enable_debug:
                 print(f'Dir Search Time: {round(directory_finish-directory_start, 2)} seconds')
             if test == 0:
@@ -708,7 +709,7 @@ class Backup_Class:
                     break_used = 1
                     break
             current_score = 0
-        overall_finish = time.perf_counter() # stop time for checking elaspsed runtime
+        overall_finish = perf_counter() # stop time for checking elaspsed runtime
         elapsed_time = round(overall_finish-overall_start, 2)
         if self.enable_debug:
             print(f'\n{game_name}\nOverall Search Time: {elapsed_time} seconds')
@@ -992,7 +993,7 @@ class Backup_Class:
             msg = f'Backup/Restore in progress.\n{self.title} will close after completion when you close this message.'
             messagebox.showerror(title=self.title, message=msg)
         while self.backup_restore_in_progress:
-            time.sleep(.1)
+            sleep(.1)
         self.database.close
         # BUG fails to exit if filedialog is left open
         # fix using subclassed filedialog commands that can close it
