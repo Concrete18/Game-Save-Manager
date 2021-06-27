@@ -42,6 +42,9 @@ class TestGameSaveManager(unittest.TestCase):
     def test_smart_browse(self):
         print('\nTesting smart_browse function')
         game_dict = {
+            # 'Barotrauma':r'C:\Users\Michael\AppData\Local\Daedalic Entertainment GmbH\Barotrauma',
+            'Phantom Abyss':r'C:\Users\Michael\AppData\Local\PhantomAbyss',
+            'Still There':r'C:\Users\Michael\AppData\LocalLow\GhostShark Games\Still There',
             'Factorio':r'C:\Users\Michael\AppData\Roaming\Factorio',
             'Surviving Mars':r'C:\Users\Michael\AppData\Roaming\Surviving Mars',
             'Wildfire':r'C:\Users\Michael\AppData\Local\wildfire',
@@ -58,6 +61,7 @@ class TestGameSaveManager(unittest.TestCase):
             'Timberborn':r'D:\My Documents\Timberborn',
             'XCOM 2 War of the Chosen':r'D:\My Documents\My Games\XCOM2 War of the Chosen'}
         self.test.debug = 0
+        self.test.output = 0
         print('\n   Setting up search directories')
         self.test.find_search_directories()
         print('\n   Starting search for each game.')
