@@ -6,14 +6,17 @@ import logging as lg
 from tkinter import ttk, filedialog, messagebox
 import tkinter as Tk
 import datetime as dt
-# TODO make optional
-import requests
-
 # optional imports
 try:
-    import winsound
+    import requests
+    requests_installed = 1
 except ModuleNotFoundError:
-    pass
+    requests_installed = 0
+try:
+    import winsound
+    winsound_installed = 1
+except ModuleNotFoundError:
+    winsound_installed = 0
 
 class Backup_Class:
 
@@ -620,16 +623,13 @@ class Backup_Class:
         return string.encode("ascii", "ignore").decode()
 
 
-    @staticmethod
-    def completion_sound():
+    def completion_sound(self):
         '''
         Makes a sound denoting a task completion.
         '''
         if sys.platform == 'win32':
-            try:
+            if winsound_installed:
                 winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
-            except ModuleNotFoundError:
-                pass
 
 
     def dir_scoring(self, possible_dir):
@@ -759,11 +759,12 @@ class Backup_Class:
         # checks if nothing was found from the first search
         if self.best_dir == self.initialdir:
             self.logger.info(f'Normal save search found nothing for {game_name}')
-            app_id = self.get_appid(full_game_name)
-            if app_id != None:
-                self.best_dir = self.check_userdata(app_id)
-            else:
-                self.logger.info(f'app_id cant be found for {game_name}')
+            if requests_installed:
+                app_id = self.get_appid(full_game_name)
+                if app_id != None:
+                    self.best_dir = self.check_userdata(app_id)
+                else:
+                    self.logger.info(f'app_id cant be found for {game_name}')
         if test == 0:
             game_save = os.path.abspath(self.GameSaveEntry.get())
             if game_save != self.script_dir:
@@ -1194,8 +1195,3 @@ class Backup_Class:
 
 if __name__ == '__main__':
     Backup_Class().run()
-
-    # App = Backup_Class()
-    # print(App.check_userdata(App.get_appid('Monster Hunter: World')))
-
-    # print(App.check_userdata(403640))
