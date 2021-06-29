@@ -1,6 +1,6 @@
 from game_save_manager import Backup_Class
+from time import sleep, perf_counter
 import unittest
-import time
 import os
 
 class TestGameSaveManager(unittest.TestCase):
@@ -30,6 +30,7 @@ class TestGameSaveManager(unittest.TestCase):
         tests = {
         'Post-Restore Save.zip':True,
         'Post-Restore Save':False,
+        'Post-Restore Save.fake':False,
         'Post-Restore Save.tar':True,
         'Post-Restore Save.gztar':True,
         'Post-Restore Save.bztar':True,
@@ -39,10 +40,24 @@ class TestGameSaveManager(unittest.TestCase):
             self.assertEqual(self.test.compressed(test_value), answer)
 
 
+    def test_get_appid(self):
+        print('\nTesting get_appid function')
+        tests = {
+        # 'This is not a real game:the sequel':None,
+        'Dishonored 2':403640,
+        'Monster Hunter: World': 582010
+        }
+        for test_value, answer in tests.items():
+            self.assertEqual(self.test.get_appid(test_value), answer)
+            sleep(.5)
+
+
     def test_smart_browse(self):
         print('\nTesting smart_browse function')
         game_dict = {
-            # 'Barotrauma':r'C:\Users\Michael\AppData\Local\Daedalic Entertainment GmbH\Barotrauma',
+            # 'Barotrauma':r'C:\Users\Michael\AppData\Local\Daedalic Entertainment GmbH\Barotrauma'
+            'HITMAN™ 2':r'C:\Program Files (x86)\Steam\userdata\22360464\863550',
+            'Monster Hunter: World':r'C:\Program Files (x86)\Steam\userdata\22360464\582010',
             'Phantom Abyss':r'C:\Users\Michael\AppData\Local\PhantomAbyss',
             'Still There':r'C:\Users\Michael\AppData\LocalLow\GhostShark Games\Still There',
             'Factorio':r'C:\Users\Michael\AppData\Roaming\Factorio',
@@ -68,9 +83,9 @@ class TestGameSaveManager(unittest.TestCase):
         elapsed_total = 0
         for game, path in game_dict.items():
             print(f'    > {game}', end="")
-            start = time.perf_counter()
+            start = perf_counter()
             self.assertEqual(self.test.game_save_location_search(game, test=1), path)
-            finish = time.perf_counter()
+            finish = perf_counter()
             elapsed_single = finish-start
             elapsed_total += elapsed_single
             print(f' | {round(elapsed_single, 2)} seconds')
