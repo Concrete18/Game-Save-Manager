@@ -6,6 +6,8 @@ import logging as lg
 from tkinter import ttk, filedialog, messagebox
 import tkinter as Tk
 import datetime as dt
+# TODO make optional
+import requests
 
 # optional imports
 try:
@@ -48,6 +50,8 @@ class Backup_Class:
     allowed_filename_characters = '[^a-zA-Z0-9.,\s]'
     backup_restore_in_progress = 0
     default_entry_value = 'Type Search Query Here'
+    applist = None
+    drive_letters = []
 
     # sets up search directories
     username = getpass.getuser()
@@ -556,13 +560,13 @@ class Backup_Class:
                 r":/Program Files (x86)/Steam/steamapps/common",
                 r":/Program Files/Steam/steamapps/common"
                 ]
-            drive_letters = self.find__drive_letters()
+            self.drive_letters = self.find__drive_letters()
         elif platform == 'linux':
             # TODO add linux support to find_search_directories
             dirs_to_check = ['$HOME/.local/share/Steam/userdata']
         # starts directory check
         for dir in dirs_to_check:
-            for letter in drive_letters:
+            for letter in self.drive_letters:
                 current_dir = letter + dir
                 if os.path.isdir(current_dir):
                     if 'documents' in current_dir.lower():
@@ -630,17 +634,16 @@ class Backup_Class:
 
     def dir_scoring(self, possible_dir):
         '''
-        ph
+        Uses a scoring system to determines the chance of the given directory to be the save location.
         '''
-        # check for dir blacklist
-        # TODO add skip for possible_dirs with blacklist keywords within it
+        # checks if possible_dir is in the blacklist
         dir_blacklist = self.scoring['dir_blacklist']
         for string in dir_blacklist:
             if string.lower() in possible_dir.lower():
                 return 0
-        if possible_dir != '':
-            if self.enable_debug:
-                print(f'\n{possible_dir}')
+        # prints possible_dir if enable_debug is 1 and the var is not blank
+        if possible_dir != '' and self.enable_debug:
+            print(f'\n{possible_dir}')
         current_score = 0
         for found_root, found_dirs, found_files in os.walk(possible_dir, topdown=False):
             for found_file in found_files:
@@ -668,22 +671,60 @@ class Backup_Class:
         return current_score
 
 
-    def game_save_location_search(self, game_name, test=0):
+    def get_appid(self, game):
+        '''
+        Checks the Steam App list for a game and returns its app id if it exists as entered.
+        '''
+        if self.applist == None:
+            applist = 'http://api.steampowered.com/ISteamApps/GetAppList/v0002/'
+            data = requests.get(applist)
+            if data.status_code != requests.codes.ok:
+                return None
+        self.applist = data.json()['applist']['apps']
+        for item in self.applist:
+            if item["name"] == game:
+                return item['appid']
+            return None
+
+
+    def check_userdata(self, app_id):
+        '''
+        Checks for a save folder within the steam userdata folder by looking for the given games app_id.
+        '''
+        existing_paths = []
+        if len(self.drive_letters) == 0:
+            self.drive_letters = self.find__drive_letters()
+        for letter in self.drive_letters:
+            path = f'{letter}:/Program Files (x86)/Steam/userdata'
+            if os.path.exists(path):
+                existing_paths.append(path)
+        for path in existing_paths:
+            for dirpath, dirnames, filenames in os.walk(path):
+                for dir in dirnames:
+                    found_path = os.path.join(dirpath, dir)
+                    if str(app_id) in found_path:
+                        return found_path.replace('/', '\\')
+
+
+    def game_save_location_search(self, full_game_name, test=0):
         '''
         Searches for possible save game locations for the given name using a point based system.
         The highes scoring directory is chosen.
         '''
+        # var setup
+        game_name = self.get_selected_game_filename(full_game_name)
         overall_start = perf_counter() # start time for checking elaspsed runtime
         best_score = 0
-        break_used = 0
         dir_changed = 0
+        current_score = 0
+        possible_dir = ''
+        self.best_dir = self.initialdir
         if self.enable_debug:
             print(f'\nGame: {game_name}')
-        current_score = 0
-        self.best_dir = self.initialdir
-        possible_dir = ''
+        # waits for search directories to be ready before the save search is started
         while self.search_directories_incomplete:
             sleep(.1)
+        # disables progress bar actions when testing
         if test == 0:
             self.progress['maximum'] = len(self.search_directories) + 1
         for directory in self.search_directories:
@@ -699,14 +740,14 @@ class Backup_Class:
             directory_finish = perf_counter()
             if self.enable_debug:
                 print(f'Dir Search Time: {round(directory_finish-directory_start, 2)} seconds')
+            # disables progress bar actions when testing
             if test == 0:
                 self.progress['value'] += 1
             if current_score > best_score:
                 best_score = current_score
                 self.best_dir = os.path.abspath(possible_dir)
-                # early break if threshold is met TODO verify for premature breaks
+                # early break if threshold is met
                 if current_score > 600:
-                    break_used = 1
                     break
             current_score = 0
         overall_finish = perf_counter() # stop time for checking elaspsed runtime
@@ -715,6 +756,14 @@ class Backup_Class:
             print(f'\n{game_name}\nOverall Search Time: {elapsed_time} seconds')
             print(f'Path Used: {self.best_dir}')
             print(f'Path Score: {best_score}')
+        # checks if nothing was found from the first search
+        if self.best_dir == self.initialdir:
+            self.logger.info(f'Normal save search found nothing for {game_name}')
+            app_id = self.get_appid(full_game_name)
+            if app_id != None:
+                self.best_dir = self.check_userdata(app_id)
+            else:
+                self.logger.info(f'app_id cant be found for {game_name}')
         if test == 0:
             game_save = os.path.abspath(self.GameSaveEntry.get())
             if game_save != self.script_dir:
@@ -725,23 +774,23 @@ class Backup_Class:
                     dir_changed = 1
         else:
             return self.best_dir
-        if break_used:
-            print('Early Break Used')
         self.progress['value'] = self.progress['maximum']
+        # completion time output
         limit = 50
-        if self.best_dir == self.initialdir:
-            info = 'Nothing Found.\nIf the game name has colons in it.\nTry searching only for the text on the left of the colons.'
-            print('Nothing Found')
-        elif len(self.best_dir) > limit:
+        if len(self.best_dir) > limit:
             info = f'Path Found in {elapsed_time} seconds\n...{self.best_dir[-limit:]}'
         else:
             info = f'Path Found in {elapsed_time} seconds\n{self.best_dir[-limit:]}'
         self.info_label.config(text=info)
         self.completion_sound()
+        # enables the browse button when a save folder seems to be found
         if self.best_dir != self.initialdir:
             if dir_changed:
+                # adds info that the found save location is not the same as the save location in the entry box
                 info += f'\nFound directory is different then entered directory.'
             self.s_browse.config(state='normal')
+        else:
+            pass
 
 
     def smart_browse(self):
@@ -749,17 +798,16 @@ class Backup_Class:
         Searches for a starting point for the save location browser.
         '''
         # removes illegal file characters
-        game_name = self.get_selected_game_filename(self.GameNameEntry.get())
-        print(game_name)
+        full_game_name = self.GameNameEntry.get()
         # checks if no game name is in entry box.
-        if len(game_name) == 0:
+        if len(full_game_name) == 0:
             messagebox.showwarning(
                 title=self.title,
                 message='Smart Browse requires a game name to be entered.')
             return
         self.open_smart_browse_window()
         # looks for folders with the games name
-        Thread(target=self.game_save_location_search, args=(game_name,), daemon=True).start()
+        Thread(target=self.game_save_location_search, args=(full_game_name,), daemon=True).start()
 
 
     def browse(self, initial_dir=None):
@@ -837,7 +885,6 @@ class Backup_Class:
             new_name = os.path.join(self.backup_dest, self.get_selected_game_filename(game_name))
             os.rename(self.base_backup_folder, new_name)
             index = self.game_listbox.curselection()
-            print(index)
             self.game_listbox.delete(Tk.ACTIVE)
             self.game_listbox.insert(index, game_name)
             self.logger.info(f'Updated {self.selected_game} in database.')
@@ -1147,3 +1194,8 @@ class Backup_Class:
 
 if __name__ == '__main__':
     Backup_Class().run()
+
+    # App = Backup_Class()
+    # print(App.check_userdata(App.get_appid('Monster Hunter: World')))
+
+    # print(App.check_userdata(403640))
