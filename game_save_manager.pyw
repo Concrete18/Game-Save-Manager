@@ -680,11 +680,11 @@ class Backup_Class:
             data = requests.get(applist)
             if data.status_code != requests.codes.ok:
                 return None
-        self.applist = data.json()['applist']['apps']
+            self.applist = data.json()['applist']['apps']
         for item in self.applist:
             if item["name"] == game:
                 return item['appid']
-            return None
+        return None
 
 
     def check_userdata(self, app_id):
