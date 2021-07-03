@@ -83,5 +83,6 @@ shutil.get_archive_formats()
 
 ## Bugs
 
+* Renaming multiples times in one session causes issues.
 * leaving the file dialog open prevents closing interface.
 * Game backup size shows as 0 after finishing a backup until it is clicked again.
