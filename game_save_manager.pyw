@@ -787,7 +787,6 @@ class Backup_Class:
             info = f'Path Found in {elapsed_time} seconds\n...{self.best_dir[-limit:]}'
         else:
             info = f'Path Found in {elapsed_time} seconds\n{self.best_dir[-limit:]}'
-        # TODO add new logs
         self.logger.info(f'Save for "{full_game_name}" found in {elapsed_time} seconds via {search_method}.')
         self.info_label.config(text=info)
         self.completion_sound()
