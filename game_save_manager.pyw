@@ -322,6 +322,9 @@ class Backup_Class:
             self.decompress(selected_backup.path, self.selected_save_path)
             self.logger.info(f'Restored save for {self.selected_game} from compressed backup.')
         else:
+            if os.path.exists(self.selected_save_path):
+                print('Path already exists.')
+                # FIXME FileExistsError: [WinError 183] Cannot create a file when that file already exists: 'D:\\My Documents\\Shadow of the Tomb Raider\\76561197982626192'
             shutil.copytree(full_save_path, self.selected_save_path)
             self.logger.info(f'Restored save for {self.selected_game}from backup.')
 
@@ -579,7 +582,7 @@ class Backup_Class:
             self.search_directories.append(custom_saved_dir)
         if self.enable_debug:
             print(self.search_directories)
-        finish = perf_counter() # stop time for checking elaspsed runtime
+        finish = perf_counter() # stop time for checking elapsed runtime
         elapsed_time = round(finish-start, 2)
         if self.enable_debug:
             print(f'find_search_directories: {elapsed_time} seconds')
@@ -623,7 +626,8 @@ class Backup_Class:
         return string.encode("ascii", "ignore").decode()
 
 
-    def completion_sound(self):
+    @staticmethod
+    def completion_sound():
         '''
         Makes a sound denoting a task completion.
         '''
@@ -713,11 +717,12 @@ class Backup_Class:
         '''
         # var setup
         game_name = self.get_selected_game_filename(full_game_name)
-        overall_start = perf_counter() # start time for checking elaspsed runtime
+        overall_start = perf_counter() # start time for checking elapsed runtime
         best_score = 0
         dir_changed = 0
         current_score = 0
         possible_dir = ''
+        search_method = 'name search'
         self.best_dir = self.initialdir
         if self.enable_debug:
             print(f'\nGame: {game_name}')
@@ -750,7 +755,7 @@ class Backup_Class:
                 if current_score > 600:
                     break
             current_score = 0
-        overall_finish = perf_counter() # stop time for checking elaspsed runtime
+        overall_finish = perf_counter() # stop time for checking elapsed runtime
         elapsed_time = round(overall_finish-overall_start, 2)
         if self.enable_debug:
             print(f'\n{game_name}\nOverall Search Time: {elapsed_time} seconds')
@@ -758,13 +763,13 @@ class Backup_Class:
             print(f'Path Score: {best_score}')
         # checks if nothing was found from the first search
         if self.best_dir == self.initialdir:
-            self.logger.info(f'Normal save search found nothing for {game_name}')
             if requests_installed:
                 app_id = self.get_appid(full_game_name)
                 if app_id != None:
                     self.best_dir = self.check_userdata(app_id)
+                    search_method = 'app id search'
                 else:
-                    self.logger.info(f'app_id cant be found for {game_name}')
+                    self.logger.info(f'app_id cant be found for {full_game_name}')
         if test == 0:
             game_save = os.path.abspath(self.GameSaveEntry.get())
             if game_save != self.script_dir:
@@ -782,6 +787,8 @@ class Backup_Class:
             info = f'Path Found in {elapsed_time} seconds\n...{self.best_dir[-limit:]}'
         else:
             info = f'Path Found in {elapsed_time} seconds\n{self.best_dir[-limit:]}'
+        # TODO add new logs
+        self.logger.info(f'Save for "{full_game_name}" found in {elapsed_time} seconds via {search_method}.')
         self.info_label.config(text=info)
         self.completion_sound()
         # enables the browse button when a save folder seems to be found
@@ -860,9 +867,7 @@ class Backup_Class:
                         self.logger.info(f'Deleted backups for{self.selected_game}.')
                     except PermissionError:
                         self.logger.warning(f'Failed to delete backups for {self.selected_game}')
-                        messagebox.showerror(
-                            title=self.title,
-                            message='Failed to delete directory\nPermission Error')
+                        messagebox.showerror(title=self.title, message='Failed to delete directory\nPermission Error')
                 self.logger.info(f'Deleted {self.selected_game} from database.')
 
 
@@ -874,9 +879,11 @@ class Backup_Class:
         if self.selected_game == None:
             messagebox.showwarning(title=self.title, message='No game is selected yet.')
             return
+        # gets entered game info
         game_name = self.GameNameEntry.get()
         save_location = self.GameSaveEntry.get().replace('/', '\\')
         if os.path.isdir(save_location):
+            # updates data in database
             sql_update_query  ='''UPDATE games
                     SET game_name = ?, save_location = ?
                     WHERE game_name = ?;'''
@@ -885,7 +892,12 @@ class Backup_Class:
             self.database.commit()
             new_name = os.path.join(self.backup_dest, self.get_selected_game_filename(game_name))
             os.rename(self.base_backup_folder, new_name)
-            index = self.game_listbox.curselection()
+            self.base_backup_folder = new_name
+            # updates listbox entry for game
+            if len(self.game_listbox.curselection()) != 0:
+                index = self.game_listbox.curselection()
+            else:
+                index = 0
             self.game_listbox.delete(Tk.ACTIVE)
             self.game_listbox.insert(index, game_name)
             self.logger.info(f'Updated {self.selected_game} in database.')
