@@ -120,20 +120,19 @@ class game_class:
             print(self.cursor.fetchone()[0])
 
 
-    def set(self, name):
+    def set(self, game_name):
         '''
-        ph
+        Sets the current game to the one entered as an argument
         '''
-        self.name = name
-        self.save_location = self.get_save_loc(name)
-        self.filename = self.get_game_filename(name)
+        self.name = game_name
+        self.save_location = self.get_save_loc(game_name)
+        self.filename = self.get_game_filename(game_name)
         self.backup_loc = os.path.join(self.backup_dest, self.filename)
         # set last backup
         self.cursor.execute("SELECT last_backup FROM games WHERE game_name=:game_name",
-            {'game_name': name})
+            {'game_name': game_name})
         self.backup_size = self.convert_size(os.path.join(self.backup_dest, self.name))
         self.last_backup = self.cursor.fetchone()[0]
-        print(f'Set game to {name}.')
 
 
     def find_drive_letters(self):
@@ -544,14 +543,3 @@ class game_class:
             self.s_browse.config(state='normal')
         else:
             pass
-
-
-if __name__ == '__main__':
-    game = game_class()
-
-    missing_total = game.database_check()
-    if len(missing_total) > 0:
-        print(f'Missing save locations for {missing_total}')
-
-    game.set('HITMAN™ 2')
-    game.backup()

@@ -104,8 +104,8 @@ class Gui:
         Allows updating data for games in database.
         The last selected game in the Listbox gets updated with the info from the Add/Update Game entries.
         '''
-        new_name = ''
-        new_save = ''
+        new_name = self.GameNameEntry.get()
+        new_save = self.GameSaveEntry.get().replace('/', '\\')
         if self.game.name == None:
             messagebox.showwarning(title=self.title, message='No game is selected yet.')
             return
