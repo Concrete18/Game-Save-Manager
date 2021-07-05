@@ -4,12 +4,6 @@ from logging.handlers import RotatingFileHandler
 import logging as lg
 from logging.handlers import RotatingFileHandler
 import datetime as dt
-# optional imports
-try:
-    import requests
-    requests_installed = 1
-except ModuleNotFoundError:
-    requests_installed = 0
 
 class game_class:
 
@@ -391,7 +385,7 @@ class game_class:
             if string.lower() in possible_dir.lower():
                 return 0
         # prints possible_dir if enable_debug is 1 and the var is not blank
-        if possible_dir != '' and self.game.enable_debug:
+        if possible_dir != '' and self.enable_debug:
             print(f'\n{possible_dir}')
         current_score = 0
         for found_root, found_dirs, found_files in os.walk(possible_dir, topdown=False):
@@ -514,7 +508,7 @@ class game_class:
                     self.best_dir = self.check_userdata(app_id)
                     search_method = 'app id search'
                 else:
-                    self.game.logger.info(f'app_id cant be found for {full_game_name}')
+                    self.logger.info(f'app_id cant be found for {full_game_name}')
         if test == 0:
             game_save = os.path.abspath(self.GameSaveEntry.get())
             if game_save != self.script_dir:
@@ -532,7 +526,7 @@ class game_class:
             info = f'Path Found in {elapsed_time} seconds\n...{self.best_dir[-limit:]}'
         else:
             info = f'Path Found in {elapsed_time} seconds\n{self.best_dir[-limit:]}'
-        self.game.logger.info(f'Save for "{full_game_name}" found in {elapsed_time} seconds via {search_method}.')
+        self.logger.info(f'Save for "{full_game_name}" found in {elapsed_time} seconds via {search_method}.')
         self.info_label.config(text=info)
         self.completion_sound()
         # enables the browse button when a save folder seems to be found
