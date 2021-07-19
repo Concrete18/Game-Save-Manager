@@ -18,6 +18,12 @@ try:
 except ModuleNotFoundError:
     winsound_installed = 0
 
+
+class Game:
+
+    pass
+
+
 class Backup_Class:
 
     # sets script directory in case current working directory is different
