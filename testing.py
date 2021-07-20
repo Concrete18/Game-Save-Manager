@@ -23,7 +23,7 @@ class TestGameSaveManager(unittest.TestCase):
 
     def test_convert_size(self):
         print('\nTesting convert_size function')
-        self.assertEqual(self.game.convert_size(os.path.join(os.getcwd(), 'Folder Test\Folder Example')), '124.0 B')
+        self.assertEqual(self.game.convert_size(os.path.join('Testing\Folder Test\Folder Example')), '124.0 B')
         self.assertEqual(self.game.convert_size('ValueError'), '0 bits')
 
 

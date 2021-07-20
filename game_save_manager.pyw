@@ -1014,7 +1014,7 @@ class Backup_Class(logger):
         self.ActionInfo.config(text='Select a Game\nto continue')
         # updates title info label
         info_text = f'Total Games: {len(self.sorted_list)}\n'\
-            'Total Backup Size: {self.game.convert_size(self.backup_dest)}'
+            f'Total Backup Size: {self.game.convert_size(self.backup_dest)}'
         self.Title.config(text=info_text)
 
 
@@ -1105,9 +1105,8 @@ class Backup_Class(logger):
             total_size = self.game.convert_size(self.game.backup_loc)
             if self.game.last_backup != 'Never':
                 time_since = self.readable_time_since(dt.datetime.strptime(self.game.last_backup, '%Y/%m/%d %H:%M:%S'))
-                info1 = f'{self.game.name} was last backed up {time_since}\n'
-                info2 = f'Game Backup Size: {total_size} from {len(os.listdir(self.game.backup_loc))} backups'
-                info = info1 + info2
+                info = f'{self.game.name} was last backed up {time_since}\n'\
+                    f'Game Backup Size: {total_size} from {len(os.listdir(self.game.backup_loc))} backups'
             else:
                 info = f'{self.game.name} has not been backed up\n'
             self.ActionInfo.config(text=info)
