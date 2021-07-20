@@ -113,6 +113,13 @@ class Game(logger):
                 return '0 bits'
         else:
             return '0 bits'
+    
+
+    def get_backup_size(self):
+        '''
+        ph
+        '''
+        self.backup_size = self.convert_size(os.path.join(self.backup_dest, self.name))
 
 
     def get_filename(self, name):
@@ -179,29 +186,30 @@ class Game(logger):
         self.last_backup = self.get_last_backup(game_name)
 
 
+    def exists_in_db(self, game_name):
+        '''
+        Checks if game is already in the database.
+        '''
+        self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
+        existing_save_loc = self.cursor.fetchone()
+        return existing_save_loc != None
+
+
     def add(self, game_name, save_location):
         '''
         Adds game to database.
         '''
-        if len(self.get_filename(game_name)) == 0:
-            raise 'Invalid Name.'
-        self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
-        existing_save_loc = self.cursor.fetchone()
-        if existing_save_loc != None:
-            raise 'Game name already exists in database.'
         self.cursor.execute("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
             {'game_name': game_name, 'save_location': save_location, 'last_backup': 'Never'})
         self.database.commit()
         self.logger.info(f'Added {game_name} to database.')
 
 
-    def delete(self, game_name):
+    def delete_from_db(self):
         '''
         Deletes selected game from SQLite Database.
         '''
-        if game_name == None:
-            raise 'No Game given.'
-        self.cursor.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': game_name})
+        self.cursor.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.name})
         self.database.commit()
 
 
@@ -343,8 +351,8 @@ class Backup_Class(logger):
                 shutil.copytree(self.game.save_location, dest)
             self.delete_oldest()
             sleep(.3)
-            # FIXME update total backup size after backup
             # BUG total_size is wrong for some games right after it finishes backing up
+            self.game.get_backup_size()
             info = f'{self.game.name} has been backed up.\n'\
                 f'Game Backup Size: {self.game.backup_size} from {len(os.listdir(self.game.backup_loc))} backups'
             self.ActionInfo.config(text=info)
@@ -431,7 +439,8 @@ class Backup_Class(logger):
         else:
             if os.path.exists(self.game.save_location):
                 print('Path already exists.')
-                # FIXME FileExistsError: [WinError 183] Cannot create a file when that file already exists: 'D:\\My Documents\\Shadow of the Tomb Raider\\76561197982626192'
+                # FIXME FileExistsError: [WinError 183] Cannot create a file when that file already exists: 
+                # 'D:\\My Documents\\Shadow of the Tomb Raider\\76561197982626192'
             shutil.copytree(full_save_path, self.game.save_location)
             self.logger.info(f'Restored save for {self.game.name}from backup.')
 
@@ -587,16 +596,12 @@ class Backup_Class(logger):
         '''
         Adds game to database using entry inputs.
         '''
-        # TODO check code here
         game_name = self.GameNameEntry.get()
         save_location = self.GameSaveEntry.get().replace('/', '\\')
         if len(self.game.get_filename(game_name)) == 0:
             messagebox.showwarning(title=self.title,message=f'Game name has no legal characters for a filename')
             return
-        # TODO check code here
-        self.cursor.execute("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
-        database_save_location = self.cursor.fetchone()
-        if database_save_location != None:
+        if self.game.exists_in_db(game_name):
             msg = f"Can't add {self.game.name} to database.\nGame already exists."
             messagebox.showwarning(title=self.title, message=msg)
         else:
@@ -818,7 +823,7 @@ class Backup_Class(logger):
             directory_start = perf_counter()
             for root, dirs, files in os.walk(directory, topdown=False):
                 for dir in dirs:
-                    if self.game.filename.lower().replace(' ', '') in dir.lower().replace(' ', ''):
+                    if self.game.get_filename(full_game_name).lower().replace(' ', '') in dir.lower().replace(' ', ''):
                         possible_dir = os.path.join(root, dir)
                         current_score = self.dir_scoring(possible_dir)
             # update based on high score
@@ -913,19 +918,20 @@ class Backup_Class(logger):
         self.GameSaveEntry.insert(0, save_dir)
 
 
-    def delete_game_from_db(self):
+    def delete_game(self):
         '''
         Deletes selected game from SQLite Database.
         '''
         if self.game.name == None:
-            messagebox.showwarning(title=self.title, message='No game is selected yet.')
+            messagebox.showwarning(title=self.title, message='No game is selected.')
             return
         delete_check = messagebox.askyesno(
             title=self.title,
             message=f'Are you sure that you want to delete {self.game.name}?')
         if delete_check:
-            self.game.delete_game_from_db(self.game.name)
+            self.game.delete_from_db()
             # deletes game from game_listbox and sorted_list
+            # FIXME _tkinter.TclError: bad listbox index "Test": must be active, anchor, end, @x,y, or a number
             self.game_listbox.delete(self.game.name)
             self.sorted_list.pop(self.game.name)
             self.update_listbox()
@@ -1007,7 +1013,8 @@ class Backup_Class(logger):
             self.game_listbox.insert(Tk.END, item)
         self.ActionInfo.config(text='Select a Game\nto continue')
         # updates title info label
-        info_text = f'Total Games: {len(self.sorted_list)}\nTotal Backup Size: {self.game.convert_size(self.backup_dest)}'
+        info_text = f'Total Games: {len(self.sorted_list)}\n'\
+            'Total Backup Size: {self.game.convert_size(self.backup_dest)}'
         self.Title.config(text=info_text)
 
 
@@ -1186,7 +1193,8 @@ class Backup_Class(logger):
         self.game_listbox = Tk.Listbox(self.ListboxFrame, exportselection=False, yscrollcommand=self.scrollbar.set,
             font=(BoldBaseFont, 12), height=10, width=60)
         self.game_listbox.grid(columnspan=3, row=1, column=0)
-        self.game_listbox.bind('<<ListboxSelect>>', lambda event, game_listbox=self.game_listbox,:self.select_listbox_entry(1))
+        self.game_listbox.bind('<<ListboxSelect>>', lambda event,
+            game_listbox=self.game_listbox,:self.select_listbox_entry(1))
 
         # TODO finish or delete up and down control of listbox
         # full interface bind for lisxtbox navigation
@@ -1240,7 +1248,7 @@ class Backup_Class(logger):
         UpdateButton.grid(row=2, column=1, padx=button_padx, pady=button_pady)
 
         RemoveButton = ttk.Button(Button_Frame, text='Remove Game',
-            command=self.delete_game_from_db, width=16)
+            command=self.delete_game, width=16)
         RemoveButton.grid(row=2, column=2, padx=button_padx, pady=button_pady)
 
         ClearButton = Tk.ttk.Button(Button_Frame, text='Clear Entries',
