@@ -353,15 +353,15 @@ class Backup_Class(logger):
             sleep(.3)
             # BUG total_size is wrong for some games right after it finishes backing up
             self.game.get_backup_size()
+            total_backups = len(os.listdir(self.game.backup_loc))
             info = f'{self.game.name} has been backed up.\n'\
-                f'Game Backup Size: {self.game.backup_size} from {len(os.listdir(self.game.backup_loc))} backups'
+                f'Game Backup Size: {self.game.backup_size} from {total_backups} backups'
             self.ActionInfo.config(text=info)
             self.game_listbox.delete(Tk.ACTIVE)
             self.game_listbox.insert(0, self.game.name)
             self.logger.info(f'Backed up Save for {self.game.name}.')
             self.backup_restore_in_progress = 0
             self.completion_sound()
-
         if self.game.name == None:
             messagebox.showwarning(title=self.title, message='No game is selected yet.')
             return
@@ -406,7 +406,6 @@ class Backup_Class(logger):
             title=self.title,
             message=f'Are you sure you want to backup {self.game.name}')
         if response == 'yes':
-            # TODO move some variables to here as arguments to make sure everything stays the same
             self.run_full_backup()
         else:
             self.game_listbox.activate(0)
@@ -439,7 +438,7 @@ class Backup_Class(logger):
         else:
             if os.path.exists(self.game.save_location):
                 print('Path already exists.')
-                # FIXME FileExistsError: [WinError 183] Cannot create a file when that file already exists: 
+                # BUG FileExistsError: [WinError 183] Cannot create a file when that file already exists: 
                 # 'D:\\My Documents\\Shadow of the Tomb Raider\\76561197982626192'
             shutil.copytree(full_save_path, self.game.save_location)
             self.logger.info(f'Restored save for {self.game.name}from backup.')
@@ -451,6 +450,7 @@ class Backup_Class(logger):
 
         First it checks if an existing save exists or if a game is even selected(Exits function if no game is selected).
         '''
+        # TODO test Restore functions
         # exits if no game is selected
         if self.game.name == None:
             messagebox.showwarning(title=self.title, message='No game is selected yet.')
@@ -678,7 +678,6 @@ class Backup_Class(logger):
     def open_smart_browse_window(self):
         '''
         Smart Browse Progress window
-        TODO create index of each directory and use changes in directory to see if a new index should be done.
         '''
         # closes window if it is already open so a new one can be created
         try:
@@ -931,11 +930,10 @@ class Backup_Class(logger):
         if delete_check:
             self.game.delete_from_db()
             # deletes game from game_listbox and sorted_list
-            # FIXME _tkinter.TclError: bad listbox index "Test": must be active, anchor, end, @x,y, or a number
-            self.game_listbox.delete(self.game.name)
-            self.sorted_list.pop(self.game.name)
+            index = self.game_listbox.get(0, Tk.END).index(self.game.name)
+            self.game_listbox.delete(index)
+            self.sorted_list.pop(index)
             self.update_listbox()
-            self.select_listbox_entry()
             # checks if you want to delete the games save backups as well
             if os.path.isdir(self.game.backup_loc):
                 response = messagebox.askyesno(
