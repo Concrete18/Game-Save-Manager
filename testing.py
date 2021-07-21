@@ -7,7 +7,17 @@ class TestGameSaveManager(unittest.TestCase):
 
     main = Backup_Class()
     game = Game('Save Backup')
-    game.name = 'Test'
+
+
+    # def test_set(self):
+    #     print('\nTesting Game.get method')
+    #     self.game.set('Dishonored 2')
+    #     self.assertEqual(self.game.name, 'Dishonored 2')
+    #     self.assertEqual(self.game.save_location, 'Dishonored 2')
+    #     self.assertEqual(self.game.filename, 'Dishonored 2')
+    #     self.assertEqual(self.game.backup_loc, 'Dishonored 2')
+    #     self.assertEqual(self.game.backup_size, 'Dishonored 2')
+    #     self.assertEqual(self.game.last_backup, 'Dishonored 2')
 
 
     def test_get_filename(self):
@@ -58,6 +68,7 @@ class TestGameSaveManager(unittest.TestCase):
         print('\nTesting smart_browse function')
         game_dict = {
             # 'Barotrauma':r'C:\Users\Michael\AppData\Local\Daedalic Entertainment GmbH\Barotrauma'
+            'Mini Motorways':r'C:\Users\Michael\AppData\LocalLow\Dinosaur Polo Club\Mini Motorways',
             'HITMAN™ 2':r'C:\Program Files (x86)\Steam\userdata\22360464\863550',
             'Monster Hunter: World':r'C:\Program Files (x86)\Steam\userdata\22360464\582010',
             'Phantom Abyss':r'C:\Users\Michael\AppData\Local\PhantomAbyss',
@@ -93,7 +104,8 @@ class TestGameSaveManager(unittest.TestCase):
             print(f' | {round(elapsed_single, 2)} seconds')
         average = round(elapsed_total/len(game_dict), 2)
         print(f'   Average search time: {average} seconds')
-
+        self.game.exit_program()
+    
 
 if __name__ == '__main__':
     unittest.main()
