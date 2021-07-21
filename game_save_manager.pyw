@@ -1,4 +1,5 @@
 import getpass, sqlite3, shutil, json, os, re, sys, subprocess, math
+import threading
 from time import sleep, perf_counter
 from threading import Thread
 from logging.handlers import RotatingFileHandler
@@ -172,6 +173,8 @@ class Game(logger):
         data = (new_name, new_save, old_name)
         self.cursor.execute(sql_update_query , data)
         self.database.commit()
+        # TODO make sure this works
+        self.set(new_name)
 
 
     def set(self, game_name):
@@ -889,14 +892,15 @@ class Backup_Class(logger):
         Searches for a starting point for the save location browser.
         '''
         # checks if no game name is in entry box.
-        if len(self.game.name) == 0:
+        game_name = self.GameNameEntry.get()
+        if game_name == None:
             messagebox.showwarning(
                 title=self.title,
                 message='Smart Browse requires a game name to be entered.')
             return
         self.open_smart_browse_window()
         # looks for folders with the games name
-        Thread(target=self.game_save_location_search, args=(self.game.name,), daemon=True).start()
+        Thread(target=self.game_save_location_search, args=(game_name,), daemon=True).start()
 
 
     def browse(self, initial_dir=None):
@@ -961,10 +965,11 @@ class Backup_Class(logger):
         game_name = self.GameNameEntry.get()
         save_location = self.GameSaveEntry.get().replace('/', '\\')
         if os.path.isdir(save_location):
+            old_save = self.game.save_location
+            old_name = self.game.name
+            old_backup = self.game.backup_loc
             self.game.update(self.game.name, game_name, save_location)
-            new_name = os.path.join(self.backup_dest, self.game.filename)
-            os.rename(self.game.backup_loc, new_name)
-            self.base_backup_folder = new_name
+            os.rename(old_backup, self.game.backup_loc)
             # updates listbox entry for game
             if len(self.game_listbox.curselection()) != 0:
                 index = self.game_listbox.curselection()
@@ -999,6 +1004,27 @@ class Backup_Class(logger):
             return f' {days} days ago'
 
 
+    def toggle_buttons(self, action=''):
+        '''
+        Disables all buttons within the buttons list.
+        '''
+        if action == 'disable':
+            buttons = [self.ExploreBackupButton, self.ExploreSaveButton, self.BackupButton, self.RestoreButton]
+            for button in buttons:
+                button.config(state='disabled')
+        else:
+            # enables buttons that should be enabled if a game is selected
+            for button in [self.BackupButton, self.ExploreSaveButton]:
+                button.config(state='normal')
+            # emables buttons that should be enabled if the selected game has a backup folder otherwise disables
+            if os.path.isdir(self.game.backup_loc):
+                set_state = 'normal'
+            else:
+                set_state = 'disabled'
+            for button in [self.ExploreBackupButton, self.RestoreButton]:
+                button.config(state=set_state)
+
+
     def update_listbox(self, data=None):
         '''
         Deletes current listbox items and adds the given data in.
@@ -1014,6 +1040,7 @@ class Backup_Class(logger):
         info_text = f'Total Games: {len(self.sorted_list)}\n'\
             f'Total Backup Size: {self.game.convert_size(self.backup_dest)}'
         self.Title.config(text=info_text)
+        self.toggle_buttons('disable')
 
 
     def entry_search(self, e):
@@ -1021,15 +1048,18 @@ class Backup_Class(logger):
         Finds all items in the sorted_list that have the search box data in it.
         It then updates the listbox data to only include matching results.
         '''
-        typed = self.search_entry.get()
-        if typed == '':
-            data = self.sorted_list
-        else:
-            data = []
-            for item in self.sorted_list:
-                if typed.lower() in item.lower():
-                    data.append(item)
-        self.update_listbox(data)
+        # TODO Test to be sure threading here does not cause issues.
+        def search():
+            typed = self.search_entry.get()
+            if typed == '':
+                data = self.sorted_list
+            else:
+                data = []
+                for item in self.sorted_list:
+                    if typed.lower() in item.lower():
+                        data.append(item)
+            self.update_listbox(data)
+        threading.Thread(target=search, daemon=True).start()
 
 
     def select_entry(self, e):
@@ -1091,15 +1121,7 @@ class Backup_Class(logger):
             self.search_entry.delete(0, Tk.END)
             self.search_entry.insert(0, self.default_entry_value)
             # enables all buttons to be pressed once a selection is made
-            for button in [self.BackupButton, self.ExploreSaveButton]:
-                button.config(state='normal')
-            if os.path.isdir(self.game.backup_loc):
-                set_state = 'normal'
-            else:
-                set_state = 'disabled'
-            for button in [self.ExploreBackupButton, self.RestoreButton]:
-                button.config(state=set_state)
-            # gets overal game backup size
+            self.toggle_buttons()
             total_size = self.game.convert_size(self.game.backup_loc)
             if self.game.last_backup != 'Never':
                 time_since = self.readable_time_since(dt.datetime.strptime(self.game.last_backup, '%Y/%m/%d %H:%M:%S'))
