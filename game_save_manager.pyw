@@ -67,7 +67,7 @@ class Backup_Class(Logger):
     best_dir = ''
 
     # game class
-    game = Game(backup_dest)
+    game = Game(backup_dest=backup_dest, db_loc='game_list.db')
 
 
     def backup_dest_check(self):
@@ -91,7 +91,7 @@ class Backup_Class(Logger):
                 os.mkdir(self.backup_dest)
 
 
-    def delete_oldest(self):
+    def delete_oldest(self, path, redundancy):
         '''
         Deletes the oldest saves so only the newest specified amount is left.
 
@@ -99,15 +99,16 @@ class Backup_Class(Logger):
 
         game -- name of folder that will have all but the newest saves deleted
         '''
+        # TODO turn into method with arguments within game class
         # creates save list
         saves_list = []
+        dir = path
         dir = os.path.join(self.backup_dest, self.game.filename)
         for file in os.listdir(dir):
             # ignores pre restore backup
             if self.post_save_name not in file:
                 file = os.path.join(dir, file)
                 saves_list.append(file)
-        print(saves_list)
         # exits if the save list is shorted then the backup_redundancy
         if len(saves_list) <= self.backup_redundancy:
             return
