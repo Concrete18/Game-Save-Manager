@@ -31,6 +31,17 @@ class TestGameSaveManager(unittest.TestCase):
             self.assertEqual(self.game.get_filename(test_value), answer)
 
 
+    # def test_delete_oldest(self):
+    #     print('\nTesting delete_oldest function')
+    #     tests = {
+    #     'Amnesia: The Dark Descent':'Amnesia The Dark Descent',
+    #     'Is&this<>correct?':'Isthiscorrect',
+    #     '  This       is  a *&^%^ space *(&^test    ':'This is a space test',
+    #     }
+    #     for test_value, answer in tests.items():
+    #         self.assertEqual(self.game.delete_oldest(test_value), answer)
+
+
     def test_convert_size(self):
         print('\nTesting convert_size function')
         self.assertEqual(self.game.convert_size(os.path.join('Testing\Folder Test\Folder Example')), '124.0 B')
