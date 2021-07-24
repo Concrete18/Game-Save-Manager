@@ -91,7 +91,7 @@ class Backup_Class(Logger):
                 os.mkdir(self.backup_dest)
 
 
-    def delete_oldest(self, path, redundancy):
+    def delete_oldest(self, path, redundancy, ignore):
         '''
         Deletes the oldest saves so only the newest specified amount is left.
 
@@ -102,24 +102,21 @@ class Backup_Class(Logger):
         # TODO turn into method with arguments within game class
         # creates save list
         saves_list = []
-        dir = path
-        dir = os.path.join(self.backup_dest, self.game.filename)
-        for file in os.listdir(dir):
+        for file in os.scandir(path):
             # ignores pre restore backup
-            if self.post_save_name not in file:
-                file = os.path.join(dir, file)
-                saves_list.append(file)
+            if ignore not in file.name:
+                saves_list.append(file.path)
         # exits if the save list is shorted then the backup_redundancy
-        if len(saves_list) <= self.backup_redundancy:
+        if len(saves_list) <= redundancy:
             return
         else:
             sorted_list = sorted(saves_list, key=os.path.getctime, reverse=True)
-            for i in range(self.backup_redundancy, len(saves_list)):
+            for i in range(redundancy, len(saves_list)):
                 if os.path.isdir(sorted_list[i]):
                     shutil.rmtree(sorted_list[i])
                 else:
                     os.remove(sorted_list[i])
-            self.logger.info(f'{self.game.name} had more then {self.backup_redundancy} Saves. Deleted oldest saves.')
+            self.logger.info(f'{self.game.name} had more then {redundancy} Saves. Deleted oldest saves.')
 
 
     def compress(self, file_path, destination):
@@ -157,7 +154,7 @@ class Backup_Class(Logger):
                 self.compress(self.game.save_location, dest)
             else:
                 shutil.copytree(self.game.save_location, dest)
-            self.delete_oldest()
+            self.delete_oldest(self.game.backup_loc, self.backup_redundancy, self.post_save_name)
             sleep(.3)
             # BUG total_size is wrong for some games right after it finishes backing up
             self.game.get_backup_size()
@@ -165,6 +162,7 @@ class Backup_Class(Logger):
             info = f'{self.game.name} has been backed up.\n'\
                 f'Game Backup Size: {self.game.backup_size} from {total_backups} backups'
             self.ActionInfo.config(text=info)
+            # BUG repeated presses replaces the wrong entry
             self.game_listbox.delete(Tk.ACTIVE)
             self.game_listbox.insert(0, self.game.name)
             self.logger.info(f'Backed up Save for {self.game.name}.')
