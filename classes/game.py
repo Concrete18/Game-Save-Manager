@@ -3,23 +3,19 @@ from classes.logger import Logger
 
 class Game(Logger):
 
-    # database creation
-    database = sqlite3.connect('game_list.db')
-    cursor = database.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS games (
-        game_name text,
-        save_location text,
-        last_backup text
-        )''')
-    # default values
-    name = None
-    save_location = None
 
-    # TODO switch to class folder structure with init.py
-
-    def __init__(self, backup_dest) -> None:
+    def __init__(self, backup_dest, db_loc) -> None:
         self.backup_dest = backup_dest
+        # database creation
+        print(db_loc)
+        self.database = sqlite3.connect('game_list.db')
+        self.cursor = self.database.cursor()
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS games (
+            game_name text,
+            save_location text,
+            last_backup text
+            )''')
 
 
     def database_check(self):
