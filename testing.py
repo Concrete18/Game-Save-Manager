@@ -6,18 +6,18 @@ import os
 class TestGameSaveManager(unittest.TestCase):
 
     main = Backup_Class()
-    game = Game('Save Backup')
+    game = Game('Save Backup', 'Testing\game_list.db')
 
-
-    # def test_set(self):
-    #     print('\nTesting Game.get method')
-    #     self.game.set('Dishonored 2')
-    #     self.assertEqual(self.game.name, 'Dishonored 2')
-    #     self.assertEqual(self.game.save_location, 'Dishonored 2')
-    #     self.assertEqual(self.game.filename, 'Dishonored 2')
-    #     self.assertEqual(self.game.backup_loc, 'Dishonored 2')
-    #     self.assertEqual(self.game.backup_size, 'Dishonored 2')
-    #     self.assertEqual(self.game.last_backup, 'Dishonored 2')
+    def test_set(self):
+        print('\nTesting Game.get method')
+        self.game.set('Dishonored 2')
+        self.assertEqual(self.game.name, 'Dishonored 2')
+        save_location = 'C:\\Users\\Michael\\Saved Games\\Arkane Studios\\Dishonored2\\base\\savegame'
+        self.assertEqual(self.game.save_location, save_location)
+        self.assertEqual(self.game.filename, 'Dishonored 2')
+        self.assertEqual(self.game.backup_loc, 'Save Backup\Dishonored 2')
+        self.assertEqual(self.game.backup_size, '5.2 MB')
+        self.assertEqual(self.game.last_backup, '2021/03/08 00:22:37')
 
 
     def test_get_filename(self):
@@ -104,7 +104,7 @@ class TestGameSaveManager(unittest.TestCase):
             print(f' | {round(elapsed_single, 2)} seconds')
         average = round(elapsed_total/len(game_dict), 2)
         print(f'   Average search time: {average} seconds')
-        self.game.exit_program()
+        self.game.close_database()
     
 
 if __name__ == '__main__':
