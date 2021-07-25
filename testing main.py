@@ -5,6 +5,8 @@ import unittest
 class TestGameSaveManager(unittest.TestCase):
 
 
+    # TODO move tests into testing folder
+
     def test_get_appid(self):
         print('\nTesting get_appid function')
         tests = {

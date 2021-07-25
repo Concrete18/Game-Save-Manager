@@ -4,8 +4,12 @@ import unittest
 class TestGame(unittest.TestCase):
 
 
+    backup_path = 'Save Backup'
+    db_loc = 'Testing\\testing.db'
+
+
     def test_set(self):
-        game = Game('Save Backup', 'Testing\game_list.db')
+        game = Game(self.backup_path, self.db_loc)
         print('\nTesting Game.get method')
         game.set('Dishonored 2')
         self.assertEqual(game.name, 'Dishonored 2')
@@ -24,7 +28,7 @@ class TestGame(unittest.TestCase):
         'Is&this<>correct?':'Isthiscorrect',
         '  This       is  a *&^%^ space *(&^test    ':'This is a space test',
         }
-        game = Game('Save Backup', 'Testing\game_list.db')
+        game = Game(self.backup_path, self.db_loc)
         for test_value, answer in tests.items():
             self.assertEqual(game.get_filename(test_value), answer)
 
@@ -42,14 +46,14 @@ class TestGame(unittest.TestCase):
 
     def test_convert_size(self):
         print('\nTesting convert_size function')
-        main = Game('Save Backup', 'Testing\game_list.db')
+        main = Game(self.backup_path, self.db_loc)
         self.assertEqual(main.convert_size('Testing\Folder Test\Folder Example'), '124.0 B')
         self.assertEqual(main.convert_size('ValueError'), '0 bits')
 
 
     def test_database_check(self):
         print('\nTesting database_check function')
-        game = Game('Save Backup', 'Testing\game_list.db')
+        game = Game(self.backup_path, self.db_loc)
         self.assertEqual(game.database_check(), [])
 
 
