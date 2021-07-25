@@ -110,7 +110,7 @@ class Backup_Class(Logger):
             current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
             dest = os.path.join(self.game.backup_loc, current_time)
             if self.enable_compression:
-                self.compress(self.game.save_location, dest)
+                self.backup.compress(self.game.save_location, dest)
             else:
                 shutil.copytree(self.game.save_location, dest)
             self.game.delete_oldest(self.game.backup_loc, self.backup_redundancy, self.post_save_name)
@@ -269,7 +269,7 @@ class Backup_Class(Logger):
                             self.Restore_Game_Window.grab_release()
                             return
                 dest = os.path.join(self.backup_dest, self.game.name, self.post_save_name)
-                self.compress(self.game.save_location, dest)
+                self.backup.compress(self.game.save_location, dest)
                 delete_dir_contents(self.game.save_location)  # delete existing save
                 self.backup.backup_orignal_save(selected_backup, full_save_path)
             close_restore_win()
