@@ -1,6 +1,6 @@
-import sqlite3, os, re, math, shutil
 from classes.logger import Logger
 from contextlib import closing
+import sqlite3, os, re, math
 
 class Game(Logger):
 
@@ -143,15 +143,6 @@ class Game(Logger):
             {'game_name': game_name, 'last_backup': last_backup})
 
 
-    def update(self, old_name, new_name, new_save):
-        '''
-        Updates a game in the database.
-        '''
-        self.update_sql("UPDATE games SET game_name = ?, save_location = ? WHERE game_name = ?;",
-            (new_name, new_save, old_name))
-        self.set(new_name)
-
-
     def set(self, game_name):
         '''
         Sets the current game to the one entered as an argument
@@ -162,6 +153,15 @@ class Game(Logger):
         self.backup_loc = os.path.join(self.backup_dest, self.filename)
         self.backup_size = self.convert_size(self.backup_loc)
         self.last_backup = self.get_last_backup(game_name)
+
+
+    def update(self, old_name, new_name, new_save):
+        '''
+        Updates a game in the database.
+        '''
+        self.update_sql("UPDATE games SET game_name = ?, save_location = ? WHERE game_name = ?;",
+            (new_name, new_save, old_name))
+        self.set(new_name)
 
 
     def exists_in_db(self, game_name):
@@ -186,30 +186,3 @@ class Game(Logger):
         Deletes selected game from SQLite Database.
         '''
         self.update_sql("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.name})
-        
-
-    def delete_oldest(self, path, redundancy, ignore):
-        '''
-        Deletes the oldest saves so only the newest specified amount is left.
-
-        Arguments:
-
-        game -- name of folder that will have all but the newest saves deleted
-        '''
-        # creates save list
-        saves_list = []
-        for file in os.scandir(path):
-            # ignores pre restore backup
-            if ignore not in file.name:
-                saves_list.append(file.path)
-        # exits if the save list is shorted then the backup_redundancy
-        if len(saves_list) <= redundancy:
-            return
-        else:
-            sorted_list = sorted(saves_list, key=os.path.getctime, reverse=True)
-            for i in range(redundancy, len(saves_list)):
-                if os.path.isdir(sorted_list[i]):
-                    shutil.rmtree(sorted_list[i])
-                else:
-                    os.remove(sorted_list[i])
-            self.logger.info(f'{self.name} had more then {redundancy} Saves. Deleted oldest saves.')

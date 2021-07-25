@@ -10,6 +10,7 @@ import datetime as dt
 from classes.logger import Logger
 from classes.game import Game
 from classes.backup import Backup
+from classes.restore import Restore
 
 # optional imports
 try:
@@ -71,8 +72,9 @@ class Main(Logger):
     best_dir = ''
 
     # game class
-    game = Game(backup_dest=backup_dest, db_loc='game.db')
-    backup = Backup(compression_type, game)
+    game = Game(backup_dest=backup_dest, db_loc='config\game.db')
+    backup = Backup(game, compression_type)
+    restore = Restore(game)
 
 
     def backup_dest_check(self):
@@ -219,18 +221,6 @@ class Main(Logger):
             self.Restore_Game_Window.destroy()
 
 
-        # TODO move to restore.py
-        def delete_dir_contents(dir):
-            '''
-            Deletes all files and folders within the given directory.
-            '''
-            for f in os.scandir(dir):
-                if os.path.isdir(f):
-                    shutil.rmtree(f)
-                else:
-                    os.remove(f)
-
-
         def restore_selected_save():
             '''
             Restores selected game save based on save clicked within the Restore_Game_Window window.
@@ -244,8 +234,8 @@ class Main(Logger):
                       '\nThis will not send to the recycle bin.'
                 response = messagebox.askyesno(title=self.title, message=msg)
                 if response:
-                    delete_dir_contents(self.game.save_location)
-                    self.backup.backup_orignal_save(selected_backup, full_save_path)
+                    self.restore.delete_dir_contents(self.game.save_location)
+                    self.restore.backup_orignal_save(selected_backup, full_save_path)
                     self.logger.info(f'Restored {self.post_save_name} for {self.game.name}.')
             else:
                 # check if a last restore backup exists already
@@ -270,8 +260,8 @@ class Main(Logger):
                             return
                 dest = os.path.join(self.backup_dest, self.game.name, self.post_save_name)
                 self.backup.compress(self.game.save_location, dest)
-                delete_dir_contents(self.game.save_location)  # delete existing save
-                self.backup.backup_orignal_save(selected_backup, full_save_path)
+                self.restore.delete_dir_contents(self.game.save_location)  # delete existing save
+                self.restore.backup_orignal_save(selected_backup, full_save_path)
             close_restore_win()
 
 

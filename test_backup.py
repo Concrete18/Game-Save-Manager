@@ -19,6 +19,17 @@ class TestBackup(unittest.TestCase):
         backup = Backup('zip', Game)
         for test_value, answer in tests.items():
             self.assertEqual(backup.compressed(test_value), answer)
+
+
+    # def test_delete_oldest(self):
+    #     print('\nTesting delete_oldest function')
+    #     tests = {
+    #     'Amnesia: The Dark Descent':'Amnesia The Dark Descent',
+    #     'Is&this<>correct?':'Isthiscorrect',
+    #     '  This       is  a *&^%^ space *(&^test    ':'This is a space test',
+    #     }
+    #     for test_value, answer in tests.items():
+    #         self.assertEqual(self.game.delete_oldest(test_value), answer)
     
 
 if __name__ == '__main__':

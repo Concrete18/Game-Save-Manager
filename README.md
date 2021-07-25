@@ -81,6 +81,15 @@ shutil.get_archive_formats()
 
 * Arrow Key listbox navigation
 
+## Testing
+
+Use this to run all tests. Currently only works on my computer when testing smart browse due to the
+game save folders existing on it.
+
+```cmd
+python -m unittest
+```
+
 ## Bugs
 
 * Renaming multiples times in one session causes issues.

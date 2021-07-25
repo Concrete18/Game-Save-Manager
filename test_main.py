@@ -5,8 +5,6 @@ import unittest
 class TestGameSaveManager(unittest.TestCase):
 
 
-    # TODO move tests into testing folder
-
     def test_get_appid(self):
         print('\nTesting get_appid function')
         tests = {
@@ -52,7 +50,7 @@ class TestGameSaveManager(unittest.TestCase):
         print('\n   Starting search for each game.')
         elapsed_total = 0
         for game, path in game_dict.items():
-            print(f'    > {game}', end="")
+            print(f'   > {game}', end="")
             start = perf_counter()
             self.assertEqual(main.game_save_location_search(game, test=1), path)
             finish = perf_counter()
