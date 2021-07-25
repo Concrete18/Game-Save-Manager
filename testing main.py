@@ -5,22 +5,6 @@ import unittest
 class TestGameSaveManager(unittest.TestCase):
 
 
-    def test_compressed(self):
-        print('\nTesting compressed function')
-        tests = {
-        'Post-Restore Save.zip': True,
-        'Post-Restore Save': False,
-        'Post-Restore Save.fake': False,
-        'Post-Restore Save.tar': True,
-        'Post-Restore Save.gztar': True,
-        'Post-Restore Save.bztar': True,
-        'Post-Restore Save.xztar': True,
-        }
-        main = Backup_Class()
-        for test_value, answer in tests.items():
-            self.assertEqual(main.compressed(test_value), answer)
-
-
     def test_get_appid(self):
         print('\nTesting get_appid function')
         tests = {
