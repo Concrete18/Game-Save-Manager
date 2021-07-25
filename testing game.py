@@ -5,7 +5,7 @@ class TestGame(unittest.TestCase):
 
 
     backup_path = 'Save Backup'
-    db_loc = 'Testing\\testing.db'
+    db_loc = 'test\\testing.db'
 
 
     def test_set(self):
@@ -13,7 +13,7 @@ class TestGame(unittest.TestCase):
         print('\nTesting Game.get method')
         game.set('Dishonored 2')
         self.assertEqual(game.name, 'Dishonored 2')
-        save_location = 'C:\\Users\\Michael\\Saved Games\\Arkane Studios\\Dishonored2\\base\\savegame'
+        save_location = r'C:\Users\Michael\Saved Games\Arkane Studios\Dishonored2\base\savegame'
         self.assertEqual(game.save_location, save_location)
         self.assertEqual(game.filename, 'Dishonored 2')
         self.assertEqual(game.backup_loc, 'Save Backup\Dishonored 2')
@@ -47,7 +47,7 @@ class TestGame(unittest.TestCase):
     def test_convert_size(self):
         print('\nTesting convert_size function')
         main = Game(self.backup_path, self.db_loc)
-        self.assertEqual(main.convert_size('Testing\Folder Test\Folder Example'), '124.0 B')
+        self.assertEqual(main.convert_size('test\Folder Test\Folder Example'), '124.0 B')
         self.assertEqual(main.convert_size('ValueError'), '0 bits')
 
 
