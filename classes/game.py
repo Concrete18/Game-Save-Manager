@@ -139,7 +139,7 @@ class Game(Logger):
         '''
         Updates the last backup time for game_name.
         '''
-        self.query("UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name",
+        self.update_sql("UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name",
             {'game_name': game_name, 'last_backup': last_backup})
 
 
@@ -168,8 +168,8 @@ class Game(Logger):
         '''
         Checks if game is already in the database.
         '''
-        exists = self.query("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
-        return exists != None
+        entry = self.query("SELECT save_location FROM games WHERE game_name=:game_name", {'game_name': game_name})
+        return entry != None
 
 
     def add(self, game_name, save_location):

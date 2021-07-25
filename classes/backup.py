@@ -4,7 +4,7 @@ import os, shutil
 class Backup(Logger):
 
     
-    def __init__(self, compression_type, game) -> None:
+    def __init__(self,compression_type, game) -> None:
         '''
         ph
         '''

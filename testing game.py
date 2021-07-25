@@ -1,7 +1,7 @@
 from classes.game import Game
 import unittest
 
-class TestGameSaveManager(unittest.TestCase):
+class TestGame(unittest.TestCase):
 
 
     def test_set(self):
