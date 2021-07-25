@@ -24,7 +24,7 @@ except ModuleNotFoundError:
     winsound_installed = 0
 
 
-class Backup_Class(Logger):
+class Main(Logger):
 
     # sets script directory in case current working directory is different
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1026,4 +1026,4 @@ class Backup_Class(Logger):
 
 
 if __name__ == '__main__':
-    Backup_Class().run()
+    Main().run()

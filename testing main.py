@@ -1,4 +1,4 @@
-from game_save_manager import Backup_Class
+from game_save_manager import Main
 from time import sleep, perf_counter
 import unittest
 
@@ -14,7 +14,7 @@ class TestGameSaveManager(unittest.TestCase):
         'Dishonored 2': 403640,
         'Monster Hunter: World': 582010
         }
-        main = Backup_Class()
+        main = Main()
         for test_value, answer in tests.items():
             self.assertEqual(main.get_appid(test_value), answer)
             sleep(.5)
@@ -22,7 +22,7 @@ class TestGameSaveManager(unittest.TestCase):
 
     def test_smart_browse(self):
         print('\nTesting smart_browse function')
-        main = Backup_Class()
+        main = Main()
         main.debug = 0
         main.output = 0
         game_dict = {
