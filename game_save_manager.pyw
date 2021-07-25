@@ -5,9 +5,12 @@ from threading import Thread
 from tkinter import ttk, filedialog, messagebox
 import tkinter as Tk
 import datetime as dt
+
 # classes
 from classes.logger import Logger
 from classes.game import Game
+from classes.backup import Backup
+
 # optional imports
 try:
     import requests
@@ -19,6 +22,7 @@ try:
     winsound_installed = 1
 except ModuleNotFoundError:
     winsound_installed = 0
+
 
 class Backup_Class(Logger):
 
@@ -68,6 +72,7 @@ class Backup_Class(Logger):
 
     # game class
     game = Game(backup_dest=backup_dest, db_loc='game_list.db')
+    backup = Backup(compression_type, game)
 
 
     def backup_dest_check(self):
@@ -89,24 +94,6 @@ class Backup_Class(Logger):
                     messagebox.showwarning(title=self.title, message='Path does not exist.')
             else:
                 os.mkdir(self.backup_dest)
-
-
-    def compress(self, file_path, destination):
-        '''
-        Compresses the file given as the file path into the destination path.
-        '''
-        shutil.make_archive(base_name=destination, format=self.compression_type, root_dir=file_path)
-
-
-    def decompress(self,file, destination, format='unknown filetype'):
-        '''
-        Decompresses the given file into the given destination.
-        '''
-        try:
-            shutil.unpack_archive(file, destination)
-        except ValueError:
-            msg = f'Decompression failed, {format} is not actually a valid compression type.'
-            messagebox.showwarning(title=self.title, message=msg)
 
 
     def run_full_backup(self):
@@ -191,37 +178,6 @@ class Backup_Class(Logger):
         print(event)
 
 
-    def compressed(self, file):
-        '''
-        Returns True if the file is compressed with a valid compression type.
-        '''
-        available_compression = []
-        for item in shutil.get_archive_formats():
-            available_compression.append(f'.{item[0]}')
-        filetype = os.path.splitext(file)[1]
-        if filetype in available_compression:
-            return True
-        else:
-            return False
-
-
-    def backup_orignal_save(self, selected_backup, full_save_path):
-        '''
-        Unpacks or copies the backup depending on if it is compressed or not
-        '''
-        # checks if the backup is compressed
-        if self.compressed(selected_backup.name):
-            self.decompress(selected_backup.path, self.game.save_location)
-            self.logger.info(f'Restored save for {self.game.name} from compressed backup.')
-        else:
-            if os.path.exists(self.game.save_location):
-                print('Path already exists.')
-                # BUG FileExistsError: [WinError 183] Cannot create a file when that file already exists: 
-                # 'D:\\My Documents\\Shadow of the Tomb Raider\\76561197982626192'
-            shutil.copytree(full_save_path, self.game.save_location)
-            self.logger.info(f'Restored save for {self.game.name}from backup.')
-
-
     def restore_save(self):
         '''
         Opens an interface for picking the dated backup of the selected game to restore.
@@ -263,6 +219,7 @@ class Backup_Class(Logger):
             self.Restore_Game_Window.destroy()
 
 
+        # TODO move to restore.py
         def delete_dir_contents(dir):
             '''
             Deletes all files and folders within the given directory.
@@ -288,7 +245,7 @@ class Backup_Class(Logger):
                 response = messagebox.askyesno(title=self.title, message=msg)
                 if response:
                     delete_dir_contents(self.game.save_location)
-                    self.backup_orignal_save(selected_backup, full_save_path)
+                    self.backup.backup_orignal_save(selected_backup, full_save_path)
                     self.logger.info(f'Restored {self.post_save_name} for {self.game.name}.')
             else:
                 # check if a last restore backup exists already
@@ -302,7 +259,7 @@ class Backup_Class(Logger):
                             for f in os.scandir(os.path.join(self.backup_dest, self.game.name)):
                                 if self.post_save_name in f.name:
                                     # deletes the compressed file or deletes the entire folder tree
-                                    if self.compressed(f.name):
+                                    if self.backup.compressed(f.name):
                                         os.remove(f)
                                     else:
                                         shutil.rmtree(f)
@@ -314,7 +271,7 @@ class Backup_Class(Logger):
                 dest = os.path.join(self.backup_dest, self.game.name, self.post_save_name)
                 self.compress(self.game.save_location, dest)
                 delete_dir_contents(self.game.save_location)  # delete existing save
-                self.backup_orignal_save(selected_backup, full_save_path)
+                self.backup.backup_orignal_save(selected_backup, full_save_path)
             close_restore_win()
 
 
@@ -898,12 +855,12 @@ class Backup_Class(Logger):
             # enables all buttons to be pressed once a selection is made
             self.toggle_buttons()
             total_size = self.game.convert_size(self.game.backup_loc)
-            if self.game.last_backup != 'Never':
+            if self.game.last_backup == 'Never':
+                info = f'{self.game.name} has not been backed up\n'
+            else:
                 time_since = self.readable_time_since(dt.datetime.strptime(self.game.last_backup, '%Y/%m/%d %H:%M:%S'))
                 info = f'{self.game.name} was last backed up {time_since}\n'\
                     f'Game Backup Size: {total_size} from {len(os.listdir(self.game.backup_loc))} backups'
-            else:
-                info = f'{self.game.name} has not been backed up\n'
             self.ActionInfo.config(text=info)
             self.BackupButton.focus_set()
 
@@ -917,7 +874,6 @@ class Backup_Class(Logger):
             messagebox.showerror(title=self.title, message=msg)
         while self.backup_restore_in_progress:
             sleep(.1)
-        self.game.close_database()
         # BUG fails to exit if filedialog is left open
         # fix using subclassed filedialog commands that can close it
         exit()
