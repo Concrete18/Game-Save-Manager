@@ -1,4 +1,4 @@
-from game_save_manager import Main
+from main import Main
 from time import sleep, perf_counter
 import unittest
 

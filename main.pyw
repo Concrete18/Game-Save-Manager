@@ -31,7 +31,7 @@ class Main(Logger):
     os.chdir(script_dir)
 
     # settings setup
-    with open('settings.json') as json_file:
+    with open('config\settings.json') as json_file:
         data = json.load(json_file)
     backup_dest = data['setup']['backup_dest']  # backup destination setup
     # redundancy settings
@@ -51,7 +51,7 @@ class Main(Logger):
     enable_debug = data['debug']['enable_debug']
 
     # scoring init
-    with open('scoring.json') as json_file:
+    with open('config\scoring.json') as json_file:
         scoring = json.load(json_file)
 
     # var init
@@ -71,7 +71,7 @@ class Main(Logger):
     best_dir = ''
 
     # game class
-    game = Game(backup_dest=backup_dest, db_loc='game_list.db')
+    game = Game(backup_dest=backup_dest, db_loc='game.db')
     backup = Backup(compression_type, game)
 
 
@@ -88,7 +88,7 @@ class Main(Logger):
                 if os.path.exists(self.backup_dest):
                     self.data['settings']['backup_dest'] = self.backup_dest
                     json_object = json.dumps(self.data, indent = 4)  # Serializing json
-                    with open('settings.json', "w") as outfile:  # Writing to sample.json
+                    with open('config\settings.json', "w") as outfile:  # Writing to sample.json
                         outfile.write(json_object)
                 else:
                     messagebox.showwarning(title=self.title, message='Path does not exist.')

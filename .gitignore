@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # custom
-game_list.db
+game.db
 /Save Backup
 /.vscode
 *.lnk
