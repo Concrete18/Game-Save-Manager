@@ -115,7 +115,7 @@ class Main(Logger):
                 self.backup.compress(self.game.save_location, dest)
             else:
                 shutil.copytree(self.game.save_location, dest)
-            self.game.delete_oldest(self.game.backup_loc, self.backup_redundancy, self.post_save_name)
+            self.backup.delete_oldest(self.game.backup_loc, self.backup_redundancy, self.post_save_name)
             sleep(.3)
             # BUG total_size is wrong for some games right after it finishes backing up
             self.game.get_backup_size()
