@@ -1,6 +1,14 @@
-from gsm.game_save_manager import Main
+import os, sys
+abspath = os.path.abspath(sys.argv[0]) #path to your test_xyz.py
+dname = os.path.dirname(abspath) #directory of test.py which is the test/ folder
+os.chdir(os.path.dirname(dname)) #cd to the parent dir of your test/ folder
+
+from main import Main
 from time import sleep, perf_counter
 import unittest
+
+print(Main)
+
 
 class TestGameSaveManager(unittest.TestCase):
 

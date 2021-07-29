@@ -1,10 +1,9 @@
 import getpass, shutil, json, os, re, sys, subprocess
-import threading
 from time import sleep, perf_counter
 from threading import Thread
+import datetime as dt
 from tkinter import ttk, filedialog, messagebox
 import tkinter as Tk
-import datetime as dt
 
 # classes
 from classes.logger import Logger
@@ -405,6 +404,7 @@ class Main(Logger):
         Smart Browse Progress window
         '''
         # closes window if it is already open so a new one can be created
+        # TODO switch to method without try block
         try:
             self.smart_browse_win.destroy()
         except AttributeError:
@@ -518,6 +518,7 @@ class Main(Logger):
                     found_path = os.path.join(dirpath, dir)
                     if str(app_id) in found_path:
                         return found_path.replace('/', '\\')
+        return False
 
 
     def game_save_location_search(self, full_game_name, test=0):
@@ -525,6 +526,7 @@ class Main(Logger):
         Searches for possible save game locations for the given name using a point based system.
         The highes scoring directory is chosen.
         '''
+        # TODO split into more functions
         # var setup
         overall_start = perf_counter() # start time for checking elapsed runtime
         best_score = 0
@@ -575,8 +577,12 @@ class Main(Logger):
             if requests_installed:
                 app_id = self.get_appid(full_game_name)
                 if app_id != None:
-                    self.best_dir = self.check_userdata(app_id)
-                    search_method = 'app id search'
+                    app_id_path = self.check_userdata(app_id)
+                    if app_id_path is not False:
+                        self.best_dir = app_id_path
+                        search_method = 'app id search'
+                    else:
+                        self.logger.info(f'No Game save can be found for {full_game_name}')
                 else:
                     self.logger.info(f'app_id cant be found for {full_game_name}')
         if test == 0:
@@ -781,7 +787,7 @@ class Main(Logger):
                     if typed.lower() in item.lower():
                         data.append(item)
             self.update_listbox(data)
-        threading.Thread(target=search, daemon=True).start()
+        Thread(target=search, daemon=True).start()
 
 
     def select_entry(self, e):
