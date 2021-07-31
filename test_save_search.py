@@ -5,12 +5,13 @@ import unittest
 class TestBackup(unittest.TestCase):
 
 
-    def test_get_appid(self):
+    def test_game_save_location_search(self):
         '''
-        ph
+        Game Save Search
         '''
         main = Save_Search(Game, 1)
         path = r'C:\Users\Michael\AppData\Local\Teardown'
+        main.game.set('Teardown')
         self.assertIn(main.game_save_location_search('Teardown', test=1), path)
 
 

@@ -6,6 +6,9 @@ class TestGameSaveManager(unittest.TestCase):
 
 
     def test_get_appid(self):
+        '''
+        get_appid
+        '''
         print('\nTesting get_appid function')
         tests = {
         'This is not a real game:the sequel': None,
@@ -19,6 +22,9 @@ class TestGameSaveManager(unittest.TestCase):
 
 
     def test_smart_browse(self):
+        '''
+        Smart Browse
+        '''
         print('\nTesting smart_browse function')
         main = Main()
         main.debug = 0

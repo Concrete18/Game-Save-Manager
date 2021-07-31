@@ -697,6 +697,8 @@ class Main(Logger):
             old_name = self.game.name
             old_backup = self.game.backup_loc
             self.game.update(self.game.name, game_name, save_location)
+            # error when path is changed
+            print(old_backup, self.game.backup_loc)
             os.rename(old_backup, self.game.backup_loc)
             # updates listbox entry for game
             if len(self.game_listbox.curselection()) != 0:
@@ -879,6 +881,7 @@ class Main(Logger):
         '''
         Opens the main Game Save Manager interface.
         '''
+        start = perf_counter()
         # Defaults
         BoldBaseFont = "Arial Bold"
 
@@ -1005,6 +1008,12 @@ class Main(Logger):
         ClearButton.grid(row=2, column=4, padx=button_padx, pady=button_pady)
 
         self.game.database_check()
+
+        # interface startup time check
+        end = perf_counter()
+        start_elapsed = round(end-start, 2)
+        if start_elapsed > 1:
+            print('Interface Ready: ', start_elapsed)
         self.main_gui.mainloop()
 
 
@@ -1012,10 +1021,17 @@ class Main(Logger):
         '''
         Runs everything needed to make the program work.
         '''
+        start = perf_counter()
         if self.output:
             sys.stdout = open("output.txt", "w")
         self.backup_dest_check()
         Thread(target=self.find_search_directories).start()
+        # main startup check
+        end = perf_counter()
+        start_elapsed = round(end-start, 2)
+        if start_elapsed > 1:
+            print('Pre Interface check ready: ', start_elapsed)
+        # opens the interface
         self.open_interface_window()
         if self.output:
             sys.stdout.close()

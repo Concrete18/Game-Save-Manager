@@ -124,16 +124,20 @@ class Game(Logger):
         '''
         Returns the save location of the selected game from the SQLite Database.
         '''
-        return self.query("SELECT save_location FROM games WHERE game_name=:game_name", 
-            {'game_name': game_name})[0]
+        value = self.query("SELECT save_location FROM games WHERE game_name=:game_name", 
+            {'game_name': game_name})
+        if len(value) > 0:
+            return value[0]
 
 
     def get_last_backup(self, game_name):
         '''
         Returns the last time the game was backed up.
         '''
-        return self.query("SELECT last_backup FROM games WHERE game_name=:game_name",
-            {'game_name': game_name})[0]
+        value = self.query("SELECT last_backup FROM games WHERE game_name=:game_name",
+            {'game_name': game_name})
+        if len(value) > 0:
+            return value[0]
     
 
     def update_last_backup(self, game_name, last_backup):
@@ -170,7 +174,7 @@ class Game(Logger):
         Checks if game is already in the database.
         '''
         entry = self.query("SELECT save_location FROM games WHERE game_name=:game_name",
-            {'game_name': game_name})[0]
+            {'game_name': game_name})
         return entry != None
 
 
