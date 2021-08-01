@@ -3,17 +3,19 @@ import os, shutil
 
 class Restore(Logger):
 
-    
-    def __init__(self, game) -> None:
+
+    def __init__(self, game, backup) -> None:
         '''
         ph
         '''
         self.game = game
+        self.backup = backup
     
 
     # TODO move restore tkinter window into this folder
 
 
+    @staticmethod
     def delete_dir_contents(dir):
         '''
         Deletes all files and folders within the given directory.
@@ -37,7 +39,7 @@ class Restore(Logger):
         Unpacks or copies the backup depending on if it is compressed or not
         '''
         # checks if the backup is compressed
-        if self.game.compressed(selected_backup.name):
+        if self.backup.compressed(selected_backup.name):
             self.decompress(selected_backup.path, self.game.save_location)
             self.logger.info(f'Restored save for {self.game.name} from compressed backup.')
         else:

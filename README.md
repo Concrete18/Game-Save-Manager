@@ -68,7 +68,7 @@ shutil.get_archive_formats()
         "disable_resize":1,
         "center_window":1,
         "text_output":0,
-        "debug":1
+        "debug":0
     },
     "custom_save_directories":[
         "D:/My Documents",
@@ -92,6 +92,8 @@ python -m unittest
 
 ## Bugs
 
+* Backing up the same game multiple times during the same selection causes duplication of the selected game in the
+listbox.
 * Renaming multiples times in one session causes issues.
 * leaving the file dialog open prevents closing interface.
 * Game backup size shows as 0 after finishing a backup until it is clicked again.

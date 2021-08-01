@@ -73,7 +73,7 @@ class Main(Logger):
     # game class
     game = Game(backup_dest=backup_dest, db_loc='config\game.db')
     backup = Backup(game, compression_type)
-    restore = Restore(game)
+    restore = Restore(game, backup)
 
 
     def backup_dest_check(self):
@@ -611,8 +611,6 @@ class Main(Logger):
                 # adds info that the found save location is not the same as the save location in the entry box
                 info += f'\nFound directory is different then entered directory.'
             self.s_browse.config(state='normal')
-        else:
-            pass
 
 
     def smart_browse(self):
@@ -698,7 +696,8 @@ class Main(Logger):
             old_backup = self.game.backup_loc
             self.game.update(self.game.name, game_name, save_location)
             # error when path is changed
-            print(old_backup, self.game.backup_loc)
+            print(old_backup)
+            print(self.game.backup_loc)
             os.rename(old_backup, self.game.backup_loc)
             # updates listbox entry for game
             if len(self.game_listbox.curselection()) != 0:
