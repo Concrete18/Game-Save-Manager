@@ -1,24 +1,10 @@
 from main import Main
+from classes.save_search import Save_Search
+from classes.game import Game
 from time import sleep, perf_counter
 import unittest
 
 class TestGameSaveManager(unittest.TestCase):
-
-
-    def test_get_appid(self):
-        '''
-        get_appid
-        '''
-        print('\nTesting get_appid function')
-        tests = {
-        'This is not a real game:the sequel': None,
-        'Dishonored 2': 403640,
-        'Monster Hunter: World': 582010
-        }
-        main = Main()
-        for test_value, answer in tests.items():
-            self.assertEqual(main.get_appid(test_value), answer)
-            sleep(.5)
 
 
     def test_smart_browse(self):
@@ -29,10 +15,11 @@ class TestGameSaveManager(unittest.TestCase):
         main = Main()
         main.debug = 0
         main.output = 0
+        search = Save_Search(Game, debug=False)
         game_dict = {
             # 'The Forgotten City':r'C:',
-            'Mini Motorways': r'C:\Users\Michael\AppData\LocalLow\Dinosaur Polo Club\Mini Motorways',
             'HITMAN™ 2': r'C:\Program Files (x86)\Steam\userdata\22360464\863550',
+            'Mini Motorways': r'C:\Users\Michael\AppData\LocalLow\Dinosaur Polo Club\Mini Motorways',
             'Phantom Abyss': r'C:\Users\Michael\AppData\Local\PhantomAbyss',
             'Still There': r'C:\Users\Michael\AppData\LocalLow\GhostShark Games\Still There',
             'Factorio': r'C:\Users\Michael\AppData\Roaming\Factorio',
@@ -51,7 +38,7 @@ class TestGameSaveManager(unittest.TestCase):
             'Timberborn': r'D:\My Documents\Timberborn',
             'XCOM 2 War of the Chosen': r'D:\My Documents\My Games\XCOM2 War of the Chosen'}
         print('\n   Setting up search directories')
-        main.find_search_directories()
+        search.find_search_directories()
         print('\n   Starting search for each game.')
         elapsed_total = 0
         for game, path in game_dict.items():

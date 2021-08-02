@@ -4,7 +4,7 @@ Tkinter Interface for running through an SQLite Database that allows backing up 
 
 ![Image of Game Save Manager](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/images/Screenshot.png)
 
-Made in Python 3.8.3
+Made with Python 3.8.3
 
 ## Features
 
@@ -50,7 +50,6 @@ shutil.get_archive_formats()
 ## Python Techniques Used
 
 * Tkinter messagebox and directory dialog
-* Fully works with python built in modules only
 * SQLite Database
 * File copying and other manipulations
 * Object oriented design
