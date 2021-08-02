@@ -1,5 +1,6 @@
 from classes.logger import Logger
 import os, requests, json, re, os, sys, getpass
+from threading import Thread
 from time import perf_counter
 
 
@@ -12,8 +13,6 @@ class Save_Search(Logger):
         scoring = json.load(json_file)
     # steam app list init
     app_list = None
-    directories_ready = False
-    directories = []
     
     with open('config\settings.json') as json_file:
         data = json.load(json_file)
@@ -25,10 +24,14 @@ class Save_Search(Logger):
         '''
         self.game = game
         self.debug = debug
-        self.drive_letters = self.find__drive_letters()
+        self.drive_letters = self.find_drive_letters()
+        # finds search directories 
+        self.directories = []
+        self.directories_ready = False
+        Thread(target=self.find_search_directories).start()
 
 
-    def find__drive_letters(self):
+    def find_drive_letters(self):
         '''
         Finds the active drive letters for storage.
         '''
@@ -74,13 +77,13 @@ class Save_Search(Logger):
                     self.directories.append(current_dir)
         for custom_saved_dir in self.data['custom_save_directories']:
             self.directories.append(custom_saved_dir)
+        self.directories_ready = True
         if self.debug:
             print(self.directories)
         finish = perf_counter() # stop time for checking elapsed runtime
         elapsed_time = round(finish-start, 2)
         if self.debug:
             print(f'find_search_directories: {elapsed_time} seconds')
-        self.directories_ready = True
 
 
     def dir_scoring(self, possible_dir):
@@ -137,6 +140,7 @@ class Save_Search(Logger):
     def get_appid(self, game, app_list):
         '''
         Checks the Steam App list for a game and returns its app id if it exists as entered.
+        If the app_list has not been populated yet then it will be aquired first.
         '''
         if app_list == None:
             app_list = self.get_app_list()
@@ -151,8 +155,6 @@ class Save_Search(Logger):
         Checks for a save folder within the steam userdata folder by looking for the given games app_id.
         '''
         existing_paths = []
-        if len(self.drive_letters) == 0:
-            self.drive_letters = self.find__drive_letters()
         for letter in self.drive_letters:
             path = f'{letter}:/Program Files (x86)/Steam/userdata'
             if os.path.exists(path):

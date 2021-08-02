@@ -1,4 +1,4 @@
-import shutil, json, os, sys, subprocess
+import shutil, json, os, sys, subprocess, winsound
 from time import sleep, perf_counter
 from threading import Thread
 import datetime as dt
@@ -11,14 +11,6 @@ from classes.game import Game
 from classes.backup import Backup
 from classes.restore import Restore
 from classes.save_search import Save_Search
-
-# optional import
-try:
-    import winsound
-    winsound_installed = 1
-except ModuleNotFoundError:
-    winsound_installed = 0
-
 
 class Main(Logger):
 
@@ -44,7 +36,7 @@ class Main(Logger):
     compression_type = data['compression']['compression_type']
     # debug
     output = data['debug']['text_output']
-    enable_debug = data['debug']['enable_debug']
+    debug = data['debug']['enable_debug']
 
     # var init
     title = 'Game Save Manager'
@@ -52,18 +44,15 @@ class Main(Logger):
     backup_restore_in_progress = False
     default_entry_value = 'Type Search Query Here'
     post_save_name = 'Post-Restore Save'
+    # init
     applist = None
-    drive_letters = []
-
-    # sets up search directories
-    initialdir = "C:/"
     best_dir = ''
 
     # game class
     game = Game(backup_dest=backup_dest, db_loc='config\game.db')
     backup = Backup(game, compression_type)
     restore = Restore(game, backup)
-    save_search = Save_Search(game, enable_debug)
+    save_search = Save_Search(game, debug)
 
 
     def backup_dest_check(self):
@@ -330,7 +319,7 @@ class Main(Logger):
                 self.update_listbox()
                 self.logger.info(f'Added {game_name} to database.')
             else:
-                msg = f'Save Location for {self.game.name} does not exist.'
+                msg = f'Save Location for {game_name} does not exist.'
                 messagebox.showwarning(title=self.title, message=msg)
 
 
@@ -377,8 +366,7 @@ class Main(Logger):
         Makes a sound denoting a task completion.
         '''
         if sys.platform == 'win32':
-            if winsound_installed:
-                winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
+            winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
 
 
     def game_save_location_search(self, full_game_name, test=0):
@@ -394,8 +382,9 @@ class Main(Logger):
         current_score = 0
         possible_dir = ''
         search_method = 'name search'
-        self.best_dir = self.initialdir
-        if self.enable_debug:
+        initialdir = "C:/"
+        self.best_dir = initialdir
+        if self.debug:
             print(f'\nGame: {self.game.filename}')
         # waits for search directories to be ready before the save search is started
         while not self.save_search.directories_ready:
@@ -405,7 +394,7 @@ class Main(Logger):
         if test == 0:
             self.progress['maximum'] = len(self.save_search.directories) + 1
         for directory in self.save_search.directories:
-            if self.enable_debug:
+            if self.debug:
                 print(f'\nCurrent Search Directory: {directory}')
             directory_start = perf_counter()
             # TODO make its own function
@@ -417,7 +406,7 @@ class Main(Logger):
                         current_score = self.save_search.dir_scoring(possible_dir)
             # update based on high score
             directory_finish = perf_counter()
-            if self.enable_debug:
+            if self.debug:
                 print(f'Dir Search Time: {round(directory_finish-directory_start, 2)} seconds')
             # disables progress bar actions when testing
             if test == 0:
@@ -431,12 +420,12 @@ class Main(Logger):
             current_score = 0
         overall_finish = perf_counter() # stop time for checking elapsed runtime
         elapsed_time = round(overall_finish-overall_start, 2)
-        if self.enable_debug:
+        if self.debug:
             print(f'\n{self.game.filename}\nOverall Search Time: {elapsed_time} seconds')
             print(f'Path Used: {self.best_dir}')
             print(f'Path Score: {best_score}')
         # checks if nothing was found from the first search
-        if self.best_dir == self.initialdir:
+        if self.best_dir == initialdir:
             app_id = self.save_search.get_appid(full_game_name, self.applist)
             if app_id != None:
                 app_id_path = self.save_search.check_userdata(app_id)
@@ -468,7 +457,7 @@ class Main(Logger):
         self.info_label.config(text=info)
         self.completion_sound()
         # enables the browse button when a save folder seems to be found
-        if self.best_dir != self.initialdir:
+        if self.best_dir != initialdir:
             if dir_changed:
                 # adds info that the found save location is not the same as the save location in the entry box
                 info += f'\nFound directory is different then entered directory.'
@@ -497,7 +486,7 @@ class Main(Logger):
         It starts in the My Games folder in My Documents if it exists within a limited drive letter search.
         '''
         if initial_dir == None:
-            starting_point = self.initialdir
+            starting_point = "C:/"
             current_save_location = self.GameSaveEntry.get()
             if os.path.exists(current_save_location):
                 starting_point = current_save_location
@@ -887,7 +876,6 @@ class Main(Logger):
             sys.stdout = open("output.txt", "w")
         self.backup_dest_check()
         self.applist = self.save_search.get_app_list()
-        Thread(target=self.save_search.find_search_directories).start()
         # main startup check
         end = perf_counter()
         start_elapsed = round(end-start, 2)
