@@ -13,7 +13,7 @@ class Save_Search(Logger):
     # steam app list init
     app_list = None
     directories_ready = False
-    search_directories = []
+    directories = []
     
     with open('config\settings.json') as json_file:
         data = json.load(json_file)
@@ -71,11 +71,11 @@ class Save_Search(Logger):
                 if os.path.isdir(current_dir):
                     if 'documents' in current_dir.lower():
                         self.initialdir = current_dir
-                    self.search_directories.append(current_dir)
+                    self.directories.append(current_dir)
         for custom_saved_dir in self.data['custom_save_directories']:
-            self.search_directories.append(custom_saved_dir)
+            self.directories.append(custom_saved_dir)
         if self.debug:
-            print(self.search_directories)
+            print(self.directories)
         finish = perf_counter() # stop time for checking elapsed runtime
         elapsed_time = round(finish-start, 2)
         if self.debug:

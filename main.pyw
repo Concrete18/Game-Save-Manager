@@ -57,7 +57,6 @@ class Main(Logger):
 
     # sets up search directories
     initialdir = "C:/"
-    search_directories = []
     best_dir = ''
 
     # game class
@@ -404,11 +403,12 @@ class Main(Logger):
             sleep(.1)
         # disables progress bar actions when testing
         if test == 0:
-            self.progress['maximum'] = len(self.search_directories) + 1
-        for directory in self.search_directories:
+            self.progress['maximum'] = len(self.save_search.directories) + 1
+        for directory in self.save_search.directories:
             if self.enable_debug:
                 print(f'\nCurrent Search Directory: {directory}')
             directory_start = perf_counter()
+            # TODO make its own function
             for root, dirs, files in os.walk(directory, topdown=False):
                 for dir in dirs:
                     # TODO check if search can be ended sooner
