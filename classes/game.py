@@ -7,7 +7,7 @@ class Game(Logger):
 
     def __init__(self, backup_dest, db_loc) -> None:
         '''
-        ph
+        Game class that allows setting the current game info up.
         '''
         self.backup_dest = backup_dest
         # database creation
@@ -104,9 +104,9 @@ class Game(Logger):
 
     def get_backup_size(self):
         '''
-        ph
+        Gets the size of the currently selected games backup folder.
         '''
-        self.backup_size = self.convert_size(os.path.join(self.backup_dest, self.name))
+        self.backup_size = self.convert_size(self.backup_loc)
 
 
     def get_filename(self, name):

@@ -6,7 +6,7 @@ class Restore(Logger):
 
     def __init__(self, game, backup) -> None:
         '''
-        ph
+        Restore class with restore methods.
         '''
         self.game = game
         self.backup = backup

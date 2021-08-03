@@ -19,7 +19,7 @@ class Save_Search(Logger):
         
     def __init__(self, game, debug) -> None:
         '''
-        ph
+        Save Search class with game save search methods.
         '''
         self.game = game
         self.debug = debug

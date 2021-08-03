@@ -7,36 +7,9 @@ import tkinter as Tk
 
 # classes
 from classes.logger import Logger
-from classes.game import Game
-from classes.backup import Backup
-from classes.restore import Restore
-from classes.save_search import Save_Search
 
-class Main(Logger):
 
-    # sets script directory in case current working directory is different
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    os.chdir(script_dir)
-
-    # settings setup
-    with open('config\settings.json') as json_file:
-        data = json.load(json_file)
-    backup_dest = data['setup']['backup_dest']  # backup destination setup
-    # redundancy settings
-    redundancy_limit = 4
-    backup_redundancy = data['optional_settings']['backup_redundancy']
-    if type(backup_redundancy) is not int or backup_redundancy not in range(1, redundancy_limit + 1):
-        backup_redundancy = 4
-    # optional settings
-    enter_to_quick_backup = data['optional_settings']['enter_to_quick_backup']
-    disable_resize = data['optional_settings']['disable_resize']
-    center_window = data['optional_settings']['center_window']
-    # compression
-    enable_compression = data['compression']['enable_compression']
-    compression_type = data['compression']['compression_type']
-    # debug
-    output = data['debug']['text_output']
-    debug = data['debug']['enable_debug']
+class GUI(Logger):
 
     # var init
     title = 'Game Save Manager'
@@ -44,14 +17,18 @@ class Main(Logger):
     backup_restore_in_progress = False
     default_entry_value = 'Type Search Query Here'
     post_save_name = 'Post-Restore Save'
-    # init
-    best_dir = ''
 
-    # game class
-    game = Game(backup_dest=backup_dest, db_loc='config\game.db')
-    backup = Backup(game, compression_type)
-    restore = Restore(game, backup)
-    save_search = Save_Search(game, debug)
+
+    def __ini__(self):
+        '''
+        ph
+        '''
+        self.main_gui = Tk.Tk()
+        self.main_gui.protocol("WM_DELETE_WINDOW", self.exit_program)
+        window_width = 680
+        window_height = 550
+        self.tk_window_options(self.main_gui, window_width, window_height)
+        # self.main_gui.geometry(f'{window_width}x{window_height}+{width}+{height}')
 
 
     def backup_dest_check(self):
@@ -880,4 +857,4 @@ class Main(Logger):
 
 
 if __name__ == '__main__':
-    Main().run()
+    GUI().run()

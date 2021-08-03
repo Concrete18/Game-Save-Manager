@@ -6,7 +6,7 @@ class Backup(Logger):
     
     def __init__(self, game, compression_type) -> None:
         '''
-        ph
+        Backup class with save backup methods.
         '''
         self.game = game
         self.compression_type = compression_type
