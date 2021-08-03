@@ -11,11 +11,10 @@ class Save_Search(Logger):
     # scoring init
     with open('config\scoring.json') as json_file:
         scoring = json.load(json_file)
-    # steam app list init
-    app_list = None
-    
     with open('config\settings.json') as json_file:
         data = json.load(json_file)
+    # steam app list init
+    app_list = None
 
         
     def __init__(self, game, debug) -> None:
@@ -137,14 +136,14 @@ class Save_Search(Logger):
             return None
 
 
-    def get_appid(self, game, app_list):
+    def get_appid(self, game):
         '''
         Checks the Steam App list for a game and returns its app id if it exists as entered.
         If the app_list has not been populated yet then it will be aquired first.
         '''
-        if app_list == None:
-            app_list = self.get_app_list()
-        for item in app_list:
+        if self.app_list == None:
+            self.app_list = self.get_app_list()
+        for item in self.app_list:
             if item["name"] == game:
                 return item['appid']
         return None

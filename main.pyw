@@ -1,5 +1,4 @@
 import shutil, json, os, sys, subprocess, winsound
-import threading
 from time import sleep, perf_counter
 from threading import Thread
 import datetime as dt

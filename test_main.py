@@ -1,4 +1,4 @@
-from main import Main
+from main import Main  # type: ignore
 from classes.save_search import Save_Search
 from classes.game import Game
 from time import sleep, perf_counter

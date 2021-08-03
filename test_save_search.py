@@ -17,9 +17,8 @@ class TestBackup(unittest.TestCase):
         'Monster Hunter: World': 582010
         }
         search = Save_Search(Game, debug=0)
-        app_list = search.get_app_list()
         for test_value, answer in tests.items():
-            self.assertEqual(search.get_appid(game=test_value, app_list=app_list), answer)
+            self.assertEqual(search.get_appid(game=test_value), answer)
             sleep(.5)
 
 
