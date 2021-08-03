@@ -76,6 +76,12 @@ shutil.get_archive_formats()
 }
 ```
 
+## Requirements
+
+```pip
+pip install -r requirements.txt
+```
+
 ## Todo
 
 * Arrow Key listbox navigation
