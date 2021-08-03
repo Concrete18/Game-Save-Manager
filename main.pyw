@@ -1,4 +1,5 @@
 import shutil, json, os, sys, subprocess, winsound
+import threading
 from time import sleep, perf_counter
 from threading import Thread
 import datetime as dt
@@ -426,7 +427,7 @@ class Main(Logger):
             print(f'Path Score: {best_score}')
         # checks if nothing was found from the first search
         if self.best_dir == initialdir:
-            app_id = self.save_search.get_appid(full_game_name, self.applist)
+            app_id = self.save_search.get_appid(full_game_name)
             if app_id != None:
                 app_id_path = self.save_search.check_userdata(app_id)
                 if app_id_path is not False:
@@ -871,16 +872,9 @@ class Main(Logger):
         '''
         Runs everything needed to make the program work.
         '''
-        start = perf_counter()
         if self.output:
             sys.stdout = open("output.txt", "w")
         self.backup_dest_check()
-        self.applist = self.save_search.get_app_list()
-        # main startup check
-        end = perf_counter()
-        start_elapsed = round(end-start, 2)
-        if start_elapsed > 1:
-            print('Pre Interface check ready: ', start_elapsed)
         # opens the interface
         self.open_interface_window()
         if self.output:
