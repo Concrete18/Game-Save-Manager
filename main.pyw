@@ -573,12 +573,12 @@ class Main(Logger):
 
         datetime_obj: Converts to descriptive string
         '''
-        seconds = (dt.datetime.now() - datetime_obj).total_seconds()
-        minutes = seconds / 60
-        hours = minutes / 60
-        days = hours / 60
-        months = days / 30
-        years = months / 12
+        seconds = (dt.datetime.now() - datetime_obj).total_seconds()  #converts datetime object into seconds
+        minutes = seconds / 60  #seconds in a minute
+        hours = minutes / 60  #minutes in a hour
+        days = hours / 60  #hours in a day
+        months = days / 30  #days in an average month rounded down
+        years = months / 12 #months in a year
         if years > 1:
             return f'{round(years, 1)} years ago'
         if months > 1:
