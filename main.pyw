@@ -564,18 +564,23 @@ class Main(Logger):
     @staticmethod
     def readable_time_since(datetime_obj):
         '''
-        Gives time since for a datetime object in the unit of time that makes the most sense
-        rounded to 1 decimal place.
+        Converts into time since for the given object.
+        Examples:
 
-        Arguments:
+        1.2 minutes ago |
+        3.4 hours ago |
+        5.6 days ago
 
-        datetime_obj -- datetime object that will have the current date subtracted from it
+        datetime_obj: Converts to descriptive string
         '''
         seconds = (dt.datetime.now() - datetime_obj).total_seconds()
         minutes = seconds / 60
         hours = minutes / 60
         days = hours / 60
         months = days / 30
+        years = months / 12
+        if years > 1:
+            return f'{round(years, 1)} years ago'
         if months > 1:
             return f'{round(months, 1)} months ago'
         if days > 1:
