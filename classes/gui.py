@@ -9,6 +9,9 @@ import tkinter as Tk
 from classes.logger import Logger
 
 
+main_gui = Tk.Tk()
+
+
 class GUI(Logger):
 
     # var init
