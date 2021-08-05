@@ -562,33 +562,39 @@ class Main(Logger):
 
 
     @staticmethod
-    def readable_time_since(datetime_obj):
+    def readable_time_since(since_date, checked_date=dt.datetime.now()):
         '''
         Converts into time since for the given object.
         Examples:
 
-        1.2 minutes ago |
-        3.4 hours ago |
-        5.6 days ago
+        1.2 seconds ago | 3.4 minutes ago | 5.6 hours ago | 7.8 days ago | 9.1 months ago | 10.1 years ago
 
-        datetime_obj: Converts to descriptive string
+        date1: Past date
+        date2: Current or more recent date (Optional) defaults to current date if not given
         '''
-        seconds = (dt.datetime.now() - datetime_obj).total_seconds()  #converts datetime object into seconds
+        if type(since_date) == str:
+            since_date = dt.datetime.strptime(since_date, '%Y/%m/%d %H:%M:%S')
+        seconds = (checked_date - since_date).total_seconds()  #converts datetime object into seconds
         minutes = seconds / 60  #seconds in a minute
-        hours = minutes / 60  #minutes in a hour
-        days = hours / 60  #hours in a day
-        months = days / 30  #days in an average month rounded down
-        years = months / 12 #months in a year
-        if years > 1:
-            return f'{round(years, 1)} years ago'
-        if months > 1:
-            return f'{round(months, 1)} months ago'
-        if days > 1:
-            return f'{round(days, 1)} days ago'
-        if hours > 1:
-            return f'{round(hours, 1)} hours ago'
-        if minutes > 1:
-            return f'{round(minutes, 1)} minutes ago'
+        hours = seconds / 3600  #minutes in a hour
+        days = seconds / 86400  #hours in a day
+        months = seconds / (30 * 24 * 60 * 60)  #days in an average month rounded down
+        years = seconds / dt.timedelta(days=365).total_seconds() #months in a year
+        if years >= 1:
+            s = '' if years == 1 else 's'
+            return f'{round(years, 1)} year{s} ago'
+        if months >= 1:
+            s = '' if months == 1 else 's'
+            return f'{round(months, 1)} month{s} ago'
+        if days >= 1:
+            s = '' if days == 1 else 's'
+            return f'{round(days, 1)} day{s} ago'
+        if hours >= 1:
+            s = '' if hours == 1 else 's'
+            return f'{round(hours, 1)} hour{s} ago'
+        if minutes >= 1:
+            s = '' if minutes == 1 else 's'
+            return f'{round(minutes, 1)} minute{s} ago'
         else:
             return f'{round(seconds, 1)} seconds ago'
 
@@ -715,7 +721,7 @@ class Main(Logger):
             if self.game.last_backup == 'Never':
                 info = f'{self.game.name} has not been backed up\n'
             else:
-                time_since = self.readable_time_since(dt.datetime.strptime(self.game.last_backup, '%Y/%m/%d %H:%M:%S'))
+                time_since = self.readable_time_since(self.game.last_backup)
                 info = f'{self.game.name} was last backed up {time_since}\n'\
                     f'Game Backup Size: {total_size} from {len(os.listdir(self.game.backup_loc))} backups'
             self.ActionInfo.config(text=info)

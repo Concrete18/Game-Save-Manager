@@ -1,10 +1,33 @@
 from main import Main  # type: ignore
 from classes.save_search import Save_Search
+import datetime as dt
 from classes.game import Game
 from time import sleep, perf_counter
 import unittest
 
 class TestGameSaveManager(unittest.TestCase):
+
+
+    def test_readable_time_since(self):
+        '''
+        readable_time_since
+        '''
+        # FIXME function does not work
+        print('\nTesting readable_time_since function')
+        main = Main()
+        checked_date = dt.datetime.strptime('2021/01/01 01:00:00', '%Y/%m/%d %H:%M:%S')
+        dates = {                          #'2020/11/28 01:00:00'
+            '2019/01/01 01:00:00': '2.0 years ago',
+            '2020/11/30 01:00:00':'1.1 months ago',
+            '2020/12/28 01:00:00':'4.0 days ago',
+            '2020/12/31 01:00:00':'1.0 day ago',
+            '2021/01/01 00:00:00':'1.0 hour ago',
+            '2020/12/31 12:00:00':'13.0 hours ago',
+            '2021/01/01 00:59:00':'1.0 minute ago',
+            '2021/01/01 00:59:55':'5.0 seconds ago',
+                }
+        for date, answer in dates.items():
+            self.assertIn(main.readable_time_since(date, checked_date), answer)
 
 
     def test_smart_browse(self):
