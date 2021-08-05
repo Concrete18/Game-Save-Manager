@@ -572,15 +572,20 @@ class Main(Logger):
         datetime_obj -- datetime object that will have the current date subtracted from it
         '''
         seconds = (dt.datetime.now() - datetime_obj).total_seconds()
-        if seconds < (60 * 60):  # seconds in minute * minutes in hour
-            minutes = round(seconds / 60, 1)  # seconds in a minute
-            return f' {minutes} minutes ago'
-        elif seconds < (60 * 60 * 24):  # seconds in minute * minutes in hour * hours in a day
-            hours = round(seconds / (60 * 60), 1)  # seconds in minute * minutes in hour
-            return f' {hours} hours ago'
+        minutes = seconds / 60
+        hours = minutes / 60
+        days = hours / 60
+        months = days / 30
+        if months > 1:
+            return f'{round(months, 1)} months ago'
+        if days > 1:
+            return f'{round(days, 1)} days ago'
+        if hours > 1:
+            return f'{round(hours, 1)} hours ago'
+        if minutes > 1:
+            return f'{round(minutes, 1)} minutes ago'
         else:
-            days = round(seconds / 86400, 1)  # seconds in minute * minutes in hour * hours in a day
-            return f' {days} days ago'
+            return f'{round(seconds, 1)} seconds ago'
 
 
     def toggle_buttons(self, action=''):
