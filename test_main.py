@@ -16,8 +16,9 @@ class TestGameSaveManager(unittest.TestCase):
         print('\nTesting readable_time_since function')
         main = Main()
         checked_date = dt.datetime.strptime('2021/01/01 01:00:00', '%Y/%m/%d %H:%M:%S')
-        dates = {                          #'2020/11/28 01:00:00'
+        dates = {
             '2019/01/01 01:00:00': '2.0 years ago',
+            '2020/01/01 01:00:00': '1.0 year ago',
             '2020/11/30 01:00:00':'1.1 months ago',
             '2020/12/28 01:00:00':'4.0 days ago',
             '2020/12/31 01:00:00':'1.0 day ago',
