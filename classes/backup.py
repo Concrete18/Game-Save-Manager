@@ -33,9 +33,10 @@ class Backup(Logger):
         shutil.make_archive(base_name=destination, format=self.compression_type, root_dir=file_path)
 
 
+    # TODO add `word` markdown style for parameters
     def delete_oldest(self, path, redundancy, ignore):
         '''
-        Deletes the oldest saves so only the newest specified amount is left.
+        Deletes the oldest saves within the given `path` so only the newest specified amount (`redundancy`) is left.
 
         Arguments:
 
@@ -54,7 +55,10 @@ class Backup(Logger):
             sorted_list = sorted(saves_list, key=os.path.getctime, reverse=True)
             for i in range(redundancy, len(saves_list)):
                 if os.path.isdir(sorted_list[i]):
-                    shutil.rmtree(sorted_list[i])
+                    try:
+                        shutil.rmtree(sorted_list[i])
+                    except PermissionError:
+                        self.logger.warn(f'Failed to delete oldest saves for {self.game.name} due to permission error.')
                 else:
                     os.remove(sorted_list[i])
             self.logger.info(f'{self.game.name} had more then {redundancy} Saves. Deleted oldest saves.')
