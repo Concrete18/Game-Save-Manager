@@ -320,21 +320,24 @@ class Main(Logger):
             else:
                 msg = f'Save Location for {game_name} does not exist.'
                 messagebox.showwarning(title=self.title, message=msg)
+    
+
+    def exit_smart_browse(self):
+        '''
+        Closes smart browse and properly ends search.
+        '''
+        self.stop_smart_browse = True
+        self.smart_browse_win.destroy()
 
 
     def open_smart_browse_window(self):
         '''
         Smart Browse Progress window
         '''
-        # closes window if it is already open so a new one can be created
-        # TODO switch to method without try block
-        try:
-            self.smart_browse_win.destroy()
-        except AttributeError:
-            pass
         # opens window
+        self.stop_smart_browse = False
         self.smart_browse_win = Tk.Toplevel(self.main_gui)
-        self.smart_browse_win.attributes('-topmost', 'true')
+        self.smart_browse_win.protocol("WM_DELETE_WINDOW", self.exit_smart_browse)
         self.tk_window_options(self.smart_browse_win, 340, 130, define_size=0)
 
         text = f'Looking for the game save directory for\n{self.GameNameEntry.get()}'
@@ -348,8 +351,8 @@ class Main(Logger):
             width=23)
         self.s_browse.grid(row=2, column=0, pady=(5,10))
         self.s_browse.config(state='disabled')
-        self.smart_browse_win.focus_force()
-
+        self.smart_browse_win.grab_set()
+        
 
     @staticmethod
     def nonascii(string):
@@ -390,7 +393,7 @@ class Main(Logger):
             print('waiting')
             sleep(.1)
         # disables progress bar actions when testing
-        if test == 0:
+        if test == False:
             self.progress['maximum'] = len(self.save_search.directories) + 1
         for directory in self.save_search.directories:
             if self.debug:
@@ -408,7 +411,11 @@ class Main(Logger):
             if self.debug:
                 print(f'Dir Search Time: {round(directory_finish-directory_start, 2)} seconds')
             # disables progress bar actions when testing
-            if test == 0:
+            if test == False:
+                # exits if smart browse window is closed
+                if self.stop_smart_browse:
+                    return
+                # BUG a non crashing error sometimes occurs when closing the smart browse window before it finishes
                 self.progress['value'] += 1
             if current_score > best_score:
                 best_score = current_score
@@ -435,7 +442,7 @@ class Main(Logger):
                     self.logger.info(f'No Game save can be found for {full_game_name}')
             else:
                 self.logger.info(f'app_id cant be found for {full_game_name}')
-        if test == 0:
+        if test == False:
             game_save = os.path.abspath(self.GameSaveEntry.get())
             if game_save != self.script_dir:
                 if self.best_dir in game_save:
@@ -572,6 +579,7 @@ class Main(Logger):
         date1: Past date
         date2: Current or more recent date (Optional) defaults to current date if not given
         '''
+        # TODO seconds issue after backup
         if type(since_date) == str:
             since_date = dt.datetime.strptime(since_date, '%Y/%m/%d %H:%M:%S')
         seconds = (checked_date - since_date).total_seconds()  #converts datetime object into seconds
@@ -581,7 +589,7 @@ class Main(Logger):
         months = seconds / (30 * 24 * 60 * 60)  #days in an average month rounded down
         years = seconds / dt.timedelta(days=365).total_seconds() #months in a year
         if years >= 1:
-            s = '' if years == 1 else 's'
+            s = '' if round(years, 2) == 1 else 's'
             return f'{round(years, 1)} year{s} ago'
         if months >= 1:
             s = '' if months == 1 else 's'
