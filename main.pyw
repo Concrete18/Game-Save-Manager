@@ -569,7 +569,7 @@ class Main(Logger):
 
 
     @staticmethod
-    def readable_time_since(since_date, checked_date=dt.datetime.now()):
+    def readable_time_since(since_date, checked_date=False):
         '''
         Converts into time since for the given object.
         Examples:
@@ -579,7 +579,8 @@ class Main(Logger):
         date1: Past date
         date2: Current or more recent date (Optional) defaults to current date if not given
         '''
-        # TODO seconds issue after backup
+        if checked_date is False:
+            checked_date = dt.datetime.now()
         if type(since_date) == str:
             since_date = dt.datetime.strptime(since_date, '%Y/%m/%d %H:%M:%S')
         seconds = (checked_date - since_date).total_seconds()  #converts datetime object into seconds
