@@ -56,8 +56,7 @@ class Game(Logger):
             for save_location in cur.fetchall():  # appends all save locations that do not exist to a list
                 if not os.path.isdir(save_location[0]):
                     cur.execute('''
-                    SELECT game_name
-                    FROM games
+                    SELECT game_name FROM games
                     WHERE save_location=:save_location''', {'save_location': save_location[0]})
                     game_name = self.cursor.fetchone()[0]
                     missing_save_list.append(game_name)

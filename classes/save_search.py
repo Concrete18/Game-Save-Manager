@@ -137,6 +137,7 @@ class Save_Search(Logger):
 
 
     def get_appid(self, game):
+        # TODO add `word` markdown style for parameters
         '''
         Checks the Steam App list for a game and returns its app id if it exists as entered.
         If the app_list has not been populated yet then it will be aquired first.

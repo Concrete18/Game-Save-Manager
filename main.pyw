@@ -273,22 +273,20 @@ class Main(Logger):
         self.Restore_Game_Window.mainloop()
 
 
-    def explore_folder(self, folder):
+    def explore_folder(self, folder_type):
         '''
         Opens the selected games save location in explorer or backup folder.
 
-        Arguments:
-
-        folder -- Set to "Game Save" or "Backup" to determine folder that is opened in explorer
+        Set `folder_type` to "Game Save" or "Backup" to determine folder that is opened in explorer.
         '''
         if self.game.name == None:
             messagebox.showwarning(title=self.title, message='No game is selected.')
-        elif folder == 'Game Save':  # open game save location in explorer
+        elif folder_type == 'Game Save':  # open game save location in explorer
             if not os.path.isdir(self.game.save_location):
                 msg = f'Save location for {self.game.name} no longer exists'
                 messagebox.showwarning(title=self.title, message=msg)
             subprocess.Popen(f'explorer "{self.game.save_location}"')
-        elif folder == 'Backup':  # open game backup location in explorer
+        elif folder_type == 'Backup':  # open game backup location in explorer
             if not os.path.isdir(self.game.backup_loc):
                 messagebox.showwarning(title=self.title, message=f'{self.game.name} has not been backed up yet.')
             subprocess.Popen(f'explorer "{self.game.backup_loc}"')
@@ -357,7 +355,7 @@ class Main(Logger):
     @staticmethod
     def nonascii(string):
         '''
-        Returns the given string with ASCII characters removed.
+        Returns `string` with ASCII characters removed.
         '''
         return string.encode("ascii", "ignore").decode()
 
@@ -571,18 +569,21 @@ class Main(Logger):
     @staticmethod
     def readable_time_since(since_date, checked_date=False):
         '''
-        Converts into time since for the given object.
+        Converts into time since for the given datetime object given as `since_date`.
+
         Examples:
 
         1.2 seconds ago | 3.4 minutes ago | 5.6 hours ago | 7.8 days ago | 9.1 months ago | 10.1 years ago
 
-        date1: Past date
-        date2: Current or more recent date (Optional) defaults to current date if not given
+        `since_date`: Past date
+        `checked_date`: Current or more recent date (Optional) defaults to current date if not given.
         '''
         if checked_date is False:
             checked_date = dt.datetime.now()
         if type(since_date) == str:
             since_date = dt.datetime.strptime(since_date, '%Y/%m/%d %H:%M:%S')
+        if not isinstance(since_date, dt.datetime):
+            raise 'Incorrect since_date given'
         seconds = (checked_date - since_date).total_seconds()  #converts datetime object into seconds
         minutes = seconds / 60  #seconds in a minute
         hours = seconds / 3600  #minutes in a hour
