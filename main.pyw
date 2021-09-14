@@ -146,6 +146,7 @@ class Main(Logger):
         '''
         Shortcut that activates when pressing enter while a game is selected.
         '''
+        # TODO add setting so if no game is selected, it will ask if you want to backup the most recently backed up game.
         response = messagebox.askquestion(
             title=self.title,
             message=f'Are you sure you want to backup {self.game.name}')
@@ -585,6 +586,8 @@ class Main(Logger):
         if not isinstance(since_date, dt.datetime):
             raise 'Incorrect since_date given'
         seconds = (checked_date - since_date).total_seconds()  #converts datetime object into seconds
+        if seconds <= 0:
+            raise 'Invalid Response - since_date takes place after the checked date.'
         minutes = seconds / 60  #seconds in a minute
         hours = seconds / 3600  #minutes in a hour
         days = seconds / 86400  #hours in a day
@@ -747,7 +750,7 @@ class Main(Logger):
             messagebox.showerror(title=self.title, message=msg)
         while self.backup_restore_in_progress:
             sleep(.1)
-        # BUG fails to exit if filedialog is left open
+        # BUG interface fails to exit if filedialog is left open
         # fix using subclassed filedialog commands that can close it
         exit()
 
