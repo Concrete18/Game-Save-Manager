@@ -17,7 +17,7 @@ class TestGame(unittest.TestCase):
         self.assertEqual(game.save_location, save_location)
         self.assertEqual(game.filename, 'Dishonored 2')
         self.assertEqual(game.backup_loc, 'Save Backup\Dishonored 2')
-        self.assertEqual(game.backup_size, '5.2 MB')
+        self.assertRegex(game.backup_size, r'[. 0-9]+(B|KB|MB|GB|TB)')
         self.assertEqual(game.last_backup, '2021/07/24 9:56:37')
 
 
