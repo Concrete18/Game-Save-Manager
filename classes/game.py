@@ -51,14 +51,10 @@ class Game(Logger):
         '''
         with closing(sqlite3.connect(self.db_loc)) as con, con, \
             closing(con.cursor()) as cur:
-            cur.execute("SELECT save_location FROM games")
+            cur.execute("SELECT game_name, save_location FROM games")
             missing_save_list = []
-            for save_location in cur.fetchall():  # appends all save locations that do not exist to a list
-                if not os.path.isdir(save_location[0]):
-                    cur.execute('''
-                    SELECT game_name FROM games
-                    WHERE save_location=:save_location''', {'save_location': save_location[0]})
-                    game_name = self.cursor.fetchone()[0]
+            for game_name, save_location in cur.fetchall():  # appends all save locations that do not exist to a list
+                if not os.path.isdir(save_location):
                     missing_save_list.append(game_name)
             return missing_save_list
 
@@ -119,25 +115,15 @@ class Game(Logger):
         return re.sub("\s\s+" , " ", string).strip()[0:50]
 
 
-    def get_save_loc(self, game_name):
+    def get_game_info(self, game_name):
         '''
-        Returns the save location of the selected game from the SQLite Database.
+        Returns the save location and last backup of the selected game from the SQLite Database.
         '''
-        value = self.query("SELECT save_location FROM games WHERE game_name=:game_name", 
+        value = self.query("SELECT save_location, last_backup FROM games WHERE game_name=:game_name", 
             {'game_name': game_name})
         if len(value) > 0:
-            return value[0]
+            return value[0], value[1]
 
-
-    def get_last_backup(self, game_name):
-        '''
-        Returns the last time the game was backed up.
-        '''
-        value = self.query("SELECT last_backup FROM games WHERE game_name=:game_name",
-            {'game_name': game_name})
-        if len(value) > 0:
-            return value[0]
-    
 
     def update_last_backup(self, game_name, last_backup):
         '''
@@ -152,11 +138,10 @@ class Game(Logger):
         Sets the current game to the one entered as an argument
         '''
         self.name = game_name
-        self.save_location = self.get_save_loc(game_name)
+        self.save_location, self.last_backup = self.get_game_info(game_name)
         self.filename = self.get_filename(game_name)
         self.backup_loc = os.path.join(self.backup_dest, self.filename)
         self.backup_size = self.convert_size(self.backup_loc)
-        self.last_backup = self.get_last_backup(game_name)
 
 
     def update(self, old_name, new_name, new_save):
