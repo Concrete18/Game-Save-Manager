@@ -711,6 +711,7 @@ class Main(Logger):
 
         Update -- 1 or 0 (default = 0)
         '''
+        # TODO check what happends when this runs while a search has only 1 entry in the listbox
         self.game.set(self.game_listbox.get(self.game_listbox.curselection()))
         # ignores function if listbox is empty
         if self.game_listbox.size() == 0:
@@ -832,7 +833,11 @@ class Main(Logger):
         self.scrollbar.config(command=self.game_listbox.yview)
         # listbox fill
         self.sorted_list = self.game.sorted_games()
-        self.update_listbox()
+        missing_games = self.game.database_check()
+        if len(missing_games) > 0:
+            self.update_listbox(missing_games)
+        else:
+            self.update_listbox()
 
         # Main Row 3
         Add_Game_Frame = Tk.LabelFrame(self.main_gui, text='Manage Games')
@@ -884,8 +889,6 @@ class Main(Logger):
 
         ClearButton = Tk.ttk.Button(Button_Frame, text='Refresh Games', command=self.update_listbox, width=16)
         ClearButton.grid(row=2, column=4, padx=button_padx, pady=button_pady)
-
-        self.game.database_check()
 
         # interface startup time check
         end = perf_counter()
