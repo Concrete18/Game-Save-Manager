@@ -1,9 +1,9 @@
 import shutil, json, os, sys, subprocess, winsound
+from tkinter import ttk, filedialog, messagebox
+import tkinter as Tk
 from time import sleep, perf_counter
 from threading import Thread
 import datetime as dt
-from tkinter import ttk, filedialog, messagebox
-import tkinter as Tk
 
 # classes
 from classes.logger import Logger
@@ -376,6 +376,7 @@ class Main(Logger):
         The highes scoring directory is chosen.
         '''
         # TODO split into more functions
+        # TODO use threading to split each search into its own thread with joins
         # var setup
         overall_start = perf_counter() # start time for checking elapsed runtime
         best_score = 0
@@ -711,7 +712,6 @@ class Main(Logger):
 
         Update -- 1 or 0 (default = 0)
         '''
-        # TODO check what happends when this runs while a search has only 1 entry in the listbox
         self.game.set(self.game_listbox.get(self.game_listbox.curselection()))
         # ignores function if listbox is empty
         if self.game_listbox.size() == 0:
@@ -763,7 +763,6 @@ class Main(Logger):
         start = perf_counter()
         # Defaults
         BoldBaseFont = "Arial Bold"
-
         self.main_gui = Tk.Tk()
         self.main_gui.protocol("WM_DELETE_WINDOW", self.exit_program)
         window_width = 680
@@ -803,7 +802,7 @@ class Main(Logger):
         instruction = 'Select a Game\nto continue'
         self.ActionInfo = Tk.Label(self.main_gui, text=instruction, font=(BoldBaseFont, 10))
         self.ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady= 5)
-
+        'word'.upper()
         # Main Row 2
         self.ListboxFrame = Tk.Frame(self.main_gui)
         self.ListboxFrame.grid(columnspan=4, row=2, column=0,  padx=(20, 20), pady=(5, 10))
@@ -824,7 +823,7 @@ class Main(Logger):
         self.game_listbox.bind('<<ListboxSelect>>', lambda event,
             game_listbox=self.game_listbox,:self.select_listbox_entry(1))
 
-        # TODO finish or delete up and down control of listbox
+        # WIP finish or delete up and down control of listbox
         # full interface bind for lisxtbox navigation
         # self.main_gui.bind('<Up>', lambda event,arg=.1:self.listbox_nav(event))
         # self.main_gui.bind('<Down>', lambda event,arg=.1:self.listbox_nav(event))
@@ -835,7 +834,9 @@ class Main(Logger):
         self.sorted_list = self.game.sorted_games()
         missing_games = self.game.database_check()
         if len(missing_games) > 0:
-            self.update_listbox(missing_games)
+            self.update_listbox()
+            # BUG does not allow selecting games properly and removes the wrong listbox entry
+            # self.update_listbox(missing_games)
         else:
             self.update_listbox()
 
