@@ -16,9 +16,7 @@ class Backup(Logger):
         '''
         Returns True if the `file` is compressed with a valid compression type.
         '''
-        available_compression = []
-        for item in shutil.get_archive_formats():
-            available_compression.append(f'.{item[0]}')
+        available_compression = [f'.{item[0]}' for item in shutil.get_archive_formats()]
         filetype = os.path.splitext(file)[1]
         if filetype in available_compression:
             return True
@@ -37,14 +35,10 @@ class Backup(Logger):
         '''
         Deletes the oldest saves within the given `path` so only the newest specified amount (`redundancy`) is left.
 
-        If `ignore` is in the filename then it will be ignored during this process.
+        If the value of `ignore` is in the filename then it will be ignored during this process.
         '''
         # creates save list
-        saves_list = []
-        for file in os.scandir(path):
-            # ignores pre restore backup
-            if ignore not in file.name:
-                saves_list.append(file.path)
+        saves_list = [file.path for file in os.scandir(path) if ignore not in file.name]
         # exits if the save list is shorted then the backup_redundancy
         if len(saves_list) <= redundancy:
             return
