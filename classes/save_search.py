@@ -36,13 +36,7 @@ class Save_Search(Logger):
         '''
         with os.popen("fsutil fsinfo drives") as data:
             letter_output = data.readlines()[1]
-        words = re.findall('\S+', letter_output)[1:]
-        result = []
-        for letters in words:
-            result.append(letters[0])
-        if self.debug:
-            print(result)
-        return result
+        return [letters[0] for letters in re.findall('\S+', letter_output)[1:]]
 
 
     def find_search_directories(self):
@@ -137,9 +131,8 @@ class Save_Search(Logger):
 
 
     def get_appid(self, game):
-        # TODO add `word` markdown style for parameters
         '''
-        Checks the Steam App list for a game and returns its app id if it exists as entered.
+        Checks the Steam App list for a `game` and returns its app id if it exists as entered.
         If the app_list has not been populated yet then it will be aquired first.
         '''
         if self.app_list == None:
@@ -152,7 +145,7 @@ class Save_Search(Logger):
 
     def check_userdata(self, app_id):
         '''
-        Checks for a save folder within the steam userdata folder by looking for the given games app_id.
+        Checks for a save folder within the steam userdata folder by looking for the given games `app_id`.
         '''
         existing_paths = []
         for letter in self.drive_letters:

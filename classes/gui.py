@@ -613,10 +613,7 @@ class GUI(Logger):
             if typed == '':
                 data = self.sorted_list
             else:
-                data = []
-                for item in self.sorted_list:
-                    if typed.lower() in item.lower():
-                        data.append(item)
+                data = [item for item in self.sorted_list if typed.lower() in item.lower()]
             self.update_listbox(data)
         Thread(target=search, daemon=True).start()
 

@@ -52,11 +52,7 @@ class Game(Logger):
         with closing(sqlite3.connect(self.db_loc)) as con, con, \
             closing(con.cursor()) as cur:
             cur.execute("SELECT game_name, save_location FROM games")
-            missing_save_list = []
-            for game_name, save_location in cur.fetchall():  # appends all save locations that do not exist to a list
-                if not os.path.isdir(save_location):
-                    missing_save_list.append(game_name)
-            return missing_save_list
+            return [name for name, save_location in cur.fetchall() if not os.path.isdir(save_location)]
 
 
     def sorted_games(self):
@@ -64,10 +60,7 @@ class Game(Logger):
         Sorts the game list from the SQLite database based on the last backup and then returns a list.
         '''
         data = self.query("SELECT game_name FROM games ORDER BY last_backup DESC", fetchall=True)
-        ordered_games = []
-        for game_name in data:
-            ordered_games.append(game_name[0])
-        return ordered_games
+        return [name[0] for name in data]
 
 
     @staticmethod
