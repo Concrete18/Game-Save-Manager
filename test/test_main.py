@@ -1,43 +1,48 @@
-import os, sys
-abspath = os.path.abspath(sys.argv[0]) #path to your test_xyz.py
-dname = os.path.dirname(abspath) #directory of test.py which is the test/ folder
-os.chdir(os.path.dirname(dname)) #cd to the parent dir of your test/ folder
-
-from main import Main
+from main import Main  # type: ignore
+from classes.save_search import Save_Search
+import datetime as dt
+from classes.game import Game
 from time import sleep, perf_counter
 import unittest
-
-print(Main)
-
 
 class TestGameSaveManager(unittest.TestCase):
 
 
-    # TODO move tests into testing folder
-
-    def test_get_appid(self):
-        print('\nTesting get_appid function')
-        tests = {
-        'This is not a real game:the sequel': None,
-        'Dishonored 2': 403640,
-        'Monster Hunter: World': 582010
-        }
+    def test_readable_time_since(self):
+        '''
+        readable_time_since
+        '''
+        # FIXME function does not work
+        print('\nTesting readable_time_since function')
         main = Main()
-        for test_value, answer in tests.items():
-            self.assertEqual(main.get_appid(test_value), answer)
-            sleep(.5)
-
+        checked_date = dt.datetime.strptime('2021/01/01 01:00:00', '%Y/%m/%d %H:%M:%S')
+        dates = {
+            '2019/01/01 01:00:00': '2.0 years ago',
+            '2020/01/01 01:00:00': '1.0 year ago',
+            '2020/11/30 01:00:00':'1.1 months ago',
+            '2020/12/28 01:00:00':'4.0 days ago',
+            '2020/12/31 01:00:00':'1.0 day ago',
+            '2021/01/01 00:00:00':'1.0 hour ago',
+            '2020/12/31 12:00:00':'13.0 hours ago',
+            '2021/01/01 00:59:00':'1.0 minute ago',
+            '2021/01/01 00:59:55':'5.0 seconds ago',
+                }
+        for date, answer in dates.items():
+            self.assertIn(main.readable_time_since(date, checked_date), answer)
 
     def test_smart_browse(self):
+        '''
+        Smart Browse
+        '''
         print('\nTesting smart_browse function')
         main = Main()
         main.debug = 0
         main.output = 0
+        search = Save_Search(Game, debug=False)
         game_dict = {
-            # 'Barotrauma': r'C:\Users\Michael\AppData\Local\Daedalic Entertainment GmbH\Barotrauma'
-            'Mini Motorways': r'C:\Users\Michael\AppData\LocalLow\Dinosaur Polo Club\Mini Motorways',
+            # 'The Forgotten City':r'C:',
             'HITMAN™ 2': r'C:\Program Files (x86)\Steam\userdata\22360464\863550',
-            'Monster Hunter: World': r'C:\Program Files (x86)\Steam\userdata\22360464\582010',
+            'Mini Motorways': r'C:\Users\Michael\AppData\LocalLow\Dinosaur Polo Club\Mini Motorways',
             'Phantom Abyss': r'C:\Users\Michael\AppData\Local\PhantomAbyss',
             'Still There': r'C:\Users\Michael\AppData\LocalLow\GhostShark Games\Still There',
             'Factorio': r'C:\Users\Michael\AppData\Roaming\Factorio',
@@ -56,20 +61,17 @@ class TestGameSaveManager(unittest.TestCase):
             'Timberborn': r'D:\My Documents\Timberborn',
             'XCOM 2 War of the Chosen': r'D:\My Documents\My Games\XCOM2 War of the Chosen'}
         print('\n   Setting up search directories')
-        main.find_search_directories()
+        search.find_search_directories()
         print('\n   Starting search for each game.')
         elapsed_total = 0
         for game, path in game_dict.items():
-            print(f'    > {game}', end="")
+            print(f'   > {game}', end="")
             start = perf_counter()
-            self.assertEqual(main.game_save_location_search(game, test=1), path)
+            # self.assertEqual(main.game_save_location_search(game, test=1), path)
+            self.assertIn(main.game_save_location_search(game, test=1), path)
             finish = perf_counter()
             elapsed_single = finish-start
             elapsed_total += elapsed_single
             print(f' | {round(elapsed_single, 2)} seconds')
         average = round(elapsed_total/len(game_dict), 2)
         print(f'   Average search time: {average} seconds')
-    
-
-if __name__ == '__main__':
-    unittest.main()
