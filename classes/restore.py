@@ -1,6 +1,7 @@
 from classes.logger import Logger
 import os, shutil
 
+
 class Restore(Logger):
 
 
@@ -11,9 +12,7 @@ class Restore(Logger):
         self.game = game
         self.backup = backup
     
-
     # TODO move restore tkinter window into this folder
-
 
     @staticmethod
     def delete_dir_contents(dir):
@@ -26,13 +25,11 @@ class Restore(Logger):
             else:
                 os.remove(f)
 
-
     def decompress(self,file, destination):
         '''
         Decompresses the given file into the given destination.
         '''
         shutil.unpack_archive(file, destination)
-
 
     def backup_orignal_save(self, selected_backup, full_save_path):
         '''

@@ -1,7 +1,9 @@
 from logging.handlers import RotatingFileHandler
 import logging as lg
 
+
 class Logger:
+
 
     # logger setup
     log_formatter = lg.Formatter('%(asctime)s %(levelname)s %(message)s', datefmt='%m-%d-%Y %I:%M:%S %p')

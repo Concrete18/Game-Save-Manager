@@ -5,6 +5,9 @@ from time import sleep, perf_counter
 from threading import Thread
 import datetime as dt
 
+# helper
+from classes.helper import benchmark
+
 # classes
 from classes.logger import Logger
 from classes.game import Game
@@ -74,7 +77,6 @@ class Main(Logger):
             else:
                 os.mkdir(self.backup_dest)
 
-
     def run_full_backup(self):
         '''
         Backups up the game entered based on SQLite save location data to the specified backup folder.
@@ -123,7 +125,6 @@ class Main(Logger):
         except SystemExit:
             print('Cancelled Backup.')
 
-
     def tk_window_options(self, window_name, window_width, window_height, define_size=0):
         '''
         Disables window resize and centers window if config enables each.
@@ -141,7 +142,6 @@ class Main(Logger):
             else:
                 window_name.geometry(f'+{width_pos}+{height_pos}')
 
-
     def backup_shortcut(self, event):
         '''
         Shortcut that activates when pressing enter while a game is selected.
@@ -156,7 +156,6 @@ class Main(Logger):
             self.game_listbox.activate(0)
             return
         print(event)
-
 
     def restore_save(self):
         '''
@@ -190,14 +189,12 @@ class Main(Logger):
             self.backup_restore_in_progress = False
             return
 
-
         def close_restore_win():
             '''
             Notifies the program that the restore process is complete and closes the restore window.
             '''
             self.backup_restore_in_progress = False
             self.Restore_Game_Window.destroy()
-
 
         def restore_selected_save():
             '''
@@ -242,7 +239,6 @@ class Main(Logger):
                 self.restore.backup_orignal_save(selected_backup, full_save_path)
             close_restore_win()
 
-
         self.Restore_Game_Window = Tk.Toplevel(takefocus=True)
         self.Restore_Game_Window.protocol("WM_DELETE_WINDOW", close_restore_win)
         window_width = 300
@@ -273,7 +269,6 @@ class Main(Logger):
 
         self.Restore_Game_Window.mainloop()
 
-
     def explore_folder(self, folder_type):
         '''
         Opens the selected games save location in explorer or backup folder.
@@ -291,7 +286,6 @@ class Main(Logger):
             if not os.path.isdir(self.game.backup_loc):
                 messagebox.showwarning(title=self.title, message=f'{self.game.name} has not been backed up yet.')
             subprocess.Popen(f'explorer "{self.game.backup_loc}"')
-
 
     def add_game_to_database(self):
         '''
@@ -320,14 +314,12 @@ class Main(Logger):
                 msg = f'Save Location for {game_name} does not exist.'
                 messagebox.showwarning(title=self.title, message=msg)
     
-
     def exit_smart_browse(self):
         '''
         Closes smart browse and properly ends search.
         '''
         self.stop_smart_browse = True
         self.smart_browse_win.destroy()
-
 
     def open_smart_browse_window(self):
         '''
@@ -352,14 +344,12 @@ class Main(Logger):
         self.s_browse.config(state='disabled')
         self.smart_browse_win.grab_set()
         
-
     @staticmethod
     def nonascii(string):
         '''
         Returns `string` with ASCII characters removed.
         '''
         return string.encode("ascii", "ignore").decode()
-
 
     @staticmethod
     def completion_sound():
@@ -368,7 +358,6 @@ class Main(Logger):
         '''
         if sys.platform == 'win32':
             winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
-
 
     def game_save_location_search(self, full_game_name, test=0):
         '''
@@ -469,7 +458,6 @@ class Main(Logger):
                 info += f'\nFound directory is different then entered directory.'
             self.s_browse.config(state='normal')
 
-
     def smart_browse(self):
         '''
         Searches for a starting point for the save location browser.
@@ -484,7 +472,6 @@ class Main(Logger):
         self.open_smart_browse_window()
         # looks for folders with the games name
         Thread(target=self.game_save_location_search, args=(game_name,), daemon=True).start()
-
 
     def browse(self, initial_dir=None):
         '''
@@ -502,7 +489,6 @@ class Main(Logger):
         save_dir = filedialog.askdirectory(initialdir=starting_point, title="Select Save Directory")
         self.GameSaveEntry.delete(0, Tk.END)
         self.GameSaveEntry.insert(0, save_dir)
-
 
     def delete_game(self):
         '''
@@ -535,7 +521,6 @@ class Main(Logger):
                         messagebox.showerror(title=self.title, message='Failed to delete directory\nPermission Error')
                 self.logger.info(f'Deleted {self.game.name} from database.')
 
-
     def update_game(self):
         '''
         Allows updating data for games in database.
@@ -566,7 +551,6 @@ class Main(Logger):
             self.logger.info(f'Updated {self.game.name} in database.')
         else:
             messagebox.showwarning(title=self.title, message='Save Location does not exist.')
-
 
     @staticmethod
     def readable_time_since(since_date, checked_date=False):
@@ -612,7 +596,6 @@ class Main(Logger):
         else:
             return f'{round(seconds, 1)} seconds ago'
 
-
     def toggle_buttons(self, action=''):
         '''
         Disables all buttons within the buttons list.
@@ -633,7 +616,6 @@ class Main(Logger):
             for button in [self.ExploreBackupButton, self.RestoreButton]:
                 button.config(state=set_state)
 
-
     def update_listbox(self, data=None):
         '''
         Deletes current listbox items and adds the given data in.
@@ -651,7 +633,6 @@ class Main(Logger):
         self.Title.config(text=info_text)
         self.toggle_buttons('disable')
 
-
     def entry_search(self, e):
         '''
         Finds all items in the sorted_list that have the search box data in it.
@@ -667,14 +648,12 @@ class Main(Logger):
             self.update_listbox(data)
         Thread(target=search, daemon=True).start()
 
-
     def select_entry(self, e):
         '''
         Deletes only search box default text on click.
         '''
         if self.search_entry.get() == self.default_entry_value:
             self.search_entry.delete(0, Tk.END)
-
 
     def listbox_nav(self, e):
         '''
@@ -691,14 +670,12 @@ class Main(Logger):
             self.game_listbox.selection_anchor(index)
             self.game_listbox.activate(index)
 
-
     def unfocus_entry(self, e):
         '''
         Resets search box to default_entry_value when it loses focus.
         '''
         self.search_entry.delete(0, Tk.END)
         self.search_entry.insert(0, self.default_entry_value)
-
 
     def select_listbox_entry(self, Update = 0):
         '''
@@ -738,7 +715,6 @@ class Main(Logger):
             self.ActionInfo.config(text=info)
             self.BackupButton.focus_set()
 
-
     def exit_program(self):
         '''
         Closes the database and quits the program when closing the interface.
@@ -751,7 +727,6 @@ class Main(Logger):
         # BUG interface fails to exit if filedialog is left open
         # fix using subclassed filedialog commands that can close it
         exit()
-
 
     def open_interface_window(self):
         '''
@@ -894,7 +869,6 @@ class Main(Logger):
         if start_elapsed > 1:
             print('Interface Ready: ', start_elapsed)
         self.main_gui.mainloop()
-
 
     def run(self):
         '''

@@ -2,6 +2,7 @@ from classes.logger import Logger
 from contextlib import closing
 import sqlite3, os, re, math
 
+
 class Game(Logger):
 
 
@@ -19,7 +20,8 @@ class Game(Logger):
             game_name text,
             save_location text,
             last_backup text
-            )''')
+            )'''
+        )
 
 
     def query(self, sql, arg1=None, fetchall=False):
@@ -34,7 +36,6 @@ class Game(Logger):
             else:
                 return cur.fetchone()
 
-
     def update_sql(self, sql, arg1=None):
         with closing(sqlite3.connect(self.db_loc)) as con, con, \
                 closing(con.cursor()) as cur:
@@ -42,7 +43,6 @@ class Game(Logger):
                 cur.execute(sql)
             else:
                 cur.execute(sql, arg1)
-
 
     def database_check(self):
         '''
@@ -54,14 +54,12 @@ class Game(Logger):
             cur.execute("SELECT game_name, save_location FROM games")
             return [name for name, save_location in cur.fetchall() if not os.path.isdir(save_location)]
 
-
     def sorted_games(self):
         '''
         Sorts the game list from the SQLite database based on the last backup and then returns a list.
         '''
         data = self.query("SELECT game_name FROM games ORDER BY last_backup DESC", fetchall=True)
         return [name[0] for name in data]
-
 
     @staticmethod
     def convert_size(dir):
@@ -89,13 +87,11 @@ class Game(Logger):
         else:
             return '0 bits'
     
-
     def get_backup_size(self):
         '''
         Gets the size of the currently selected games backup folder.
         '''
         self.backup_size = self.convert_size(self.backup_loc)
-
 
     def get_filename(self, name):
         '''
@@ -107,7 +103,6 @@ class Game(Logger):
         string = char_removal.sub('', name)
         return re.sub("\s\s+" , " ", string).strip()[0:50]
 
-
     def get_game_info(self, game_name):
         '''
         Returns the save location and last backup of the selected game from the SQLite Database.
@@ -117,14 +112,12 @@ class Game(Logger):
         if len(value) > 0:
             return value[0], value[1]
 
-
     def update_last_backup(self, game_name, last_backup):
         '''
         Updates the last backup time for game_name.
         '''
         self.update_sql("UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name",
             {'game_name': game_name, 'last_backup': last_backup})
-
 
     def set(self, game_name):
         '''
@@ -136,7 +129,6 @@ class Game(Logger):
         self.backup_loc = os.path.join(self.backup_dest, self.filename)
         self.backup_size = self.convert_size(self.backup_loc)
 
-
     def update(self, old_name, new_name, new_save):
         '''
         Updates a game in the database.
@@ -144,7 +136,6 @@ class Game(Logger):
         self.update_sql("UPDATE games SET game_name = ?, save_location = ? WHERE game_name = ?;",
             (new_name, new_save, old_name))
         self.set(new_name)
-
 
     def exists_in_db(self, game_name):
         '''
@@ -154,7 +145,6 @@ class Game(Logger):
             {'game_name': game_name})
         return entry != None
 
-
     def add(self, game_name, save_location):
         '''
         Adds game to database.
@@ -162,7 +152,6 @@ class Game(Logger):
         self.update_sql("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
             {'game_name': game_name, 'save_location': save_location, 'last_backup': 'Never'})
         self.logger.info(f'Added {game_name} to database.')
-
 
     def delete_from_db(self):
         '''

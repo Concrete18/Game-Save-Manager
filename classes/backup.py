@@ -1,6 +1,7 @@
 from classes.logger import Logger
 import os, shutil
 
+
 class Backup(Logger):
 
     
@@ -23,13 +24,11 @@ class Backup(Logger):
         else:
             return False
 
-
     def compress(self, file_path, destination):
         '''
         Compresses the `file_path` into the `destination` path.
         '''
         shutil.make_archive(base_name=destination, format=self.compression_type, root_dir=file_path)
-
 
     def delete_oldest(self, path, redundancy, ignore):
         '''

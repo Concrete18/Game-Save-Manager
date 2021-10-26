@@ -38,7 +38,6 @@ class Save_Search(Logger):
             letter_output = data.readlines()[1]
         return [letters[0] for letters in re.findall('\S+', letter_output)[1:]]
 
-
     def find_search_directories(self):
         '''
         Finds the directories to use when searching for games.
@@ -78,7 +77,6 @@ class Save_Search(Logger):
         if self.debug:
             print(f'find_search_directories: {elapsed_time} seconds')
 
-
     def dir_scoring(self, possible_dir):
         '''
         Uses a scoring system to determines the chance of the given directory to be the save location.
@@ -117,7 +115,6 @@ class Save_Search(Logger):
             print(f'Score {current_score}')
         return current_score
 
-
     def get_app_list(self):
         '''
         Gets the applist from the steam API
@@ -128,7 +125,6 @@ class Save_Search(Logger):
             return data.json()['applist']['apps']
         else:
             return None
-
 
     def get_appid(self, game):
         '''
@@ -141,7 +137,6 @@ class Save_Search(Logger):
             if item["name"] == game:
                 return item['appid']
         return None
-
 
     def check_userdata(self, app_id):
         '''
