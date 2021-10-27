@@ -5,15 +5,15 @@ from time import sleep, perf_counter
 from threading import Thread
 import datetime as dt
 
-# helper
-from classes.helper import benchmark
-
 # classes
 from classes.logger import Logger
 from classes.game import Game
 from classes.backup import Backup
 from classes.restore import Restore
 from classes.save_search import Save_Search
+
+# helper
+from classes.helper import benchmark
 
 class Main(Logger):
 
@@ -114,8 +114,7 @@ class Main(Logger):
         self.ActionInfo.config(text=f'Backing up {self.game.name}\nDo not close program.')
         try:
             Thread(target=backup).start()
-            last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-            self.game.update_last_backup(self.game.name, last_backup)
+            self.game.update_last_backup(self.game.name)
         except FileNotFoundError:
             messagebox.showwarning(title=self.title,  message='Action Failed - File location does not exist.')
             self.logger.error(f'Failed to Backed up Save for {self.game.name}. File location does not exist.')

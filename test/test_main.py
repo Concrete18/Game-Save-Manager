@@ -2,7 +2,7 @@ from main import Main  # type: ignore
 from classes.save_search import Save_Search
 import datetime as dt
 from classes.game import Game
-from time import sleep, perf_counter
+from time import perf_counter
 import unittest
 
 class TestGameSaveManager(unittest.TestCase):
