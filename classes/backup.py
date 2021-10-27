@@ -44,11 +44,14 @@ class Backup(Logger):
         else:
             sorted_list = sorted(saves_list, key=os.path.getctime, reverse=True)
             for i in range(redundancy, len(saves_list)):
+                file_to_delete = sorted_list[i]
                 if os.path.isdir(sorted_list[i]):
                     try:
-                        shutil.rmtree(sorted_list[i])
+                        shutil.rmtree(file_to_delete)
                     except PermissionError:
                         self.logger.warn(f'Failed to delete oldest saves for {self.game.name} due to permission error.')
+                        # tries to delete the folder again if it managed to delete the contents only
+                        os.rmdir(file_to_delete)
                 else:
-                    os.remove(sorted_list[i])
+                    os.remove(file_to_delete)
             self.logger.info(f'{self.game.name} had more then {redundancy} Saves. Deleted oldest saves.')
