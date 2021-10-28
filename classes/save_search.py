@@ -25,7 +25,7 @@ class Save_Search(Logger):
         self.debug = debug
         self.drive_letters = self.find_drive_letters()
         # finds search directories 
-        self.directories = []
+        self.directories = [custom_saved_dir for custom_saved_dir in self.data['custom_save_directories']]
         self.directories_ready = False
         Thread(target=self.find_search_directories).start()
 
@@ -53,6 +53,7 @@ class Save_Search(Logger):
                 rf":/Users/{username}/AppData/Roaming",
                 rf":/Users/{username}/Saved Games",
                 rf":/Users/{username}/Documents",
+                rf":/My Documents",
                 r":/Program Files (x86)/Steam/steamapps/common",
                 r":/Program Files/Steam/steamapps/common"
                 ]
@@ -67,8 +68,6 @@ class Save_Search(Logger):
                     if 'documents' in current_dir.lower():
                         self.initialdir = current_dir
                     self.directories.append(current_dir)
-        for custom_saved_dir in self.data['custom_save_directories']:
-            self.directories.append(custom_saved_dir)
         self.directories_ready = True
         if self.debug:
             print(self.directories)
