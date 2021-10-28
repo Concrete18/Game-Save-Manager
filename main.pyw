@@ -572,11 +572,11 @@ class Main(Logger):
         seconds = (checked_date - since_date).total_seconds()  #converts datetime object into seconds
         if seconds <= 0:
             raise 'Invalid Response - since_date takes place after the checked date.'
-        minutes = seconds / 60  #seconds in a minute
-        hours = seconds / 3600  #minutes in a hour
-        days = seconds / 86400  #hours in a day
-        months = seconds / (30 * 24 * 60 * 60)  #days in an average month rounded down
-        years = seconds / dt.timedelta(days=365).total_seconds() #months in a year
+        minutes = seconds / 60  # seconds in a minute
+        hours = seconds / 3600  # minutes in a hour
+        days = seconds / 86400  # hours in a day
+        months = seconds / (30 * 24 * 60 * 60)  # days in an average month rounded down
+        years = seconds / dt.timedelta(days=365).total_seconds() # months in a year
         if years >= 1:
             s = '' if round(years, 2) == 1 else 's'
             return f'{round(years, 1)} year{s} ago'

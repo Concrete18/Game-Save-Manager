@@ -41,7 +41,7 @@ class TestGameSaveManager(unittest.TestCase):
         search = Save_Search(Game, debug=False)
         game_dict = {
             # 'The Forgotten City':r'C:',
-            'HITMAN™ 2': r'C:\Program Files (x86)\Steam\userdata\22360464\863550',
+            # 'HITMAN™ 2': r'C:\Program Files (x86)\Steam\userdata\22360464\863550',
             'Mini Motorways': r'C:\Users\Michael\AppData\LocalLow\Dinosaur Polo Club\Mini Motorways',
             'Phantom Abyss': r'C:\Users\Michael\AppData\Local\PhantomAbyss',
             'Still There': r'C:\Users\Michael\AppData\LocalLow\GhostShark Games\Still There',
@@ -67,7 +67,6 @@ class TestGameSaveManager(unittest.TestCase):
         for game, path in game_dict.items():
             print(f'   > {game}', end="")
             start = perf_counter()
-            # self.assertEqual(main.game_save_location_search(game, test=1), path)
             self.assertIn(main.game_save_location_search(game, test=1), path)
             finish = perf_counter()
             elapsed_single = finish-start
