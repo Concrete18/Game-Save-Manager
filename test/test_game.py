@@ -30,10 +30,10 @@ class TestGame(unittest.TestCase):
             self.assertEqual(game.get_filename(test_value), answer)
 
     def test_convert_size(self):
-        print('\nTesting convert_size function')
+        print('\nTesting get_dir_size function')
         main = Game(self.backup_path, self.db_loc)
-        self.assertEqual(main.convert_size('test\Folder Test\Folder Example'), '124.0 B')
-        self.assertEqual(main.convert_size('ValueError'), '0 bits')
+        self.assertEqual(main.get_dir_size('test\Folder Test\Folder Example'), '124.0 B')
+        self.assertEqual(main.get_dir_size('ValueError'), '0 bits')
 
     def test_database_check(self):
         print('\nTesting database_check function')

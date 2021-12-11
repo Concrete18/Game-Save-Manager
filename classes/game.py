@@ -16,22 +16,14 @@ class Game(Logger):
         self.db_loc = db_loc
         self.database = sqlite3.connect(db_loc)
         self.cursor = self.database.cursor()
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS games (
-            game_name text,
-            save_location text,
-            last_backup text
-            )'''
-        )
-
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS games (game_name text, save_location text, last_backup text)')
 
     def query(self, sql, arg1=None, fetchall=False):
         '''
         Querys info in the database using the sql command.
         `arg1` can be used for add args to excute and `fetchall` as true to fetchall instead of fetchone.
         '''
-        with closing(sqlite3.connect(self.db_loc)) as con, con, \
-                closing(con.cursor()) as cur:
+        with closing(sqlite3.connect(self.db_loc)) as con, con, closing(con.cursor()) as cur:
             if arg1 == None:
                 cur.execute(sql)
             else:
@@ -45,8 +37,7 @@ class Game(Logger):
         '''
         Allows updating using the `sql` command with opitional `arg1`.
         '''
-        with closing(sqlite3.connect(self.db_loc)) as con, con, \
-                closing(con.cursor()) as cur:
+        with closing(sqlite3.connect(self.db_loc)) as con, con, closing(con.cursor()) as cur:
             if arg1 == None:
                 cur.execute(sql)
             else:
@@ -70,7 +61,7 @@ class Game(Logger):
         return [name[0] for name in data]
 
     @staticmethod
-    def convert_size(directory):
+    def get_dir_size(directory):
         '''
         Converts size of `directory` to best fitting unit of measure.
         '''
@@ -91,12 +82,6 @@ class Game(Logger):
         else:
             return '0 bits'
     
-    def get_backup_size(self):
-        '''
-        Gets the size of the currently selected games backup folder.
-        '''
-        self.backup_size = self.convert_size(self.backup_loc)
-
     def get_filename(self, name):
         '''
         Removes illegal characters and shortens `name` so it can become a valid filename.
@@ -121,8 +106,8 @@ class Game(Logger):
         Updates the last_backup time for `game_name` to the current datetime.
         '''
         last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-        self.update_sql("UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name",
-            {'game_name': game_name, 'last_backup': last_backup})
+        data = {'game_name': game_name, 'last_backup': last_backup}
+        self.update_sql("UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name", data)
 
     def set(self, game_name):
         '''
@@ -132,7 +117,7 @@ class Game(Logger):
         self.save_location, self.last_backup = self.get_game_info(game_name)
         self.filename = self.get_filename(game_name)
         self.backup_loc = os.path.join(self.backup_dest, self.filename)
-        self.backup_size = self.convert_size(self.backup_loc)
+        self.backup_size = self.get_dir_size(self.backup_loc)
 
     def update(self, old_name, new_name, new_save):
         '''
@@ -163,3 +148,10 @@ class Game(Logger):
         Deletes selected game from SQLite Database.
         '''
         self.update_sql("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.name})
+
+    def close_database(self):
+        '''
+        Closes the database.
+        '''
+        self.database.close()
+        print('Database closed')

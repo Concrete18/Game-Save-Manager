@@ -81,7 +81,12 @@ class Main(Logger):
         '''
         Backups up the game entered based on SQLite save location data to the specified backup folder.
         '''
+        game_name = self.game.name
+        game_save_loc = self.game.save_location
+        game_backup_loc = self.game.backup_loc
+        
 
+        # backup function that is ready to be run as a thread
         def backup():
             '''
             Runs a single backup for the entered arg.
@@ -89,40 +94,49 @@ class Main(Logger):
             '''
             self.backup_restore_in_progress = True
             current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
-            dest = os.path.join(self.game.backup_loc, current_time)
+            game_save_dest = os.path.join(game_backup_loc, current_time)
             if self.enable_compression:
-                self.backup.compress(self.game.save_location, dest)
+                self.backup.compress(game_save_loc, game_save_dest)
             else:
-                shutil.copytree(self.game.save_location, dest)
-            self.backup.delete_oldest(self.game.backup_loc, self.backup_redundancy, self.post_save_name)
+                shutil.copytree(game_save_loc, game_save_dest)
+            self.backup.delete_oldest(game_backup_loc, self.backup_redundancy, self.post_save_name)
             sleep(.3)
             # BUG total_size is wrong for some games right after it finishes backing up
-            self.game.get_backup_size()
-            total_backups = len(os.listdir(self.game.backup_loc))
-            info = f'{self.game.name} has been backed up.\n'\
-                f'Game Backup Size: {self.game.backup_size} from {total_backups} backups'
+            backup_size = self.game.get_dir_size(game_backup_loc)
+            total_backups = len(os.listdir(game_backup_loc))
+            info = f'{game_name} has been backed up.\nGame Backup Size: {backup_size} from {total_backups} backups'
             self.ActionInfo.config(text=info)
-            # BUG repeated presses replaces the wrong entry
-            self.game_listbox.delete(Tk.ACTIVE)
-            self.game_listbox.insert(0, self.game.name)
-            self.logger.info(f'Backed up Save for {self.game.name}.')
+            self.logger.info(f'Backed up Save for {game_name}.')
             self.backup_restore_in_progress = False
             self.completion_sound()
-        if self.game.name == None:
+
+
+        # nothing is selected
+        if game_name == None:
             messagebox.showwarning(title=self.title, message='No game is selected yet.')
             return
-        self.ActionInfo.config(text=f'Backing up {self.game.name}\nDo not close program.')
-        try:
+        # save path does not exists
+        elif not os.path.exists(game_save_loc):
+            messagebox.showwarning(title=self.title,  message='Action Failed - Save does not exist.')
+            self.logger.error(f'Failed to Backed up Save for {game_name}. Save does not exist.')
+        # actual run if it clears
+        else:
+            # moves clicked game to the top
+            self.game_listbox.delete(Tk.ACTIVE)
+            self.game_listbox.insert(0, game_name)
+            self.ActionInfo.config(text=f'Backing up {game_name}\nDo not close program.')
+            # starts backup function as a new thread
             Thread(target=backup).start()
-            self.game.update_last_backup(self.game.name)
-        except FileNotFoundError:
-            messagebox.showwarning(title=self.title,  message='Action Failed - File location does not exist.')
-            self.logger.error(f'Failed to Backed up Save for {self.game.name}. File location does not exist.')
-        except FileExistsError:
-            messagebox.showwarning(title=self.title, message='Action Failed - Save Already Backed up.')
-            self.logger.error(f'Failed to Backed up Save for {self.game.name}. Save Already Backed up.')
-        except SystemExit:
-            print('Cancelled Backup.')
+            # BUG unable to open database file
+            self.game.update_last_backup(game_name)
+
+        # TODO check if needed 
+        # except FileExistsError:
+        #     messagebox.showwarning(title=self.title, message='Action Failed - Save Already Backed up.')
+        #     self.logger.error(f'Failed to Backed up Save for {self.game.name}. Save Already Backed up.')
+
+        # except SystemExit:
+        #     print('Cancelled Backup.')
 
     def tk_window_options(self, window_name, window_width, window_height, define_size=0):
         '''
@@ -298,6 +312,7 @@ class Main(Logger):
         if self.game.exists_in_db(game_name):
             msg = f"Can't add {self.game.name} to database.\nGame already exists."
             messagebox.showwarning(title=self.title, message=msg)
+            # TODO ask if you want to update if the save path is different then the current one.
         else:
             if os.path.isdir(save_location):
                 self.game.add(game_name, save_location)
@@ -466,7 +481,8 @@ class Main(Logger):
         if game_name == None:
             messagebox.showwarning(
                 title=self.title,
-                message='Smart Browse requires a game name to be entered.')
+                message='Smart Browse requires a game name to be entered.'
+                )
             return
         self.open_smart_browse_window()
         # looks for folders with the games name
@@ -628,7 +644,7 @@ class Main(Logger):
         self.ActionInfo.config(text='Select a Game\nto continue')
         # updates title info label
         info_text = f'Total Games: {len(self.sorted_list)}\n'\
-            f'Total Backup Size: {self.game.convert_size(self.backup_dest)}'
+            f'Total Backup Size: {self.game.get_dir_size(self.backup_dest)}'
         self.Title.config(text=info_text)
         self.toggle_buttons('disable')
 
@@ -704,11 +720,11 @@ class Main(Logger):
             self.search_entry.insert(0, self.default_entry_value)
             # enables all buttons to be pressed once a selection is made
             self.toggle_buttons()
-            total_size = self.game.convert_size(self.game.backup_loc)
             if self.game.last_backup == 'Never':
                 info = f'{self.game.name} has not been backed up\n'
             else:
                 time_since = self.readable_time_since(self.game.last_backup)
+                total_size = self.game.get_dir_size(self.game.backup_loc)
                 info = f'{self.game.name} was last backed up {time_since}\n'\
                     f'Game Backup Size: {total_size} from {len(os.listdir(self.game.backup_loc))} backups'
             self.ActionInfo.config(text=info)
