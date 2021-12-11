@@ -17,47 +17,25 @@ class Game(Logger):
         self.database = sqlite3.connect(db_loc)
         self.cursor = self.database.cursor()
         self.cursor.execute('CREATE TABLE IF NOT EXISTS games (game_name text, save_location text, last_backup text)')
+        self.total_executions = 1
 
-    def query(self, sql, arg1=None, fetchall=False):
-        '''
-        Querys info in the database using the sql command.
-        `arg1` can be used for add args to excute and `fetchall` as true to fetchall instead of fetchone.
-        '''
-        with closing(sqlite3.connect(self.db_loc)) as con, con, closing(con.cursor()) as cur:
-            if arg1 == None:
-                cur.execute(sql)
-            else:
-                cur.execute(sql, arg1)
-            if fetchall:
-                return cur.fetchall()
-            else:
-                return cur.fetchone()
-
-    def update_sql(self, sql, arg1=None):
-        '''
-        Allows updating using the `sql` command with opitional `arg1`.
-        '''
-        with closing(sqlite3.connect(self.db_loc)) as con, con, closing(con.cursor()) as cur:
-            if arg1 == None:
-                cur.execute(sql)
-            else:
-                cur.execute(sql, arg1)
 
     def database_check(self):
         '''
         Checks for no longer existing save directories from the database and
         allows showing the missing entries for fixing.
         '''
-        with closing(sqlite3.connect(self.db_loc)) as con, con, \
-            closing(con.cursor()) as cur:
-            cur.execute("SELECT game_name, save_location FROM games")
-            return [name for name, save_location in cur.fetchall() if not os.path.isdir(save_location)]
+        self.cursor.execute("SELECT game_name, save_location FROM games")
+        self.total_executions += 1
+        return [name for name, save_location in self.cursor.fetchall() if not os.path.isdir(save_location)]
 
     def sorted_games(self):
         '''
         Sorts the game list from the SQLite database based on the last backup and then returns a list.
         '''
-        data = self.query("SELECT game_name FROM games ORDER BY last_backup DESC", fetchall=True)
+        self.cursor.execute("SELECT game_name FROM games ORDER BY last_backup DESC")
+        data = self.cursor.fetchall()
+        self.total_executions += 1
         return [name[0] for name in data]
 
     @staticmethod
@@ -96,18 +74,21 @@ class Game(Logger):
         '''
         Returns the save location and last backup of `game_name` from the SQLite Database.
         '''
-        value = self.query("SELECT save_location, last_backup FROM games WHERE game_name=:game_name", 
+        self.cursor.execute("SELECT save_location, last_backup FROM games WHERE game_name=:game_name",
             {'game_name': game_name})
-        if len(value) > 0:
-            return value[0], value[1]
+        self.total_executions += 1
+        return self.cursor.fetchone()
 
     def update_last_backup(self, game_name):
         '''
         Updates the last_backup time for `game_name` to the current datetime.
         '''
         last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-        data = {'game_name': game_name, 'last_backup': last_backup}
-        self.update_sql("UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name", data)
+        query = "UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name"
+        data ={'game_name': game_name, 'last_backup': last_backup}
+        self.cursor.execute(query, data)
+        self.total_executions += 1
+        self.database.commit()
 
     def set(self, game_name):
         '''
@@ -123,35 +104,46 @@ class Game(Logger):
         '''
         Updates a game data in the database with `old_name` to `new_name` and `new_save`.
         '''
-        self.update_sql("UPDATE games SET game_name = ?, save_location = ? WHERE game_name = ?;",
-            (new_name, new_save, old_name))
+        query  ='''UPDATE games SET game_name = ?, save_location = ? WHERE game_name = ?;'''
+        data = (new_name, new_save, old_name)
+        self.cursor.execute(query , data)
+        self.database.commit()
         self.set(new_name)
+        self.total_executions += 1
 
     def exists_in_db(self, game_name):
         '''
         Checks if `game_name` is already in the database.
         '''
-        entry = self.query("SELECT save_location FROM games WHERE game_name=:game_name",
-            {'game_name': game_name})
+        query = "SELECT save_location FROM games WHERE game_name=:game_name"
+        data = {'game_name': game_name}
+        self.cursor.execute(query, data)
+        entry = self.cursor.fetchone()
+        self.total_executions += 1
         return entry != None
 
     def add(self, game_name, save_location):
         '''
         Adds game to database with `game_name`, `save_location` data.
         '''
-        self.update_sql("INSERT INTO games VALUES (:game_name, :save_location, :last_backup)",
-            {'game_name': game_name, 'save_location': save_location, 'last_backup': 'Never'})
+        query = "INSERT INTO games VALUES (:game_name, :save_location, :last_backup)"
+        args = {'game_name': game_name, 'save_location': save_location, 'last_backup': 'Never'}
+        self.cursor.execute(query, args)
+        self.database.commit()
         self.logger.info(f'Added {game_name} to database.')
+        self.total_executions += 1
 
     def delete_from_db(self):
         '''
         Deletes selected game from SQLite Database.
         '''
-        self.update_sql("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.name})
+        self.cursor.execute("DELETE FROM games WHERE game_name = :game_name", {'game_name': self.name})
+        self.database.commit()
+        self.total_executions += 1
 
     def close_database(self):
         '''
         Closes the database.
         '''
         self.database.close()
-        print('Database closed')
+        print(f'Database closed after {self.total_executions} excecutions')

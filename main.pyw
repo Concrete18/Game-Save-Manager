@@ -84,7 +84,7 @@ class Main(Logger):
         game_name = self.game.name
         game_save_loc = self.game.save_location
         game_backup_loc = self.game.backup_loc
-        
+
 
         # backup function that is ready to be run as a thread
         def backup():
@@ -310,7 +310,7 @@ class Main(Logger):
             messagebox.showwarning(title=self.title,message=f'Game name has no legal characters for a filename')
             return
         if self.game.exists_in_db(game_name):
-            msg = f"Can't add {self.game.name} to database.\nGame already exists."
+            msg = f"Can't add {game_name} to database.\nGame already exists."
             messagebox.showwarning(title=self.title, message=msg)
             # TODO ask if you want to update if the save path is different then the current one.
         else:
@@ -741,6 +741,7 @@ class Main(Logger):
             sleep(.1)
         # BUG interface fails to exit if filedialog is left open
         # fix using subclassed filedialog commands that can close it
+        self.game.close_database()
         exit()
 
     def open_interface_window(self):
