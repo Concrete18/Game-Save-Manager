@@ -57,7 +57,6 @@ class TestGameSaveManager(unittest.TestCase):
             'Dishonored 2': r'C:\Users\Michael\Saved Games\Arkane Studios\Dishonored2',
             'Cyberpunk 2077': r'C:\Users\Michael\Saved Games\CD Projekt Red\Cyberpunk 2077',
             'Deep Rock Galactic': r'D:\My Installed Games\Steam Games\steamapps\common\Deep Rock Galactic',
-            'Breathedge': r'C:\Program Files (x86)\Steam\steamapps\common\Breathedge',
             'Timberborn': r'D:\My Documents\Timberborn',
             'XCOM 2 War of the Chosen': r'D:\My Documents\My Games\XCOM2 War of the Chosen'}
         print('\n   Setting up search directories')

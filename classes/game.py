@@ -77,7 +77,9 @@ class Game(Logger):
         self.cursor.execute("SELECT save_location, last_backup FROM games WHERE game_name=:game_name",
             {'game_name': game_name})
         self.total_executions += 1
-        return self.cursor.fetchone()
+        game = self.cursor.fetchone()
+        if len(game) > 0:
+            return game[0], game[1]
 
     def update_last_backup(self, game_name):
         '''

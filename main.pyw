@@ -127,7 +127,6 @@ class Main(Logger):
             self.ActionInfo.config(text=f'Backing up {game_name}\nDo not close program.')
             # starts backup function as a new thread
             Thread(target=backup).start()
-            # BUG unable to open database file
             self.game.update_last_backup(game_name)
 
         # TODO check if needed 
@@ -824,7 +823,7 @@ class Main(Logger):
         if len(missing_games) > 0:
             self.update_listbox()
             # BUG does not allow selecting games properly and removes the wrong listbox entry
-            # self.update_listbox(missing_games)
+            self.update_listbox(missing_games)
         else:
             self.update_listbox()
 
