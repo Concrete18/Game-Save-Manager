@@ -30,7 +30,7 @@ class Backup(Logger):
         '''
         shutil.make_archive(base_name=destination, format=self.compression_type, root_dir=file_path)
 
-    def delete_oldest(self, path, redundancy, ignore):
+    def delete_oldest(self, game_name, path, redundancy, ignore):
         '''
         Deletes the oldest saves within the given `path` so only the newest specified amount (`redundancy`) is left.
 
@@ -49,9 +49,12 @@ class Backup(Logger):
                     try:
                         shutil.rmtree(file_to_delete)
                     except PermissionError:
-                        self.logger.warn(f'Failed to delete oldest saves for {self.game.name} due to permission error.')
+                        self.logger.warn(f'Failed to delete oldest save for {game_name} due to permission error.')
                         # tries to delete the folder again if it managed to delete the contents only
-                        os.rmdir(file_to_delete)
+                        try:
+                            os.rmdir(file_to_delete)
+                        except PermissionError:
+                            self.logger.warn(f'Failed to delete empty folder for {game_name} due to permission error.')
                 else:
                     os.remove(file_to_delete)
-            self.logger.info(f'{self.game.name} had more then {redundancy} Saves. Deleted oldest saves.')
+            self.logger.info(f'{game_name} had more then {redundancy} Saves. Deleted oldest saves.')

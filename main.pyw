@@ -99,7 +99,7 @@ class Main(Logger):
                 self.backup.compress(game_save_loc, game_save_dest)
             else:
                 shutil.copytree(game_save_loc, game_save_dest)
-            self.backup.delete_oldest(game_backup_loc, self.backup_redundancy, self.post_save_name)
+            self.backup.delete_oldest(game_name, game_backup_loc, self.backup_redundancy, self.post_save_name)
             sleep(.3)
             # BUG total_size is wrong for some games right after it finishes backing up
             backup_size = self.game.get_dir_size(game_backup_loc)
@@ -128,14 +128,6 @@ class Main(Logger):
             # starts backup function as a new thread
             Thread(target=backup).start()
             self.game.update_last_backup(game_name)
-
-        # TODO check if needed 
-        # except FileExistsError:
-        #     messagebox.showwarning(title=self.title, message='Action Failed - Save Already Backed up.')
-        #     self.logger.error(f'Failed to Backed up Save for {self.game.name}. Save Already Backed up.')
-
-        # except SystemExit:
-        #     print('Cancelled Backup.')
 
     def tk_window_options(self, window_name, window_width, window_height, define_size=0):
         '''
@@ -821,8 +813,6 @@ class Main(Logger):
         self.sorted_list = self.game.sorted_games()
         missing_games = self.game.database_check()
         if len(missing_games) > 0:
-            self.update_listbox()
-            # BUG does not allow selecting games properly and removes the wrong listbox entry
             self.update_listbox(missing_games)
         else:
             self.update_listbox()

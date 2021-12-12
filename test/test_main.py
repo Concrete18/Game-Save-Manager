@@ -12,7 +12,6 @@ class TestGameSaveManager(unittest.TestCase):
         '''
         readable_time_since
         '''
-        # FIXME function does not work
         print('\nTesting readable_time_since function')
         main = Main()
         checked_date = dt.datetime.strptime('2021/01/01 01:00:00', '%Y/%m/%d %H:%M:%S')

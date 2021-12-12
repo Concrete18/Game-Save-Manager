@@ -1,5 +1,4 @@
 from classes.logger import Logger
-from contextlib import closing
 import sqlite3, os, re, math
 import datetime as dt
 
