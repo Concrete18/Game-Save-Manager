@@ -1,4 +1,5 @@
 from main import Main  # type: ignore
+from config.config import Config
 from classes.save_search import Save_Search
 import datetime as dt
 from classes.game import Game
@@ -37,7 +38,9 @@ class TestGameSaveManager(unittest.TestCase):
         main = Main()
         main.debug = 0
         main.output = 0
-        search = Save_Search(Game, debug=False)
+        cfg = Config('config\settings.ini')
+        cfg.get_settings()
+        search = Save_Search(Game, cfg.custom_dirs, debug=False)
         game_dict = {
             # 'The Forgotten City':r'C:',
             # 'HITMAN™ 2': r'C:\Program Files (x86)\Steam\userdata\22360464\863550',

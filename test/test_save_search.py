@@ -1,5 +1,6 @@
 from classes.save_search import Save_Search
 from classes.game import Game
+from config.config import Config
 from time import sleep
 from main import Main # type: ignore
 import unittest
@@ -11,6 +12,8 @@ class TestBackup(unittest.TestCase):
         '''
         get_appid
         '''
+        cfg = Config('config\settings.ini')
+        cfg.get_settings()
         print('\nTesting get_appid function')
         tests = {
         'This is not a real game:the sequel': None,
@@ -18,7 +21,7 @@ class TestBackup(unittest.TestCase):
         'Monster Hunter: World': 582010,
         # 'HITMAN™ 2': 863550
         }
-        search = Save_Search(Game, debug=0)
+        search = Save_Search(Game, cfg.custom_dirs, debug=0)
         for test_value, answer in tests.items():
             self.assertEqual(search.get_appid(game=test_value), answer)
             sleep(.5)

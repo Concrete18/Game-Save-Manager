@@ -77,8 +77,22 @@ class Game(Logger):
             {'game_name': game_name})
         self.total_executions += 1
         game = self.cursor.fetchone()
-        if len(game) > 0:
+        if game:
             return game[0], game[1]
+        else:
+            return None, None
+
+    # TODO delete once not needed
+    def exists_in_db(self, game_name):
+        '''
+        Checks if `game_name` is already in the database.
+        '''
+        query = "SELECT save_location FROM games WHERE game_name=:game_name"
+        args = {'game_name': game_name}
+        self.cursor.execute(query, args)
+        entry = self.cursor.fetchone()
+        self.total_executions += 1
+        return entry != None
 
     def update_last_backup(self, game_name):
         '''
@@ -86,8 +100,8 @@ class Game(Logger):
         '''
         last_backup = dt.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
         query = "UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name"
-        data ={'game_name': game_name, 'last_backup': last_backup}
-        self.cursor.execute(query, data)
+        args ={'game_name': game_name, 'last_backup': last_backup}
+        self.cursor.execute(query, args)
         self.total_executions += 1
         self.database.commit()
 
@@ -105,23 +119,12 @@ class Game(Logger):
         '''
         Updates a game data in the database with `old_name` to `new_name` and `new_save`.
         '''
-        query  ='''UPDATE games SET game_name = ?, save_location = ? WHERE game_name = ?;'''
-        data = (new_name, new_save, old_name)
-        self.cursor.execute(query , data)
+        query  ='UPDATE games SET game_name = ?, save_location = ? WHERE game_name = ?;'
+        args = (new_name, new_save, old_name)
+        self.cursor.execute(query , args)
         self.database.commit()
         self.set(new_name)
         self.total_executions += 1
-
-    def exists_in_db(self, game_name):
-        '''
-        Checks if `game_name` is already in the database.
-        '''
-        query = "SELECT save_location FROM games WHERE game_name=:game_name"
-        data = {'game_name': game_name}
-        self.cursor.execute(query, data)
-        entry = self.cursor.fetchone()
-        self.total_executions += 1
-        return entry != None
 
     def add(self, game_name, save_location):
         '''

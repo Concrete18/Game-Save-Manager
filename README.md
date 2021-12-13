@@ -57,23 +57,29 @@ shutil.get_archive_formats()
 
 ## Config
 
-```json
-{
-    "settings":{
-        "backup_dest":"Save Backup",
-        "backup_redundancy":3,
-        "enable_compression":1,
-        "compression_type":"zip",
-        "disable_resize":1,
-        "center_window":1,
-        "text_output":0,
-        "debug":0
-    },
-    "custom_save_directories":[
-        "D:/My Documents",
-        "D:/My Installed Games/Steam Games/steamapps/common"
-    ]
-}
+```ini
+[SETTINGS]
+# sets the folder name (within script dir) or full directory that you you backups to go to
+backup_dest = Save Backup
+# determines type of compression used. Must be supported by python shutil
+compression_type = zip
+# determines how many previous backups to keep as a redundancy
+backup_redundancy = 3
+# enables using the enter key to quickly backup the currently selected game
+quick_backup = True
+# centers the window when it is first created
+center_window = True
+# disables resizing the window
+disable_resize = True
+
+[DEBUG]
+# these can easily be ignored
+text_output = False
+enable_debug = False
+
+[CUSTOM_SAVE_DIRECTORIES]
+# add any new folders with whatever name(no spaces) you want
+d_drive_steam = D:/My Installed Games/Steam Games/steamapps/common
 ```
 
 ## Requirements

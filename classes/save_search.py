@@ -11,21 +11,19 @@ class Save_Search(Logger):
     # scoring init
     with open('config\scoring.json') as json_file:
         scoring = json.load(json_file)
-    with open('config\settings.json') as json_file:
-        data = json.load(json_file)
     # steam app list init
     app_list = None
 
         
-    def __init__(self, game, debug) -> None:
+    def __init__(self, game, custom_dirs, debug) -> None:
         '''
         Save Search class with game save search methods.
         '''
         self.game = game
         self.debug = debug
         self.drive_letters = self.find_drive_letters()
-        # finds search directories 
-        self.directories = [custom_saved_dir for custom_saved_dir in self.data['custom_save_directories']]
+        # finds search directories
+        self.directories = custom_dirs
         self.directories_ready = False
         Thread(target=self.find_search_directories).start()
 

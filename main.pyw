@@ -1,4 +1,4 @@
-import shutil, json, os, sys, subprocess, winsound
+import shutil, os, sys, subprocess, winsound
 from tkinter import ttk, filedialog, messagebox
 import tkinter as Tk
 from time import sleep, perf_counter
@@ -6,8 +6,9 @@ from threading import Thread
 import datetime as dt
 
 # classes
-from classes.logger import Logger
+from config.config import Config
 from classes.game import Game
+from classes.logger import Logger
 from classes.backup import Backup
 from classes.restore import Restore
 from classes.save_search import Save_Search
@@ -21,29 +22,13 @@ class Main(Logger):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
 
-    # settings setup
-    with open('config\settings.json') as json_file:
-        data = json.load(json_file)
-    backup_dest = data['setup']['backup_dest']  # backup destination setup
-    # redundancy settings
-    redundancy_limit = 4
-    backup_redundancy = data['optional_settings']['backup_redundancy']
-    if type(backup_redundancy) is not int or backup_redundancy not in range(1, redundancy_limit + 1):
-        backup_redundancy = 4
-    # optional settings
-    enter_to_quick_backup = data['optional_settings']['enter_to_quick_backup']
-    disable_resize = data['optional_settings']['disable_resize']
-    center_window = data['optional_settings']['center_window']
-    # compression
-    enable_compression = data['compression']['enable_compression']
-    compression_type = data['compression']['compression_type']
-    # debug
-    output = data['debug']['text_output']
-    debug = data['debug']['enable_debug']
+    # config setup
+    cfg = Config('config\settings.ini')
+    cfg.get_settings()
 
     # var init
     title = 'Game Save Manager'
-    allowed_filename_characters = '[^a-zA-Z0-9.,\s]'
+    allowed_filename_characters = r'[^a-zA-Z0-9.,\s]'
     backup_restore_in_progress = False
     default_entry_value = 'Type Search Query Here'
     post_save_name = 'Post-Restore Save'
@@ -51,10 +36,10 @@ class Main(Logger):
     best_dir = ''
 
     # game class
-    game = Game(backup_dest=backup_dest, db_loc='config\game.db')
-    backup = Backup(game, compression_type)
+    game = Game(backup_dest=cfg.backup_dest, db_loc='config\game.db')
+    backup = Backup(game, cfg.compression_type)
     restore = Restore(game, backup)
-    save_search = Save_Search(game, debug)
+    save_search = Save_Search(game, cfg.custom_dirs, cfg.debug)
 
 
     def backup_dest_check(self):
@@ -62,20 +47,18 @@ class Main(Logger):
         Checks if backup destination in settings exists and asks if you want to choose one if it does not.
         '''
         Tk.Tk().withdraw()
-        if not os.path.exists(self.backup_dest):
+        if not os.path.exists(self.cfg.backup_dest):
             msg = 'Do you want to choose a save backup directory instead of using a default within the program folder?'
             response = messagebox.askyesno(title=self.title, message=msg)
             if response:
-                self.backup_dest = filedialog.askdirectory(initialdir="C:/", title="Select Save Backup Directory")
-                if os.path.exists(self.backup_dest):
-                    self.data['settings']['backup_dest'] = self.backup_dest
-                    json_object = json.dumps(self.data, indent = 4)  # Serializing json
-                    with open('config\settings.json', "w") as outfile:  # Writing to sample.json
-                        outfile.write(json_object)
+                self.cfg.backup_dest = filedialog.askdirectory(initialdir="C:/", title="Select Save Backup Directory")
+                if os.path.exists(self.cfg.backup_dest):
+                    # TODO switch to configparser
+                    pass
                 else:
                     messagebox.showwarning(title=self.title, message='Path does not exist.')
             else:
-                os.mkdir(self.backup_dest)
+                os.mkdir(self.cfg.backup_dest)
 
     def run_full_backup(self):
         '''
@@ -95,11 +78,8 @@ class Main(Logger):
             self.backup_restore_in_progress = True
             current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
             game_save_dest = os.path.join(game_backup_loc, current_time)
-            if self.enable_compression:
-                self.backup.compress(game_save_loc, game_save_dest)
-            else:
-                shutil.copytree(game_save_loc, game_save_dest)
-            self.backup.delete_oldest(game_name, game_backup_loc, self.backup_redundancy, self.post_save_name)
+            self.backup.compress(game_save_loc, game_save_dest)
+            self.backup.delete_oldest(game_name, game_backup_loc, self.cfg.backup_redundancy, self.post_save_name)
             sleep(.3)
             # BUG total_size is wrong for some games right after it finishes backing up
             backup_size = self.game.get_dir_size(game_backup_loc)
@@ -136,9 +116,9 @@ class Main(Logger):
         window_name.title(self.title)
         if sys.platform == 'win32':
             window_name.iconbitmap(window_name, 'images\Save_icon.ico')
-        if self.disable_resize:  # sets window to not resize if disable_resize is set to 1
+        if self.cfg.disable_resize:  # sets window to not resize if disable_resize is set to 1
             window_name.resizable(width=False, height=False)
-        if self.center_window == 1:
+        if self.cfg.center_window == 1:
             width_pos = int((window_name.winfo_screenwidth()-window_width)/2)
             height_pos = int((window_name.winfo_screenheight()-window_height)/2)
             if define_size:
@@ -205,7 +185,7 @@ class Main(Logger):
             Restores selected game save based on save clicked within the Restore_Game_Window window.
             '''
             selected_backup = self.save_dic[save_listbox.get(save_listbox.curselection())]
-            full_save_path = os.path.join(self.backup_dest, self.game.name, selected_backup.name)
+            full_save_path = os.path.join(self.cfg.backup_dest, self.game.name, selected_backup.name)
             # check if the last post restore save is being restored
             if self.post_save_name in selected_backup.name:
                 msg = 'This will delete the previously restored backup.'\
@@ -218,14 +198,14 @@ class Main(Logger):
                     self.logger.info(f'Restored {self.post_save_name} for {self.game.name}.')
             else:
                 # check if a last restore backup exists already
-                for item in os.scandir(os.path.join(self.backup_dest, self.game.name)):
+                for item in os.scandir(os.path.join(self.cfg.backup_dest, self.game.name)):
                     if self.post_save_name in item.name:
                         msg = f'Backup of Post-Restore Save already exists.'\
                               '\nDo you want to delete it in order to continue?'
                         response = messagebox.askyesno(title=self.title, message=msg)
                         if response:
                             # finds the post_save_name
-                            for f in os.scandir(os.path.join(self.backup_dest, self.game.name)):
+                            for f in os.scandir(os.path.join(self.cfg.backup_dest, self.game.name)):
                                 if self.post_save_name in f.name:
                                     # deletes the compressed file or deletes the entire folder tree
                                     if self.backup.compressed(f.name):
@@ -237,7 +217,7 @@ class Main(Logger):
                             print('Canceling Restore.')
                             self.Restore_Game_Window.grab_release()
                             return
-                dest = os.path.join(self.backup_dest, self.game.name, self.post_save_name)
+                dest = os.path.join(self.cfg.backup_dest, self.game.name, self.post_save_name)
                 self.backup.compress(self.game.save_location, dest)
                 self.restore.delete_dir_contents(self.game.save_location)  # delete existing save
                 self.restore.backup_orignal_save(selected_backup, full_save_path)
@@ -300,10 +280,17 @@ class Main(Logger):
         if len(self.game.get_filename(game_name)) == 0:
             messagebox.showwarning(title=self.title,message=f'Game name has no legal characters for a filename')
             return
-        if self.game.exists_in_db(game_name):
+        found_name, found_save = self.game.get_game_info(game_name)
+        if found_name != None:
+            # if save_location != found_save and os.path.isdir(save_location):
+            #     msg = f"{game_name} is already in the database.\nThe save path is different, would you like to update it?"
+            #     print(save_location)
+            #     if messagebox.askyesnocancel(title=self.title, message=msg):
+            #         # BUG this wont work
+            #         self.game.update(found_name, found_name, save_location)
+            # else:
             msg = f"Can't add {game_name} to database.\nGame already exists."
             messagebox.showwarning(title=self.title, message=msg)
-            # TODO ask if you want to update if the save path is different then the current one.
         else:
             if os.path.isdir(save_location):
                 self.game.add(game_name, save_location)
@@ -380,7 +367,7 @@ class Main(Logger):
         search_method = 'name search'
         initialdir = "C:/"
         self.best_dir = initialdir
-        if self.debug:
+        if self.cfg.debug:
             print(f'\nGame: {self.game.filename}')
         # waits for search directories to be ready before the save search is started
         while not self.save_search.directories_ready:
@@ -390,7 +377,7 @@ class Main(Logger):
         if test == False:
             self.progress['maximum'] = len(self.save_search.directories) + 1
         for directory in self.save_search.directories:
-            if self.debug:
+            if self.cfg.debug:
                 print(f'\nCurrent Search Directory: {directory}')
             directory_start = perf_counter()
             # TODO make its own function
@@ -402,7 +389,7 @@ class Main(Logger):
                         current_score = self.save_search.dir_scoring(possible_dir)
             # update based on high score
             directory_finish = perf_counter()
-            if self.debug:
+            if self.cfg.debug:
                 print(f'Dir Search Time: {round(directory_finish-directory_start, 2)} seconds')
             # disables progress bar actions when testing
             if test == False:
@@ -420,7 +407,7 @@ class Main(Logger):
             current_score = 0
         overall_finish = perf_counter() # stop time for checking elapsed runtime
         elapsed_time = round(overall_finish-overall_start, 2)
-        if self.debug:
+        if self.cfg.debug:
             print(f'\n{self.game.filename}\nOverall Search Time: {elapsed_time} seconds')
             print(f'Path Used: {self.best_dir}')
             print(f'Path Score: {best_score}')
@@ -539,8 +526,6 @@ class Main(Logger):
         game_name = self.GameNameEntry.get()
         save_location = self.GameSaveEntry.get().replace('/', '\\')
         if os.path.isdir(save_location):
-            old_save = self.game.save_location
-            old_name = self.game.name
             old_backup = self.game.backup_loc
             self.game.update(self.game.name, game_name, save_location)
             # error when path is changed
@@ -635,7 +620,7 @@ class Main(Logger):
         self.ActionInfo.config(text='Select a Game\nto continue')
         # updates title info label
         info_text = f'Total Games: {len(self.sorted_list)}\n'\
-            f'Total Backup Size: {self.game.get_dir_size(self.backup_dest)}'
+            f'Total Backup Size: {self.game.get_dir_size(self.cfg.backup_dest)}'
         self.Title.config(text=info_text)
         self.toggle_buttons('disable')
 
@@ -750,7 +735,7 @@ class Main(Logger):
         # self.main_gui.geometry(f'{window_width}x{window_height}+{width}+{height}')
 
         # binding
-        if self.enter_to_quick_backup:
+        if self.cfg.quick_backup:
             self.main_gui.bind('<Return>', self.backup_shortcut)
 
         # Main Row 0
@@ -879,12 +864,12 @@ class Main(Logger):
         '''
         Runs everything needed to make the program work.
         '''
-        if self.output:
+        if self.cfg.output:
             sys.stdout = open("output.txt", "w")
         self.backup_dest_check()
         # opens the interface
         self.open_interface_window()
-        if self.output:
+        if self.cfg.output:
             sys.stdout.close()
 
 
