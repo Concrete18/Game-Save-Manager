@@ -51,10 +51,11 @@ class Main(Logger):
             msg = 'Do you want to choose a save backup directory instead of using a default within the program folder?'
             response = messagebox.askyesno(title=self.title, message=msg)
             if response:
-                self.cfg.backup_dest = filedialog.askdirectory(initialdir="C:/", title="Select Save Backup Directory")
-                if os.path.exists(self.cfg.backup_dest):
-                    # TODO switch to configparser
-                    pass
+                new_backup_dest = filedialog.askdirectory(initialdir=self.script_dir, title="Select Save Backup Directory")
+                if os.path.exists(new_backup_dest):
+                    self.cfg.backup_dest = new_backup_dest
+                    self.cfg.set_setting('SETTINGS', 'backup_dest', new_backup_dest)
+                    self.logger.info(f'Set new backup_dest to {new_backup_dest}')
                 else:
                     messagebox.showwarning(title=self.title, message='Path does not exist.')
             else:
