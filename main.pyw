@@ -70,11 +70,11 @@ class Main(Logger):
         game_backup_loc = self.game.backup_loc
 
 
-        # backup function that is ready to be run as a thread
         def backup():
             '''
             Runs a single backup for the entered arg.
             Also sets self.backup_restore_in_progress to True so the program wont quick during a backup.
+            Function is ready to be run as a thread.
             '''
             self.backup_restore_in_progress = True
             current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
@@ -711,11 +711,11 @@ class Main(Logger):
         '''
         Closes the database and quits the program when closing the interface.
         '''
-        if self.backup_restore_in_progress:
-            msg = f'Backup/Restore in progress.\n{self.title} will close after completion when you close this message.'
-            messagebox.showerror(title=self.title, message=msg)
+        # if self.backup_restore_in_progress:
+        #     msg = f'Backup/Restore in progress.\n{self.title} will close after completion when you close this message.'
+        #     messagebox.showerror(title=self.title, message=msg)
         while self.backup_restore_in_progress:
-            sleep(.1)
+            sleep(.5)
         # BUG interface fails to exit if filedialog is left open
         # fix using subclassed filedialog commands that can close it
         self.game.close_database()
@@ -857,7 +857,7 @@ class Main(Logger):
         # interface startup time check
         end = perf_counter()
         start_elapsed = round(end-start, 2)
-        if start_elapsed > 1:
+        if start_elapsed > .5:
             print('Interface Ready: ', start_elapsed)
         self.main_gui.mainloop()
 
