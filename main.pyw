@@ -78,8 +78,10 @@ class Main(Logger):
             '''
             self.backup_restore_in_progress = True
             current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
-            game_save_dest = os.path.join(game_backup_loc, current_time)
-            self.backup.compress(game_save_loc, game_save_dest)
+            self.backup.compress(game_save_loc, game_backup_loc, current_time)
+            if not os.path.exists(game_backup_loc):
+                self.logger.error(f'Something went wrong when backing up {game_name}.')
+                return
             self.backup.delete_oldest(game_name, game_backup_loc, self.cfg.backup_redundancy, self.post_save_name)
             sleep(.3)
             # BUG total_size is wrong for some games right after it finishes backing up
@@ -195,7 +197,7 @@ class Main(Logger):
                 response = messagebox.askyesno(title=self.title, message=msg)
                 if response:
                     self.restore.delete_dir_contents(self.game.save_location)
-                    self.restore.backup_orignal_save(selected_backup, full_save_path)
+                    self.decompress(selected_backup.path, self.game.save_location)
                     self.logger.info(f'Restored {self.post_save_name} for {self.game.name}.')
             else:
                 # check if a last restore backup exists already
@@ -208,20 +210,17 @@ class Main(Logger):
                             # finds the post_save_name
                             for f in os.scandir(os.path.join(self.cfg.backup_dest, self.game.name)):
                                 if self.post_save_name in f.name:
-                                    # deletes the compressed file or deletes the entire folder tree
-                                    if self.backup.compressed(f.name):
-                                        os.remove(f)
-                                    else:
-                                        shutil.rmtree(f)
+                                    os.remove(f)
                             self.logger.info(f'Deleted original save before last restore for {self.game.name}.')
                         else:
                             print('Canceling Restore.')
                             self.Restore_Game_Window.grab_release()
                             return
-                dest = os.path.join(self.cfg.backup_dest, self.game.name, self.post_save_name)
-                self.backup.compress(self.game.save_location, dest)
+                dest = os.path.join(self.cfg.backup_dest, self.game.name)
+                self.backup.compress(self.game.save_location, dest, self.post_save_name)
                 self.restore.delete_dir_contents(self.game.save_location)  # delete existing save
-                self.restore.backup_orignal_save(selected_backup, full_save_path)
+                self.decompress(selected_backup.path, self.game.save_location)
+                self.logger.info(f'Restored {self.post_save_name} for {self.game.name}.')
             close_restore_win()
 
         self.Restore_Game_Window = Tk.Toplevel(takefocus=True)
@@ -293,7 +292,7 @@ class Main(Logger):
             msg = f"Can't add {game_name} to database.\nGame already exists."
             messagebox.showwarning(title=self.title, message=msg)
         else:
-            if os.path.isdir(save_location):
+            if os.path.exists(save_location):
                 self.game.add(game_name, save_location)
                 # delete entry data
                 self.GameSaveEntry.delete(0, Tk.END)
@@ -526,7 +525,7 @@ class Main(Logger):
         # gets entered game info
         game_name = self.GameNameEntry.get()
         save_location = self.GameSaveEntry.get().replace('/', '\\')
-        if os.path.isdir(save_location):
+        if os.path.exists(save_location):
             old_backup = self.game.backup_loc
             self.game.update(self.game.name, game_name, save_location)
             # error when path is changed
@@ -702,8 +701,12 @@ class Main(Logger):
             else:
                 time_since = self.readable_time_since(self.game.last_backup)
                 total_size = self.game.get_dir_size(self.game.backup_loc)
+                if os.path.exists(self.game.backup_loc):
+                    total_backups = len(os.listdir(self.game.backup_loc))
+                else:
+                    total_backups = 0
                 info = f'{self.game.name} was last backed up {time_since}\n'\
-                    f'Game Backup Size: {total_size} from {len(os.listdir(self.game.backup_loc))} backups'
+                    f'Game Backup Size: {total_size} from {total_backups} backups'
             self.ActionInfo.config(text=info)
             self.BackupButton.focus_set()
 
