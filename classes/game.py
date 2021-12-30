@@ -26,7 +26,7 @@ class Game(Logger):
         '''
         self.cursor.execute("SELECT game_name, save_location FROM games")
         self.total_executions += 1
-        return [name for name, save_location in self.cursor.fetchall() if not os.path.isdir(save_location)]
+        return [name for name, save_location in self.cursor.fetchall() if not os.path.exists(save_location)]
 
     def sorted_games(self):
         '''
@@ -58,16 +58,13 @@ class Game(Logger):
                 return '0 bits'
         else:
             return '0 bits'
-    
+
     def get_filename(self, name):
         '''
         Removes illegal characters and shortens `name` so it can become a valid filename.
         '''
-        name.replace('&', 'and')
-        allowed_filename_characters = '[^a-zA-Z0-9.,\s]'
-        char_removal = re.compile(allowed_filename_characters)
-        string = char_removal.sub('', name)
-        return re.sub("\s\s+" , " ", string).strip()[0:50]
+        name = re.sub(r'[^A-Za-z0-9 ]+', '', name.replace('&', 'and')).strip()
+        return re.sub("\s\s+" , " ", name)[0:50] # remvoes duplicate spaces and returns
 
     def get_game_info(self, game_name):
         '''
