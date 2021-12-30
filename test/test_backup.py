@@ -4,21 +4,7 @@ import unittest
 
 class TestBackup(unittest.TestCase):
 
-
-    def test_compressed(self):
-        print('\nTesting compressed function')
-        tests = {
-        'Post-Restore Save.zip': True,
-        'Post-Restore Save': False,
-        'Post-Restore Save.fake': False,
-        'Post-Restore Save.tar': True,
-        'Post-Restore Save.gztar': True,
-        'Post-Restore Save.bztar': True,
-        'Post-Restore Save.xztar': True,
-        }
-        backup = Backup('zip', Game)
-        for test_value, answer in tests.items():
-            self.assertEqual(backup.compressed(test_value), answer)
+    pass
 
     # def test_delete_oldest(self):
     #     print('\nTesting delete_oldest function')

@@ -22,8 +22,8 @@ class TestGame(unittest.TestCase):
         print('\nTesting get_filename function')
         tests = {
         'Amnesia: The Dark Descent':'Amnesia The Dark Descent',
-        'Is&this<>correct?':'Isthiscorrect',
-        '  This       is  a *&^%^ space *(&^test    ':'This is a space test',
+        'Is&this<>correct?':'Isandthiscorrect',
+        '  This       is  a *^%^ space *(^test    ':'This is a space test',
         }
         game = Game(self.backup_path, self.db_loc)
         for test_value, answer in tests.items():
