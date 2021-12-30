@@ -35,8 +35,7 @@ different directory then what is currently entered.
 
 ### Backup Compression
 
-* Backup compression for saving space can be enabled in the config.
-* When restoring, compressed files are detected regardless of compression setting.
+* Backup of saves uses compression for saving space.
 * Use below command to view available compression formats.
 
 ```python
