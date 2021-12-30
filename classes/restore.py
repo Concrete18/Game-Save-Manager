@@ -30,19 +30,3 @@ class Restore(Logger):
         Decompresses the given file into the given destination.
         '''
         shutil.unpack_archive(file, destination)
-
-    def backup_orignal_save(self, selected_backup, full_save_path):
-        '''
-        Unpacks or copies the backup depending on if it is compressed or not
-        '''
-        # checks if the backup is compressed
-        if self.backup.compressed(selected_backup.name):
-            self.decompress(selected_backup.path, self.game.save_location)
-            self.logger.info(f'Restored save for {self.game.name} from compressed backup.')
-        else:
-            if os.path.exists(self.game.save_location):
-                print('Path already exists.')
-                # BUG FileExistsError: [WinError 183] Cannot create a file when that file already exists: 
-                # 'D:\\My Documents\\Shadow of the Tomb Raider\\76561197982626192'
-            shutil.copytree(full_save_path, self.game.save_location)
-            self.logger.info(f'Restored save for {self.game.name}from backup.')
