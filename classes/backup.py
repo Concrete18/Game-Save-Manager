@@ -1,4 +1,5 @@
 from classes.logger import Logger
+from zipfile import ZipFile
 import os, shutil
 
 
@@ -13,22 +14,22 @@ class Backup(Logger):
         self.compression_type = compression_type
 
 
-    def compressed(self, file):
-        '''
-        Returns True if the `file` is compressed with a valid compression type.
-        '''
-        available_compression = [f'.{item[0]}' for item in shutil.get_archive_formats()]
-        filetype = os.path.splitext(file)[1]
-        if filetype in available_compression:
-            return True
-        else:
-            return False
-
-    def compress(self, file_path, destination):
+    def compress(self, file_path, game_backup_loc, file_name):
         '''
         Compresses the `file_path` into the `destination` path.
         '''
-        shutil.make_archive(base_name=destination, format=self.compression_type, root_dir=file_path)
+        destination = os.path.join(game_backup_loc, file_name)
+        if os.path.isdir(file_path):
+            shutil.make_archive(base_name=destination, format=self.compression_type, root_dir=file_path)
+        elif os.path.isfile(file_path):
+            if not os.path.exists(game_backup_loc):
+                os.mkdir(game_backup_loc)
+            os.mkdir(destination)
+            with ZipFile(file_path, 'w') as zipf:
+                zipf.write(destination, arcname=file_name)
+
+            # destination Save Backup\Inscryption\12-29-21 18-30-20
+            # root_dir D:\My Installed Games\Steam Games\steamapps\common\Inscryption\SaveFile.gwsave
 
     def delete_oldest(self, game_name, path, redundancy, ignore):
         '''
