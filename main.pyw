@@ -17,6 +17,23 @@ from classes.save_search import Save_Search
 from classes.helper import benchmark
 
 
+# class CustomFileDialog(filedialog):
+#     # WIP
+#     def ask_for_folder_path(self):
+#         file = filedialog.askdirectory(mustexist=True)
+#         print(file)
+#         if file:
+#             return file
+#         else:
+#             return False
+
+#     def close_dialog(self):
+#         filedialog.cancel_command()
+#         # filedialog.quit()
+
+#     # TODO set var to a function so it can be run if it is not false
+
+
 class Main(Logger):
 
     # sets script directory in case current working directory is different
@@ -52,7 +69,9 @@ class Main(Logger):
             response = messagebox.askyesno(title=self.title, message=msg)
             if response:
                 new_backup_dest = filedialog.askdirectory(
-                    initialdir=self.script_dir, title="Select Save Backup Directory"
+                    mustexist=True,
+                    initialdir=self.script_dir,
+                    title="Select Save Backup Directory",
                 )
                 if os.path.exists(new_backup_dest):
                     self.cfg.backup_dest = new_backup_dest

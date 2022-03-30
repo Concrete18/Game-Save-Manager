@@ -66,7 +66,7 @@ class Game(Logger):
         """
         Removes illegal characters and shortens `name` so it can become a valid filename.
         """
-        name = re.sub(r"[^A-Za-z0-9 ]+", "", name.replace("&", "and")).strip()
+        name = re.sub(r"[^A-Za-z0-9' ]+", "", name.replace("&", "and")).strip()
         return re.sub("\s\s+", " ", name)[0:50]  # remvoes duplicate spaces and returns
 
     def get_game_info(self, game_name):
