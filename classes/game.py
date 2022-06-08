@@ -13,9 +13,9 @@ class Game(Logger):
         self.db_loc = db_loc
         self.database = sqlite3.connect(db_loc)
         self.cursor = self.database.cursor()
-        self.cursor.execute(
-            "CREATE TABLE IF NOT EXISTS games (game_name text, save_location text, last_backup text)"
-        )
+        main = "CREATE TABLE IF NOT EXISTS games"
+        args = "(game_name TEXT, save_location TEXT, last_backup TEXT, previous_backup_hash TEXT)"
+        self.cursor.execute(main + args)
         self.total_executions = 1
 
     def database_check(self):
@@ -66,7 +66,7 @@ class Game(Logger):
         """
         Removes illegal characters and shortens `name` so it can become a valid filename.
         """
-        name = re.sub(r"[^A-Za-z0-9' ]+", "", name.replace("&", "and")).strip()
+        name = re.sub(r"[^A-Za-z0-9'(){}\s]+", "", name.replace("&", "and")).strip()
         return re.sub("\s\s+", " ", name)[0:50]  # remvoes duplicate spaces and returns
 
     def get_game_info(self, game_name):
@@ -74,13 +74,17 @@ class Game(Logger):
         Returns the save location and last backup of `game_name` from the SQLite Database.
         """
         self.cursor.execute(
-            "SELECT save_location, last_backup FROM games WHERE game_name=:game_name",
+            "SELECT save_location, last_backup, previous_backup_hash FROM games WHERE game_name=:game_name",
             {"game_name": game_name},
         )
         self.total_executions += 1
         game = self.cursor.fetchone()
         if game:
-            return game[0], game[1]
+            return {
+                "save_location": game[0],
+                "last_backup": game[1],
+                "previous_backup_hash": game[2],
+            }
         else:
             return None, None
 
@@ -109,12 +113,27 @@ class Game(Logger):
         self.total_executions += 1
         self.database.commit()
 
+    def update_previous_backup_hash(self, game_name, hash):
+        """
+        Updates the last_backup time for `game_name` to the current datetime.
+        """
+        query = (
+            "UPDATE games SET previous_backup_hash = :hash WHERE game_name = :game_name"
+        )
+        args = {"game_name": game_name, "hash": hash}
+        self.cursor.execute(query, args)
+        self.total_executions += 1
+        self.database.commit()
+
     def set(self, game_name):
         """
         Sets the current game to `game_name`.
         """
         self.name = game_name
-        self.save_location, self.last_backup = self.get_game_info(game_name)
+        data = self.get_game_info(game_name)
+        self.save_location = data["save_location"]
+        self.last_backup = data["last_backup"]
+        self.previous_backup_hash = data["previous_backup_hash"]
         self.filename = self.get_filename(game_name)
         self.backup_loc = os.path.join(self.backup_dest, self.filename)
         self.backup_size = self.get_dir_size(self.backup_loc)
@@ -139,6 +158,7 @@ class Game(Logger):
             "game_name": game_name,
             "save_location": save_location,
             "last_backup": "Never",
+            "previous_backup_hash": 0,
         }
         self.cursor.execute(query, args)
         self.database.commit()
