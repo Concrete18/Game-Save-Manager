@@ -46,7 +46,7 @@ class TestGameSaveManager(unittest.TestCase):
             "Mini Motorways": r"C:\Users\Michael\AppData\LocalLow\Dinosaur Polo Club\Mini Motorways",
             "Phantom Abyss": r"C:\Users\Michael\AppData\Local\PhantomAbyss",
             "Still There": r"C:\Users\Michael\AppData\LocalLow\GhostShark Games\Still There",
-            "Factorio": r"C:\Users\Michael\AppData\Roaming\Factorio",
+            # "Factorio": r"C:\Users\Michael\AppData\Roaming\Factorio",
             "Surviving Mars": r"C:\Users\Michael\AppData\Roaming\Surviving Mars",
             "Wildfire": r"C:\Users\Michael\AppData\Local\wildfire",
             "Teardown": r"C:\Users\Michael\AppData\Local\Teardown",
