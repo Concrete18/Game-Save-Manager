@@ -12,10 +12,7 @@ from classes.logger import Logger
 from classes.backup import Backup
 from classes.restore import Restore
 from classes.save_search import Save_Search
-
-# helper
-from classes.helper import benchmark
-
+from classes.helper import Helper
 
 # class CustomFileDialog(filedialog):
 #     # WIP
@@ -34,7 +31,7 @@ from classes.helper import benchmark
 #     # TODO set var to a function so it can be run if it is not false
 
 
-class Main(Logger):
+class Main(Helper, Logger):
 
     # sets script directory in case current working directory is different
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -91,6 +88,8 @@ class Main(Logger):
         game_name = self.game.name
         game_save_loc = self.game.save_location
         game_backup_loc = self.game.backup_loc
+        current_save_hash = self.get_hash(game_save_loc)
+        game_previous_hash = self.game.previous_backup_hash
 
         def backup():
             """
@@ -126,14 +125,18 @@ class Main(Logger):
             return
         # save path does not exists
         elif not os.path.exists(game_save_loc):
-            messagebox.showwarning(
-                title=self.title, message="Action Failed - Save does not exist."
-            )
-            self.logger.error(
-                f"Failed to Backed up Save for {game_name}. Save does not exist."
-            )
+            msg = "Action Failed - Save does not exist."
+            messagebox.showwarning(title=self.title, message=msg)
+            msg = f"Failed to Backed up Save for {game_name}. Save does not exist."
+            self.logger.error(msg)
         # actual run if it clears
         else:
+            # checks if current folder and previous backup hashes are identical
+            game_current_hash = self.get_hash(game_save_loc)
+            if game_previous_hash == game_current_hash:
+                msg = "Game Save has not changed since last backup."
+                messagebox.showwarning(title=self.title, message=msg)
+                return
             # moves clicked game to the top
             self.game_listbox.delete(Tk.ACTIVE)
             self.game_listbox.insert(0, game_name)
@@ -142,6 +145,8 @@ class Main(Logger):
             )
             # starts backup function as a new thread
             Thread(target=backup).start()
+            # TODO update hash in database
+            self.game.update_previous_backup_hash(game_name, current_save_hash)
             self.game.update_last_backup(game_name)
 
     def tk_window_options(
@@ -603,6 +608,8 @@ class Main(Logger):
             message=f"Are you sure that you want to delete {self.game.name}?",
         )
         if delete_check:
+            # BUG deletes game that is selected but often removes
+            # the wrong game form the list
             self.game.delete_from_db()
             # deletes game from game_listbox and sorted_list
             index = self.game_listbox.get(0, Tk.END).index(self.game.name)
