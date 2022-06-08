@@ -20,13 +20,14 @@ class TestGame(unittest.TestCase):
         self.assertEqual(game.backup_loc, "Save Backup\Dishonored 2")
         self.assertRegex(game.backup_size, r"[. 0-9]+(B|KB|MB|GB|TB)")
         self.assertEqual(game.last_backup, "2021/07/24 9:56:37")
+        self.assertEqual(game.previous_backup_hash, "45sa456dasd")
 
     def test_get_filename(self):
         print("\nTesting get_filename function")
         tests = {
             "Amnesia: The Dark Descent": "Amnesia The Dark Descent",
             "Is&this<>correct?": "Isandthiscorrect",
-            "  This       is  a *^%^ space *(^test    ": "This is a space test",
+            "  This       is  a *^%^ space *^test    ": "This is a space test",
         }
         game = Game(self.backup_path, self.db_loc)
         for test_value, answer in tests.items():
