@@ -153,7 +153,7 @@ class Game(Logger):
         """
         Adds game to database with `game_name`, `save_location` data.
         """
-        query = "INSERT INTO games VALUES (:game_name, :save_location, :last_backup)"
+        query = "INSERT INTO games VALUES (:game_name, :save_location, :last_backup, :previous_backup_hash)"
         args = {
             "game_name": game_name,
             "save_location": save_location,

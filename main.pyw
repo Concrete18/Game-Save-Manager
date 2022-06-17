@@ -145,7 +145,6 @@ class Main(Helper, Logger):
             )
             # starts backup function as a new thread
             Thread(target=backup).start()
-            # TODO update hash in database
             self.game.update_previous_backup_hash(game_name, current_save_hash)
             self.game.update_last_backup(game_name)
 
