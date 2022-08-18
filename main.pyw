@@ -81,6 +81,20 @@ class Main(Helper, Logger):
             else:
                 os.mkdir(self.cfg.backup_dest)
 
+    def set_info_text(self, msg, sound=None):
+        """
+        Sets the interface info text to `msg`.
+        If sound is given as `"success"` or `"warning"`, it will play the sound
+        after updating the text.
+        """
+        # TODO make sure data is exactly 2 lines
+        self.ActionInfo.config(text=msg)
+        if sound:
+            if sound == "success":
+                self.completion_sound()
+            elif sound == "warning":
+                self.warning_sound()
+
     def run_full_backup(self):
         """
         Backups up the game entered based on SQLite save location data to the specified backup folder.
@@ -113,20 +127,22 @@ class Main(Helper, Logger):
             # BUG total_size is wrong for some games right after it finishes backing up
             backup_size = self.game.get_dir_size(game_backup_loc)
             total_backups = len(os.listdir(game_backup_loc))
-            info = f"{game_name} has been backed up.\nGame Backup Size: {backup_size} from {total_backups} backups"
-            self.ActionInfo.config(text=info)
+            msg = f"{game_name} has been backed up.\nGame Backup Size: {backup_size} from {total_backups} backups"
+            self.set_info_text(msg=msg, sound="success")
             self.logger.info(f"Backed up Save for {game_name}.")
             self.backup_restore_in_progress = False
             self.completion_sound()
 
         # nothing is selected
         if game_name == None:
+            # TODO switch to showing test in ui and making sound
             messagebox.showwarning(title=self.title, message="No game is selected yet.")
             return
         # save path does not exists
         elif not os.path.exists(game_save_loc):
             msg = "Action Failed - Save does not exist."
             messagebox.showwarning(title=self.title, message=msg)
+            # TODO switch to showing test in ui and making sound
             msg = f"Failed to Backed up Save for {game_name}. Save does not exist."
             self.logger.error(msg)
         # actual run if it clears
@@ -134,8 +150,9 @@ class Main(Helper, Logger):
             # checks if current folder and previous backup hashes are identical
             game_current_hash = self.get_hash(game_save_loc)
             if game_previous_hash == game_current_hash:
-                msg = "Game Save has not changed since last backup."
-                messagebox.showwarning(title=self.title, message=msg)
+                msg = f"{game_name} Save has not changed since last backup."
+                self.set_info_text(msg=msg, sound="warning")
+                # TODO play warning sound
                 return
             # moves clicked game to the top
             self.game_listbox.delete(Tk.ACTIVE)
@@ -411,7 +428,7 @@ class Main(Helper, Logger):
         """
         # opens window
         self.stop_smart_browse = False
-        self.smart_browse_win = Tk.Toplevel(self.main_gui)
+        self.smart_browse_win = Tk.Toplevel(self.root)
         self.smart_browse_win.protocol("WM_DELETE_WINDOW", self.exit_smart_browse)
         self.tk_window_options(self.smart_browse_win, 340, 130, define_size=0)
 
@@ -450,6 +467,14 @@ class Main(Helper, Logger):
         """
         if sys.platform == "win32":
             winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
+
+    @staticmethod
+    def warning_sound():
+        """
+        Makes a sound denoting a task warning.
+        """
+        if sys.platform == "win32":
+            winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
 
     def game_save_location_search(self, full_game_name, test=0):
         """
@@ -747,7 +772,8 @@ class Main(Helper, Logger):
         self.game_listbox.delete(0, Tk.END)
         for item in data:
             self.game_listbox.insert(Tk.END, item)
-        self.ActionInfo.config(text="Select a Game\nto continue")
+        msg = "Select a Game\nto continue"
+        self.set_info_text(msg=msg)
         # updates title info label
         info_text = (
             f"Total Games: {len(self.sorted_list)}\n"
@@ -832,7 +858,7 @@ class Main(Helper, Logger):
             # enables all buttons to be pressed once a selection is made
             self.toggle_buttons()
             if self.game.last_backup == "Never":
-                info = f"{self.game.name} has not been backed up\n"
+                msg = f"{self.game.name} has not been backed up\n"
             else:
                 time_since = self.readable_time_since(self.game.last_backup)
                 total_size = self.game.get_dir_size(self.game.backup_loc)
@@ -840,11 +866,11 @@ class Main(Helper, Logger):
                     total_backups = len(os.listdir(self.game.backup_loc))
                 else:
                     total_backups = 0
-                info = (
+                msg = (
                     f"{self.game.name} was last backed up {time_since}\n"
                     f"Game Backup Size: {total_size} from {total_backups} backups"
                 )
-            self.ActionInfo.config(text=info)
+            self.set_info_text(msg=msg)
             self.BackupButton.focus_set()
 
     def exit_program(self):
@@ -868,19 +894,19 @@ class Main(Helper, Logger):
         start = perf_counter()
         # Defaults
         BoldBaseFont = "Arial Bold"
-        self.main_gui = Tk.Tk()
-        self.main_gui.protocol("WM_DELETE_WINDOW", self.exit_program)
+        self.root = Tk.Tk()
+        self.root.protocol("WM_DELETE_WINDOW", self.exit_program)
         window_width = 680
         window_height = 550
-        self.tk_window_options(self.main_gui, window_width, window_height)
-        # self.main_gui.geometry(f'{window_width}x{window_height}+{width}+{height}')
+        self.tk_window_options(self.root, window_width, window_height)
+        # self.root.geometry(f'{window_width}x{window_height}+{width}+{height}')
 
         # binding
         if self.cfg.quick_backup:
-            self.main_gui.bind("<Return>", self.backup_shortcut)
+            self.root.bind("<Return>", self.backup_shortcut)
 
         # Main Row 0
-        Backup_Frame = Tk.Frame(self.main_gui)
+        Backup_Frame = Tk.Frame(self.root)
         Backup_Frame.grid(columnspan=4, column=0, row=0, padx=(20, 20), pady=(5, 0))
 
         self.Title = Tk.Label(Backup_Frame, text="\n", font=(BoldBaseFont, 10))
@@ -925,13 +951,11 @@ class Main(Helper, Logger):
 
         # Main Row 1
         instruction = "Select a Game\nto continue"
-        self.ActionInfo = Tk.Label(
-            self.main_gui, text=instruction, font=(BoldBaseFont, 10)
-        )
+        self.ActionInfo = Tk.Label(self.root, text=instruction, font=(BoldBaseFont, 10))
         self.ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady=5)
         "word".upper()
         # Main Row 2
-        self.ListboxFrame = Tk.Frame(self.main_gui)
+        self.ListboxFrame = Tk.Frame(self.root)
         self.ListboxFrame.grid(
             columnspan=4, row=2, column=0, padx=(20, 20), pady=(5, 10)
         )
@@ -962,8 +986,8 @@ class Main(Helper, Logger):
 
         # WIP finish or delete up and down control of listbox
         # full interface bind for lisxtbox navigation
-        # self.main_gui.bind('<Up>', lambda event,arg=.1:self.listbox_nav(event))
-        # self.main_gui.bind('<Down>', lambda event,arg=.1:self.listbox_nav(event))
+        # self.root.bind('<Up>', lambda event,arg=.1:self.listbox_nav(event))
+        # self.root.bind('<Down>', lambda event,arg=.1:self.listbox_nav(event))
 
         # scrollbar config
         self.scrollbar.config(command=self.game_listbox.yview)
@@ -976,7 +1000,7 @@ class Main(Helper, Logger):
             self.update_listbox()
 
         # Main Row 3
-        Add_Game_Frame = Tk.LabelFrame(self.main_gui, text="Manage Games")
+        Add_Game_Frame = Tk.LabelFrame(self.root, text="Manage Games")
         Add_Game_Frame.grid(columnspan=4, row=3, padx=15, pady=(5, 17))
 
         EnterGameLabel = Tk.ttk.Label(Add_Game_Frame, text="Enter Game Name")
@@ -1052,7 +1076,7 @@ class Main(Helper, Logger):
         start_elapsed = round(end - start, 2)
         if start_elapsed > 0.5:
             print("Interface Ready: ", start_elapsed)
-        self.main_gui.mainloop()
+        self.root.mainloop()
 
     def run(self):
         """
@@ -1068,4 +1092,5 @@ class Main(Helper, Logger):
 
 
 if __name__ == "__main__":
-    Main().run()
+    App = Main()
+    App.run()
