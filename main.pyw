@@ -152,7 +152,6 @@ class Main(Helper, Logger):
             if game_previous_hash == game_current_hash:
                 msg = f"{game_name} Save has not changed since last backup."
                 self.set_info_text(msg=msg, sound="warning")
-                # TODO play warning sound
                 return
             # moves clicked game to the top
             self.game_listbox.delete(Tk.ACTIVE)
