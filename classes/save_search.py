@@ -74,7 +74,8 @@ class Save_Search(Logger):
 
     def dir_scoring(self, possible_dir):
         """
-        Uses a scoring system to determines the chance of the given directory to be the save location.
+        Uses a scoring system to determines the chance of the given directory
+        to be the save location.
         """
         # checks if possible_dir is in the blacklist
         dir_blacklist = self.scoring["dir_blacklist"]
@@ -123,8 +124,9 @@ class Save_Search(Logger):
 
     def get_appid(self, game):
         """
-        Checks the Steam App list for a `game` and returns its app id if it exists as entered.
-        If the app_list has not been populated yet then it will be aquired first.
+        Checks the Steam App list for a `game` and returns its app id if it
+        exists as entered. If the app_list has not been populated yet then it
+        will be aquired first.
         """
         if self.app_list == None:
             self.app_list = self.get_app_list()
@@ -135,7 +137,8 @@ class Save_Search(Logger):
 
     def check_userdata(self, app_id):
         """
-        Checks for a save folder within the steam userdata folder by looking for the given games `app_id`.
+        Checks for a save folder within the steam userdata folder by looking
+        for the given games `app_id`.
         """
         existing_paths = []
         for letter in self.drive_letters:
