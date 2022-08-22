@@ -64,14 +64,16 @@ class Game(Logger):
 
     def get_filename(self, name):
         """
-        Removes illegal characters and shortens `name` so it can become a valid filename.
+        Removes illegal characters and shortens `name` so it can become a
+        valid filename.
         """
         name = re.sub(r"[^A-Za-z0-9'(){}\s]+", "", name.replace("&", "and")).strip()
         return re.sub("\s\s+", " ", name)[0:50]  # remvoes duplicate spaces and returns
 
     def get_game_info(self, game_name):
         """
-        Returns the save location and last backup of `game_name` from the SQLite Database.
+        Returns the save location and last backup of `game_name` from the
+        SQLite Database.
         """
         self.cursor.execute(
             "SELECT save_location, last_backup, previous_backup_hash FROM games WHERE game_name=:game_name",
@@ -124,6 +126,11 @@ class Game(Logger):
         self.cursor.execute(query, args)
         self.total_executions += 1
         self.database.commit()
+
+    def selected(self):
+        if self.name == None:
+            return False
+        return True
 
     def set(self, game_name):
         """
