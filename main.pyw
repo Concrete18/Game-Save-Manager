@@ -14,22 +14,6 @@ from classes.restore import Restore
 from classes.save_search import Save_Search
 from classes.helper import Helper
 
-# class CustomFileDialog(filedialog):
-#     # WIP
-#     def ask_for_folder_path(self):
-#         file = filedialog.askdirectory(mustexist=True)
-#         print(file)
-#         if file:
-#             return file
-#         else:
-#             return False
-
-#     def close_dialog(self):
-#         filedialog.cancel_command()
-#         # filedialog.quit()
-
-#     # TODO set var to a function so it can be run if it is not false
-
 
 class Main(Helper, Logger):
 
@@ -58,46 +42,42 @@ class Main(Helper, Logger):
 
     def backup_dest_check(self):
         """
-        Checks if backup destination in settings exists and asks if you want to choose one if it does not.
+        Checks if backup destination in settings exists and asks if you want
+        to choose one if it does not.
         """
         Tk.Tk().withdraw()
         if not os.path.exists(self.cfg.backup_dest):
             msg = "Do you want to choose a save backup directory instead of using a default within the program folder?"
             response = messagebox.askyesno(title=self.title, message=msg)
             if response:
+                title = "Select Save Backup Directory"
                 new_backup_dest = filedialog.askdirectory(
-                    mustexist=True,
-                    initialdir=self.script_dir,
-                    title="Select Save Backup Directory",
+                    mustexist=True, initialdir=self.script_dir, title=title
                 )
                 if os.path.exists(new_backup_dest):
                     self.cfg.backup_dest = new_backup_dest
                     self.cfg.set_setting("SETTINGS", "backup_dest", new_backup_dest)
                     self.logger.info(f"Set new backup_dest to {new_backup_dest}")
                 else:
-                    messagebox.showwarning(
-                        title=self.title, message="Path does not exist."
-                    )
+                    msg = "Path does not exist."
+                    messagebox.showwarning(title=self.title, message=msg)
             else:
                 os.mkdir(self.cfg.backup_dest)
 
-    def set_info_text(self, msg, sound=None):
+    def set_info_text(self, msg):
         """
         Sets the interface info text to `msg`.
         If sound is given as `"success"` or `"warning"`, it will play the sound
         after updating the text.
         """
-        # TODO make sure data is exactly 2 lines
+        if "\n" not in msg:
+            msg += "\n"
         self.ActionInfo.config(text=msg)
-        if sound:
-            if sound == "success":
-                self.completion_sound()
-            elif sound == "warning":
-                self.warning_sound()
 
     def run_full_backup(self):
         """
-        Backups up the game entered based on SQLite save location data to the specified backup folder.
+        Backups up the game entered based on SQLite save location data to the
+        specified backup folder.
         """
         game_name = self.game.name
         game_save_loc = self.game.save_location
@@ -108,14 +88,15 @@ class Main(Helper, Logger):
         def backup():
             """
             Runs a single backup for the entered arg.
-            Also sets self.backup_restore_in_progress to True so the program wont quick during a backup.
-            Function is ready to be run as a thread.
+            Also sets self.backup_restore_in_progress to True so the program
+            wont quick during a backup. Function is ready to be run as a thread.
             """
             self.backup_restore_in_progress = True
             current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
             self.backup.compress(game_save_loc, game_backup_loc, current_time)
             if not os.path.exists(game_backup_loc):
                 self.logger.error(f"Something went wrong when backing up {game_name}.")
+                self.warning_sound()
                 return
             self.backup.delete_oldest(
                 game_name,
@@ -128,21 +109,23 @@ class Main(Helper, Logger):
             backup_size = self.game.get_dir_size(game_backup_loc)
             total_backups = len(os.listdir(game_backup_loc))
             msg = f"{game_name} has been backed up.\nGame Backup Size: {backup_size} from {total_backups} backups"
-            self.set_info_text(msg=msg, sound="success")
+            self.set_info_text(msg=msg)
+            self.completion_sound()
             self.logger.info(f"Backed up Save for {game_name}.")
             self.backup_restore_in_progress = False
             self.completion_sound()
 
         # nothing is selected
         if game_name == None:
-            # TODO switch to showing test in ui and making sound
-            messagebox.showwarning(title=self.title, message="No game is selected yet.")
+            msg = "No game is selected yet."
+            self.set_info_text(msg=msg)
+            self.warning_sound()
             return
         # save path does not exists
         elif not os.path.exists(game_save_loc):
-            msg = "Action Failed - Save does not exist."
-            messagebox.showwarning(title=self.title, message=msg)
-            # TODO switch to showing test in ui and making sound
+            msg = "Save no longer exists."
+            self.set_info_text(msg=msg)
+            self.warning_sound()
             msg = f"Failed to Backed up Save for {game_name}. Save does not exist."
             self.logger.error(msg)
         # actual run if it clears
@@ -151,7 +134,8 @@ class Main(Helper, Logger):
             game_current_hash = self.get_hash(game_save_loc)
             if game_previous_hash == game_current_hash:
                 msg = f"{game_name} Save has not changed since last backup."
-                self.set_info_text(msg=msg, sound="warning")
+                self.set_info_text(msg=msg)
+                self.warning_sound()
                 return
             # moves clicked game to the top
             self.game_listbox.delete(Tk.ACTIVE)
@@ -205,14 +189,15 @@ class Main(Helper, Logger):
 
     def restore_save(self):
         """
-        Opens an interface for picking the dated backup of the selected game to restore.
+        Opens an interface for picking the dated backup of the selected game
+        to restore.
 
-        First it checks if an existing save exists or if a game is even selected(Exits function if no game is selected).
+        First it checks if an existing save exists or if a game is even
+        selected(Exits function if no game is selected).
         """
         # TODO test Restore functions
         # exits if no game is selected
-        if self.game.name == None:
-            messagebox.showwarning(title=self.title, message="No game is selected yet.")
+        if not self.game.selected():
             return
         self.backup_restore_in_progress = (
             True  # disables closing the interface until restore completes
@@ -244,14 +229,16 @@ class Main(Helper, Logger):
 
         def close_restore_win():
             """
-            Notifies the program that the restore process is complete and closes the restore window.
+            Notifies the program that the restore process is complete and
+            closes the restore window.
             """
             self.backup_restore_in_progress = False
             self.Restore_Game_Window.destroy()
 
         def restore_selected_save():
             """
-            Restores selected game save based on save clicked within the Restore_Game_Window window.
+            Restores selected game save based on save clicked within the
+            Restore_Game_Window window.
             """
             selected_backup = self.save_dic[
                 save_listbox.get(save_listbox.curselection())
@@ -270,9 +257,8 @@ class Main(Helper, Logger):
                 if response:
                     self.restore.delete_dir_contents(self.game.save_location)
                     self.decompress(selected_backup.path, self.game.save_location)
-                    self.logger.info(
-                        f"Restored {self.post_save_name} for {self.game.name}."
-                    )
+                    msg = f"Restored {self.post_save_name} for {self.game.name}."
+                    self.logger.info(msg)
             else:
                 # check if a last restore backup exists already
                 for item in os.scandir(
@@ -291,9 +277,8 @@ class Main(Helper, Logger):
                             ):
                                 if self.post_save_name in f.name:
                                     os.remove(f)
-                            self.logger.info(
-                                f"Deleted original save before last restore for {self.game.name}."
-                            )
+                            msg = f"Deleted original save before last restore for {self.game.name}."
+                            self.logger.info(msg)
                         else:
                             print("Canceling Restore.")
                             self.Restore_Game_Window.grab_release()
@@ -304,9 +289,8 @@ class Main(Helper, Logger):
                     self.game.save_location
                 )  # delete existing save
                 self.decompress(selected_backup.path, self.game.save_location)
-                self.logger.info(
-                    f"Restored {self.post_save_name} for {self.game.name}."
-                )
+                msg = f"Restored {self.post_save_name} for {self.game.name}."
+                self.logger.info(msg)
             close_restore_win()
 
         self.Restore_Game_Window = Tk.Toplevel(takefocus=True)
@@ -359,21 +343,20 @@ class Main(Helper, Logger):
         """
         Opens the selected games save location in explorer or backup folder.
 
-        Set `folder_type` to "Game Save" or "Backup" to determine folder that is opened in explorer.
+        Set `folder_type` to "Game Save" or "Backup" to determine folder that
+        is opened in explorer.
         """
-        if self.game.name == None:
-            messagebox.showwarning(title=self.title, message="No game is selected.")
-        elif folder_type == "Game Save":  # open game save location in explorer
+        if not self.game.selected():
+            return
+        if folder_type == "Game Save":  # open game save location in explorer
             if not os.path.isdir(self.game.save_location):
                 msg = f"Save location for {self.game.name} no longer exists"
                 messagebox.showwarning(title=self.title, message=msg)
             subprocess.Popen(f'explorer "{self.game.save_location}"')
         elif folder_type == "Backup":  # open game backup location in explorer
             if not os.path.isdir(self.game.backup_loc):
-                messagebox.showwarning(
-                    title=self.title,
-                    message=f"{self.game.name} has not been backed up yet.",
-                )
+                msg = f"{self.game.name} has not been backed up yet."
+                messagebox.showwarning(title=self.title, message=msg)
             subprocess.Popen(f'explorer "{self.game.backup_loc}"')
 
     def add_game_to_database(self):
@@ -383,10 +366,8 @@ class Main(Helper, Logger):
         game_name = self.GameNameEntry.get()
         save_location = self.GameSaveEntry.get().replace("/", "\\")
         if len(self.game.get_filename(game_name)) == 0:
-            messagebox.showwarning(
-                title=self.title,
-                message=f"Game name has no legal characters for a filename",
-            )
+            msg = f"Game name has no legal characters for a filename"
+            messagebox.showwarning(title=self.title, message=msg)
             return
         found_name, found_save = self.game.get_game_info(game_name)
         if found_name != None:
@@ -464,21 +445,35 @@ class Main(Helper, Logger):
         """
         Makes a sound denoting a task completion.
         """
-        if sys.platform == "win32":
-            winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
+
+        def threaded_sound():
+            """
+            Function defined so it can be run in a new thread.
+            """
+            if sys.platform == "win32":
+                winsound.PlaySound("Exclamation", winsound.SND_ALIAS)
+
+        Thread(target=threaded_sound).start()
 
     @staticmethod
     def warning_sound():
         """
         Makes a sound denoting a task warning.
         """
-        if sys.platform == "win32":
-            winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
+
+        def threaded_sound():
+            """
+            Function defined so it can be run in a new thread.
+            """
+            if sys.platform == "win32":
+                winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
+
+        Thread(target=threaded_sound).start()
 
     def game_save_location_search(self, full_game_name, test=0):
         """
-        Searches for possible save game locations for the given name using a point based system.
-        The highes scoring directory is chosen.
+        Searches for possible save game locations for the given name using a
+        point based system. The highes scoring directory is chosen.
         """
         # TODO split into more functions
         # TODO use threading to split each search into its own thread with joins
@@ -566,19 +561,20 @@ class Main(Helper, Logger):
         self.progress["value"] = self.progress["maximum"]
         # completion time output
         limit = 50
+        path = self.best_dir[-limit:]
         if len(self.best_dir) > limit:
-            info = f"Path Found in {elapsed_time} seconds\n...{self.best_dir[-limit:]}"
+            info = f"Path Found in {elapsed_time} seconds\n...{path}"
         else:
-            info = f"Path Found in {elapsed_time} seconds\n{self.best_dir[-limit:]}"
-        self.logger.info(
-            f'Save for "{full_game_name}" found in {elapsed_time} seconds via {search_method}.'
-        )
+            info = f"Path Found in {elapsed_time} seconds\n{path}"
+        msg = f'Save for "{full_game_name}" found in {elapsed_time} seconds via {search_method}.'
+        self.logger.info(msg)
         self.info_label.config(text=info)
         self.completion_sound()
         # enables the browse button when a save folder seems to be found
         if self.best_dir != initialdir:
             if dir_changed:
-                # adds info that the found save location is not the same as the save location in the entry box
+                # adds info that the found save location is not the same as
+                # the save location in the entry box
                 info += f"\nFound directory is different then entered directory."
             self.s_browse.config(state="normal")
 
@@ -603,7 +599,8 @@ class Main(Helper, Logger):
     def browse(self, initial_dir=None):
         """
         Opens a file dialog so a save directory can be chosen.
-        It starts in the My Games folder in My Documents if it exists within a limited drive letter search.
+        It starts in the My Games folder in My Documents if it exists within
+        a limited drive letter search.
         """
         if initial_dir == None:
             starting_point = "C:/"
@@ -623,13 +620,10 @@ class Main(Helper, Logger):
         """
         Deletes selected game from SQLite Database.
         """
-        if self.game.name == None:
-            messagebox.showwarning(title=self.title, message="No game is selected.")
+        if not self.game.selected():
             return
-        delete_check = messagebox.askyesno(
-            title=self.title,
-            message=f"Are you sure that you want to delete {self.game.name}?",
-        )
+        msg = f"Are you sure that you want to delete {self.game.name}?"
+        delete_check = messagebox.askyesno(title=self.title, message=msg)
         if delete_check:
             # BUG deletes game that is selected but often removes
             # the wrong game form the list
@@ -641,31 +635,27 @@ class Main(Helper, Logger):
             self.update_listbox()
             # checks if you want to delete the games save backups as well
             if os.path.isdir(self.game.backup_loc):
-                response = messagebox.askyesno(
-                    title=self.title,
-                    message="Do you want to delete the backed up saves as well?",
-                )
+                msg = "Do you want to delete the backed up saves as well?"
+                response = messagebox.askyesno(title=self.title, message=msg)
                 if response:
                     try:
+                        # BUG permission error often
                         shutil.rmtree(self.game.backup_loc)
                         self.logger.info(f"Deleted backups for{self.game.name}.")
                     except PermissionError:
-                        self.logger.warning(
-                            f"Failed to delete backups for {self.game.name}"
-                        )
-                        messagebox.showerror(
-                            title=self.title,
-                            message="Failed to delete directory\nPermission Error",
-                        )
+                        msg = f"Failed to delete backups for {self.game.name}"
+                        self.logger.warning(msg)
+                        msg = "Failed to delete directory\nPermission Error"
+                        messagebox.showerror(title=self.title, message=msg)
                 self.logger.info(f"Deleted {self.game.name} from database.")
 
     def update_game(self):
         """
         Allows updating data for games in database.
-        The last selected game in the Listbox gets updated with the info from the Add/Update Game entries.
+        The last selected game in the Listbox gets updated with the info
+        from the Add/Update Game entries.
         """
-        if self.game.name == None:
-            messagebox.showwarning(title=self.title, message="No game is selected yet.")
+        if not self.game.selected():
             return
         # gets entered game info
         game_name = self.GameNameEntry.get()
@@ -686,21 +676,23 @@ class Main(Helper, Logger):
             self.game_listbox.insert(index, game_name)
             self.logger.info(f"Updated {self.game.name} in database.")
         else:
-            messagebox.showwarning(
-                title=self.title, message="Save Location does not exist."
-            )
+            msg = "Save Location does not exist."
+            messagebox.showwarning(title=self.title, message=msg)
 
     @staticmethod
     def readable_time_since(since_date, checked_date=False):
         """
-        Converts into time since for the given datetime object given as `since_date`.
+        Converts into time since for the given datetime object given
+        as `since_date`.
 
         Examples:
 
-        1.2 seconds ago | 3.4 minutes ago | 5.6 hours ago | 7.8 days ago | 9.1 months ago | 10.1 years ago
+        1.2 seconds ago | 3.4 minutes ago | 5.6 hours ago | 7.8 days ago
+        | 9.1 months ago | 10.1 years ago
 
         `since_date`: Past date
-        `checked_date`: Current or more recent date (Optional) defaults to current date if not given.
+        `checked_date`: Current or more recent date (Optional) defaults to
+        current date if not given.
         """
         if checked_date is False:
             checked_date = dt.datetime.now()
@@ -786,7 +778,7 @@ class Main(Helper, Logger):
         Finds all items in the sorted_list that have the search box data in it.
         It then updates the listbox data to only include matching results.
         """
-        # TODO Test to be sure threading here does not cause issues.
+        # TODO test to be sure threading here does not cause issues.
         def search():
             typed = self.search_entry.get()
             if typed == "":
@@ -880,7 +872,7 @@ class Main(Helper, Logger):
         #     msg = f'Backup/Restore in progress.\n{self.title} will close after completion when you close this message.'
         #     messagebox.showerror(title=self.title, message=msg)
         while self.backup_restore_in_progress:
-            sleep(0.5)
+            sleep(0.05)
         # BUG interface fails to exit if filedialog is left open
         # fix using subclassed filedialog commands that can close it
         self.game.close_database()
