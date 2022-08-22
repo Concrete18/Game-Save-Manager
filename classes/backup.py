@@ -38,9 +38,11 @@ class Backup(Logger):
 
     def delete_oldest(self, game_name, path, redundancy, ignore):
         """
-        Deletes the oldest saves within the given `path` so only the newest specified amount (`redundancy`) is left.
+        Deletes the oldest saves within the given `path` so only the newest
+        specified amount (`redundancy`) is left.
 
-        If the value of `ignore` is in the filename then it will be ignored during this process.
+        If the value of `ignore` is in the filename then it will be ignored
+        during this process.
         """
         # creates save list
         saves_list = [file.path for file in os.scandir(path) if ignore not in file.name]
