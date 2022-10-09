@@ -71,6 +71,7 @@ class Save_Search(Logger):
         elapsed_time = round(finish - start, 2)
         if self.debug:
             print(f"find_search_directories: {elapsed_time} seconds")
+        return self.directories
 
     def dir_scoring(self, possible_dir):
         """

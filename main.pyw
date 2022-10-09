@@ -110,7 +110,6 @@ class Main(Helper, Logger):
             total_backups = len(os.listdir(game_backup_loc))
             msg = f"{game_name} has been backed up.\nGame Backup Size: {backup_size} from {total_backups} backups"
             self.set_info_text(msg=msg)
-            self.completion_sound()
             self.logger.info(f"Backed up Save for {game_name}.")
             self.backup_restore_in_progress = False
             self.completion_sound()
@@ -120,7 +119,6 @@ class Main(Helper, Logger):
             msg = "No game is selected yet."
             self.set_info_text(msg=msg)
             self.warning_sound()
-            return
         # save path does not exists
         elif not os.path.exists(game_save_loc):
             msg = "Save no longer exists."
@@ -272,9 +270,10 @@ class Main(Helper, Logger):
                         response = messagebox.askyesno(title=self.title, message=msg)
                         if response:
                             # finds the post_save_name
-                            for f in os.scandir(
-                                os.path.join(self.cfg.backup_dest, self.game.name)
-                            ):
+                            backup_dest = os.path.join(
+                                self.cfg.backup_dest, self.game.name
+                            )
+                            for f in os.scandir(backup_dest):
                                 if self.post_save_name in f.name:
                                     os.remove(f)
                             msg = f"Deleted original save before last restore for {self.game.name}."
@@ -469,6 +468,7 @@ class Main(Helper, Logger):
                 winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
 
         Thread(target=threaded_sound).start()
+        print("warning sound was played")
 
     def game_save_location_search(self, full_game_name, test=0):
         """
@@ -519,7 +519,8 @@ class Main(Helper, Logger):
                 # exits if smart browse window is closed
                 if self.stop_smart_browse:
                     return
-                # BUG a non crashing error sometimes occurs when closing the smart browse window before it finishes
+                # BUG a non crashing error sometimes occurs when closing the
+                # smart browse window before it finishes
                 self.progress["value"] += 1
             if current_score > best_score:
                 best_score = current_score
@@ -577,6 +578,12 @@ class Main(Helper, Logger):
                 # the save location in the entry box
                 info += f"\nFound directory is different then entered directory."
             self.s_browse.config(state="normal")
+
+    def rust_smart_search():
+        import subprocess
+
+        ## call date command ##
+        p = subprocess.Popen("date", stdout=subprocess.PIPE, shell=True)
 
     def smart_browse(self):
         """
