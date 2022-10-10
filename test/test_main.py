@@ -68,7 +68,7 @@ class TestGameSaveManager(unittest.TestCase):
         for game, path in game_dict.items():
             print(f"   > {game}", end="")
             start = perf_counter()
-            self.assertIn(main.game_save_location_search(game, test=1), path)
+            self.assertIn(main.game_save_location_search(game), path)
             finish = perf_counter()
             elapsed_single = finish - start
             elapsed_total += elapsed_single

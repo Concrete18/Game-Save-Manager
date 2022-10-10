@@ -1,18 +1,15 @@
 from classes.logger import Logger
-import os, requests, json, re, os, sys, getpass
-from threading import Thread
-from time import perf_counter
+import os, requests, json, re, os, sys, getpass, subprocess
 
 
-# WIP finish switch to separate class
 class Save_Search(Logger):
-
-    initialdir = "C:/"
     # scoring init
     with open("config\scoring.json") as json_file:
         scoring = json.load(json_file)
-    # steam app list init
+
+    # var init
     app_list = None
+    initialdir = "C:/"  # TODO check value of below var init
 
     def __init__(self, game, custom_dirs, debug) -> None:
         """
@@ -21,10 +18,7 @@ class Save_Search(Logger):
         self.game = game
         self.debug = debug
         self.drive_letters = self.find_drive_letters()
-        # finds search directories
-        self.directories = custom_dirs
-        self.directories_ready = False
-        Thread(target=self.find_search_directories).start()
+        self.save_dirs = self.find_search_directories() + custom_dirs
 
     def find_drive_letters(self):
         """
@@ -38,7 +32,7 @@ class Save_Search(Logger):
         """
         Finds the directories to use when searching for games.
         """
-        start = perf_counter()
+        directories = []
         # os specific settings
         platform = sys.platform
         username = getpass.getuser()
@@ -63,15 +57,8 @@ class Save_Search(Logger):
                 if os.path.isdir(current_dir):
                     if "documents" in current_dir.lower():
                         self.initialdir = current_dir
-                    self.directories.append(current_dir)
-        self.directories_ready = True
-        if self.debug:
-            print(self.directories)
-        finish = perf_counter()  # stop time for checking elapsed runtime
-        elapsed_time = round(finish - start, 2)
-        if self.debug:
-            print(f"find_search_directories: {elapsed_time} seconds")
-        return self.directories
+                    directories.append(current_dir)
+        return directories
 
     def dir_scoring(self, possible_dir):
         """
@@ -153,3 +140,17 @@ class Save_Search(Logger):
                     if str(app_id) in found_path:
                         return found_path.replace("/", "\\")
         return False
+
+    def find_save_location(self, full_game_name):
+        """
+        Runs a Rust version of game save search.
+        """
+        rust_exe = "rust/target/release/save_search.exe"
+        if not os.path.exists(rust_exe):
+            return False
+        formatted_save_dirs = [f'"{dir}"' for dir in self.save_dirs]
+        # save_dirs_string = " ".join(formatted_save_dirs)
+        command = [rust_exe, full_game_name] + formatted_save_dirs
+        print(command)
+        output = subprocess.run(command, capture_output=True, shell=False)
+        return str(output.stdout).replace("\\n", "")[2:-1].replace(r"\\", "\\")

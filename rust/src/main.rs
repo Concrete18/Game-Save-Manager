@@ -24,22 +24,8 @@ fn search_path(path: String, search_string: String) -> String {
     found_path
 }
 
-fn find_dirs_to_check() -> Vec<String> {
-    let dirs_to_check = vec![
-        "D:/My Installed Games/Steam Games/steamapps/common".to_string(),
-        "C:/Users/Michael/AppData/Local".to_string(),
-        "C:/Users/Michael/AppData/LocalLow".to_string(),
-        "C:/Users/Michael/AppData/Roaming".to_string(),
-        "C:/Users/Michael/Saved Games".to_string(),
-        "C:/Users/Michael/Documents".to_string(),
-        "D:/My Documents".to_string(),
-        "C:/Program Files (x86)/Steam/steamapps/common".to_string(),
-    ];
-    return dirs_to_check;
-}
-
-fn find_possible_save_paths(search_string: &String) -> Vec<String> {
-    let dirs_to_check = find_dirs_to_check();
+fn find_possible_save_paths(search_string: &String, dirs_to_check: Vec<String>) -> Vec<String> {
+    // let dirs_to_check = find_dirs_to_check();
     let mut possible_paths = Vec::new();
     for dir in dirs_to_check {
         let found_path = search_path(dir.to_string(), search_string.to_string());
@@ -101,8 +87,8 @@ fn pick_best_path(paths: Vec<String>) -> String {
     return best_path.to_string();
 }
 
-fn find_save_path(game_name: String) -> String {
-    let paths = find_possible_save_paths(&game_name);
+fn find_save_path(game_name: String, dirs_to_check: Vec<String>) -> String {
+    let paths = find_possible_save_paths(&game_name, dirs_to_check);
     let total_paths = paths.len();
     if total_paths == 0 {
         return "".to_string();
@@ -115,11 +101,17 @@ fn find_save_path(game_name: String) -> String {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
+    let game = args[1].to_string();
+    let mut dirs_to_check: Vec<String> = Vec::new();
+    for i in 2..args.len() {
+        let dir = args[i].to_string();
+        dirs_to_check.push(dir);
+    }
+    if dirs_to_check.len() < 1 {
+        println!("No paths found to search.")
+    }
 
-    let game = &args[1];
-    // let file_path = &args[2];
-
-    let best_path = find_save_path(game.to_string());
+    let best_path = find_save_path(game, dirs_to_check);
     println!("{best_path}");
 }
 
@@ -127,9 +119,24 @@ fn main() {
 mod game_save_search_tests {
     use super::*;
 
+    fn find_dirs_to_check() -> Vec<String> {
+        let dirs_to_check = vec![
+            "D:/My Installed Games/Steam Games/steamapps/common".to_string(),
+            "C:/Users/Michael/AppData/Local".to_string(),
+            "C:/Users/Michael/AppData/LocalLow".to_string(),
+            "C:/Users/Michael/AppData/Roaming".to_string(),
+            "C:/Users/Michael/Saved Games".to_string(),
+            "C:/Users/Michael/Documents".to_string(),
+            "D:/My Documents".to_string(),
+            "C:/Program Files (x86)/Steam/steamapps/common".to_string(),
+        ];
+        return dirs_to_check;
+    }
+
     #[test]
     fn teardown() {
-        let found_path = find_save_path("Teardown".to_string());
+        let dirs_to_check = find_dirs_to_check();
+        let found_path = find_save_path("Teardown".to_string(), dirs_to_check);
         let actual_path = "c:/users/michael/appdata/local\\teardown".to_string();
         println!("Found: {found_path}\nActual: {actual_path}");
         assert_eq!(found_path.contains(&actual_path), true);
@@ -137,7 +144,8 @@ mod game_save_search_tests {
 
     #[test]
     fn deep_rock_galactic() {
-        let found_path = find_save_path("Deep Rock Galactic".to_string());
+        let dirs_to_check = find_dirs_to_check();
+        let found_path = find_save_path("Deep Rock Galactic".to_string(), dirs_to_check);
         let actual_path =
             "d:/my installed games/steam games/steamapps/common\\deep rock galactic".to_string();
         println!("Found: {found_path}\nActual: {actual_path}");
@@ -146,7 +154,8 @@ mod game_save_search_tests {
 
     #[test]
     fn the_forest() {
-        let found_path = find_save_path("The Forest".to_string());
+        let dirs_to_check = find_dirs_to_check();
+        let found_path = find_save_path("The Forest".to_string(), dirs_to_check);
         let actual_path = "c:/users/michael/appdata/locallow\\sks\\theforest".to_string();
         println!("Found: {found_path}\nActual: {actual_path}");
         assert_eq!(found_path.contains(&actual_path), true);
@@ -154,7 +163,8 @@ mod game_save_search_tests {
 
     #[test]
     fn factorio() {
-        let found_path = find_save_path("Factorio".to_string());
+        let dirs_to_check = find_dirs_to_check();
+        let found_path = find_save_path("Factorio".to_string(), dirs_to_check);
         let actual_path = "c:/users/michael/appdata/roaming\\factorio\\".to_string();
         println!("Found: {found_path}\nActual: {actual_path}");
         assert_eq!(found_path.contains(&actual_path), true);
@@ -162,7 +172,8 @@ mod game_save_search_tests {
 
     #[test]
     fn cyberpunk_2077() {
-        let found_path = find_save_path("Cyberpunk 2077".to_string());
+        let dirs_to_check = find_dirs_to_check();
+        let found_path = find_save_path("Cyberpunk 2077".to_string(), dirs_to_check);
         let actual_path =
             "c:/users/michael/saved games\\cd projekt red\\cyberpunk 2077".to_string();
         println!("Found: {found_path}\nActual: {actual_path}");
@@ -209,7 +220,8 @@ mod game_save_search_tests {
             // ),
         ];
         for (game, actual_path) in games {
-            let found_path = find_save_path(game.to_string());
+            let dirs_to_check = find_dirs_to_check();
+            let found_path = find_save_path(game.to_string(), dirs_to_check);
             println!("\nFound: {found_path}\nActual: {actual_path}\n");
             assert_eq!(found_path.contains(&actual_path.to_string()), true);
         }

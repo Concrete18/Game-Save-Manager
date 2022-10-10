@@ -394,44 +394,6 @@ class Main(Helper, Logger):
                 msg = f"Save Location for {game_name} does not exist."
                 messagebox.showwarning(title=self.title, message=msg)
 
-    def exit_smart_browse(self):
-        """
-        Closes smart browse and properly ends search.
-        """
-        self.stop_smart_browse = True
-        self.smart_browse_win.destroy()
-
-    def open_smart_browse_window(self):
-        """
-        Smart Browse Progress window
-        """
-        # opens window
-        self.stop_smart_browse = False
-        self.smart_browse_win = Tk.Toplevel(self.root)
-        self.smart_browse_win.protocol("WM_DELETE_WINDOW", self.exit_smart_browse)
-        self.tk_window_options(self.smart_browse_win, 340, 130, define_size=0)
-
-        text = f"Looking for the game save directory for\n{self.GameNameEntry.get()}"
-        self.info_label = Tk.Label(
-            self.smart_browse_win, text=text, font=("Arial Bold", 10)
-        )
-        self.info_label.grid(row=0, column=0, pady=(9))
-
-        self.progress = ttk.Progressbar(
-            self.smart_browse_win, orient=Tk.HORIZONTAL, length=360, mode="determinate"
-        )
-        self.progress.grid(row=1, column=0, pady=(5, 10), padx=20)
-
-        self.s_browse = ttk.Button(
-            self.smart_browse_win,
-            text="Browse",
-            command=lambda: self.browse(self.best_dir),
-            width=23,
-        )
-        self.s_browse.grid(row=2, column=0, pady=(5, 10))
-        self.s_browse.config(state="disabled")
-        self.smart_browse_win.grab_set()
-
     @staticmethod
     def nonascii(string):
         """
@@ -470,121 +432,6 @@ class Main(Helper, Logger):
         Thread(target=threaded_sound).start()
         print("warning sound was played")
 
-    def game_save_location_search(self, full_game_name, test=0):
-        """
-        Searches for possible save game locations for the given name using a
-        point based system. The highes scoring directory is chosen.
-        """
-        # TODO split into more functions
-        # TODO use threading to split each search into its own thread with joins
-        # var setup
-        overall_start = perf_counter()  # start time for checking elapsed runtime
-        best_score = 0
-        dir_changed = 0
-        current_score = 0
-        possible_dir = ""
-        search_method = "name search"
-        initialdir = "C:/"
-        self.best_dir = initialdir
-        if self.cfg.debug:
-            print(f"\nGame: {self.game.filename}")
-        # waits for search directories to be ready before the save search is started
-        while not self.save_search.directories_ready:
-            print("waiting")
-            sleep(0.1)
-        # disables progress bar actions when testing
-        if test == False:
-            self.progress["maximum"] = len(self.save_search.directories) + 1
-        for directory in self.save_search.directories:
-            if self.cfg.debug:
-                print(f"\nCurrent Search Directory: {directory}")
-            directory_start = perf_counter()
-            # TODO make its own function
-            for root, dirs, files in os.walk(directory, topdown=False):
-                for dir in dirs:
-                    # TODO check if search can be ended sooner
-                    if self.game.get_filename(full_game_name).lower().replace(
-                        " ", ""
-                    ) in dir.lower().replace(" ", ""):
-                        possible_dir = os.path.join(root, dir)
-                        current_score = self.save_search.dir_scoring(possible_dir)
-            # update based on high score
-            directory_finish = perf_counter()
-            if self.cfg.debug:
-                print(
-                    f"Dir Search Time: {round(directory_finish-directory_start, 2)} seconds"
-                )
-            # disables progress bar actions when testing
-            if test == False:
-                # exits if smart browse window is closed
-                if self.stop_smart_browse:
-                    return
-                # BUG a non crashing error sometimes occurs when closing the
-                # smart browse window before it finishes
-                self.progress["value"] += 1
-            if current_score > best_score:
-                best_score = current_score
-                self.best_dir = os.path.abspath(possible_dir)
-                # early break if threshold is met
-                if current_score > 600:
-                    break
-            current_score = 0
-        overall_finish = perf_counter()  # stop time for checking elapsed runtime
-        elapsed_time = round(overall_finish - overall_start, 2)
-        if self.cfg.debug:
-            print(
-                f"\n{self.game.filename}\nOverall Search Time: {elapsed_time} seconds"
-            )
-            print(f"Path Used: {self.best_dir}")
-            print(f"Path Score: {best_score}")
-        # checks if nothing was found from the first search
-        if self.best_dir == initialdir:
-            app_id = self.save_search.get_appid(full_game_name)
-            if app_id != None:
-                app_id_path = self.save_search.check_userdata(app_id)
-                if app_id_path is not False:
-                    self.best_dir = app_id_path
-                    search_method = "app id search"
-                else:
-                    self.logger.info(f"No Game save can be found for {full_game_name}")
-            else:
-                self.logger.info(f"app_id cant be found for {full_game_name}")
-        if test == False:
-            game_save = os.path.abspath(self.GameSaveEntry.get())
-            if game_save != self.script_dir:
-                if self.best_dir in game_save:
-                    print("Found save is correct.")
-                else:
-                    print("Found save is incorrect.")
-                    dir_changed = 1
-        else:
-            return self.best_dir
-        self.progress["value"] = self.progress["maximum"]
-        # completion time output
-        limit = 50
-        path = self.best_dir[-limit:]
-        if len(self.best_dir) > limit:
-            info = f"Path Found in {elapsed_time} seconds\n...{path}"
-        else:
-            info = f"Path Found in {elapsed_time} seconds\n{path}"
-        msg = f'Save for "{full_game_name}" found in {elapsed_time} seconds via {search_method}.'
-        self.logger.info(msg)
-        self.info_label.config(text=info)
-        self.completion_sound()
-        # enables the browse button when a save folder seems to be found
-        if self.best_dir != initialdir:
-            if dir_changed:
-                # adds info that the found save location is not the same as
-                # the save location in the entry box
-                info += f"\nFound directory is different then entered directory."
-            self.s_browse.config(state="normal")
-
-    def rust_smart_search():
-        import subprocess
-
-        ## call date command ##
-        p = subprocess.Popen("date", stdout=subprocess.PIPE, shell=True)
-
     def smart_browse(self):
         """
         Searches for a starting point for the save location browser.
@@ -592,16 +439,15 @@ class Main(Helper, Logger):
         # checks if no game name is in entry box.
         game_name = self.GameNameEntry.get()
         if game_name == None:
-            messagebox.showwarning(
-                title=self.title,
-                message="Smart Browse requires a game name to be entered.",
-            )
+            msg = "Smart Browse requires a game name to be entered."
+            messagebox.showwarning(title=self.title, message=msg)
             return
-        self.open_smart_browse_window()
         # looks for folders with the games name
-        Thread(
-            target=self.game_save_location_search, args=(game_name,), daemon=True
-        ).start()
+        best_dir = self.save_search.find_save_location(game_name)
+        if not best_dir:
+            print("Did not work")
+        # TODO wait for a threaded version of above function to finish to open browse
+        self.browse(best_dir)
 
     def browse(self, initial_dir=None):
         """
@@ -609,16 +455,8 @@ class Main(Helper, Logger):
         It starts in the My Games folder in My Documents if it exists within
         a limited drive letter search.
         """
-        if initial_dir == None:
-            starting_point = "C:/"
-            current_save_location = self.GameSaveEntry.get()
-            if os.path.exists(current_save_location):
-                starting_point = current_save_location
-        else:
-            starting_point = initial_dir
-            self.smart_browse_win.destroy()
         save_dir = filedialog.askdirectory(
-            initialdir=starting_point, title="Select Save Directory"
+            initialdir=initial_dir, title="Select Save Directory"
         )
         self.GameSaveEntry.delete(0, Tk.END)
         self.GameSaveEntry.insert(0, save_dir)
