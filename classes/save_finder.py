@@ -1,9 +1,9 @@
 from classes.logger import Logger
-import os, requests, json, re, os, sys, getpass, subprocess
+import os, requests, json, re, os, sys, getpass
 import save_search
 
-
-class Save_Search(Logger):
+# TODO rename class
+class SaveFinder(Logger):
     # scoring init
     with open("config\scoring.json") as json_file:
         scoring = json.load(json_file)
@@ -61,45 +61,6 @@ class Save_Search(Logger):
                     directories.append(current_dir)
         return directories
 
-    def dir_scoring(self, possible_dir):
-        """
-        Uses a scoring system to determines the chance of the given directory
-        to be the save location.
-        """
-        # checks if possible_dir is in the blacklist
-        dir_blacklist = self.scoring["dir_blacklist"]
-        for string in dir_blacklist:
-            if string.lower() in possible_dir.lower():
-                return 0
-        # prints possible_dir if debug is 1 and the var is not blank
-        if possible_dir != "" and self.debug:
-            print(f"\n{possible_dir}")
-        current_score = 0
-        for found_root, found_dirs, found_files in os.walk(possible_dir, topdown=False):
-            for found_file in found_files:
-                # file scoring TODO add a way to track scoring that applies
-                # + scorers
-                for item, score in self.scoring["file_positive_scoring"].items():
-                    if item in found_file.lower():
-                        current_score += score
-                # - scorers
-                for item, score in self.scoring["file_negative_scoring"].items():
-                    if item in found_file.lower():
-                        current_score -= score
-            for found_dir in found_dirs:
-                # folder scoring
-                # + scorers
-                for item, score in self.scoring["folder_positive_scoring"].items():
-                    if item in found_dir.lower():
-                        current_score += score
-                # - scorers
-                for item, score in self.scoring["folder_negative_scoring"].items():
-                    if item in found_dir.lower():
-                        current_score -= score
-        if self.debug:
-            print(f"Score {current_score}")
-        return current_score
-
     def get_app_list(self):
         """
         Gets the applist from the steam API
@@ -146,4 +107,8 @@ class Save_Search(Logger):
         """
         Runs a Rust version of game save search.
         """
-        return save_search.find_save_path(full_game_name, self.save_dirs)
+        path = save_search.find_save_path(full_game_name, self.save_dirs)
+        if not path:
+            appid = self.get_appid(full_game_name)
+            path = self.check_userdata(appid)
+        return path.replace("\\", "/").replace("", "")

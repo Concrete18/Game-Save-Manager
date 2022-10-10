@@ -15,7 +15,7 @@ from classes.game import Game
 from classes.logger import Logger
 from classes.backup import Backup
 from classes.restore import Restore
-from classes.save_search import Save_Search
+from classes.save_finder import SaveFinder
 from classes.helper import Helper
 
 
@@ -31,14 +31,12 @@ class Main(Helper, Logger):
     backup_restore_in_progress = False
     default_entry_value = "Type Search Query Here"
     post_save_name = "Post-Restore Save"
-    # init
-    best_dir = ""
 
     # game class
     game = Game(backup_dest=cfg.backup_dest, db_loc="config\game.db")
     backup = Backup(game, cfg.compression_type)
     restore = Restore(game, backup)
-    save_search = Save_Search(game, cfg.custom_dirs, cfg.debug)
+    save = SaveFinder(game, cfg.custom_dirs, cfg.debug)
 
     def backup_dest_check(self):
         """
@@ -443,21 +441,22 @@ class Main(Helper, Logger):
             messagebox.showwarning(title=self.title, message=msg)
             return
         # looks for folders with the games name
-        best_dir = self.save_search.find_save_location(game_name)
+        best_dir = self.save.find_save_location(game_name)
         if not best_dir:
             print("Did not work")
         # TODO wait for a threaded version of above function to finish to open browse
         self.browse(best_dir)
 
-    def browse(self, initial_dir=None):
+    def browse(self, directory="C:/"):
         """
         Opens a file dialog so a save directory can be chosen.
+
+        TODO fix below
         It starts in the My Games folder in My Documents if it exists within
         a limited drive letter search.
         """
-        save_dir = filedialog.askdirectory(
-            initialdir=initial_dir, title="Select Save Directory"
-        )
+        msg = "Select Save Directory"
+        save_dir = filedialog.askdirectory(initialdir=directory, title=msg)
         if save_dir:
             self.GameSaveEntry.delete(0, Tk.END)
             self.GameSaveEntry.insert(0, save_dir)
@@ -485,7 +484,7 @@ class Main(Helper, Logger):
                 response = messagebox.askyesno(title=self.title, message=msg)
                 if response:
                     try:
-                        # BUG permission error often
+                        # BUG gets permission errors often
                         shutil.rmtree(self.game.backup_loc)
                         self.logger.info(f"Deleted backups for{self.game.name}.")
                     except PermissionError:

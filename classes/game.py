@@ -90,18 +90,6 @@ class Game(Logger):
         else:
             return None, None
 
-    # TODO delete once not needed
-    def exists_in_db(self, game_name):
-        """
-        Checks if `game_name` is already in the database.
-        """
-        query = "SELECT save_location FROM games WHERE game_name=:game_name"
-        args = {"game_name": game_name}
-        self.cursor.execute(query, args)
-        entry = self.cursor.fetchone()
-        self.total_executions += 1
-        return entry != None
-
     def update_last_backup(self, game_name):
         """
         Updates the last_backup time for `game_name` to the current datetime.
