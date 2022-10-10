@@ -9,7 +9,6 @@ class TestGame(unittest.TestCase):
 
     def test_set(self):
         game = Game(self.backup_path, self.db_loc)
-        print("\nTesting Game.get method")
         game.set("Dishonored 2")
         self.assertEqual(game.name, "Dishonored 2")
         save_location = (
@@ -23,7 +22,6 @@ class TestGame(unittest.TestCase):
         self.assertEqual(game.previous_backup_hash, "45sa456dasd")
 
     def test_get_filename(self):
-        print("\nTesting get_filename function")
         tests = {
             "Amnesia: The Dark Descent": "Amnesia The Dark Descent",
             "Is&this<>correct?": "Isandthiscorrect",
@@ -34,7 +32,6 @@ class TestGame(unittest.TestCase):
             self.assertEqual(game.get_filename(test_value), answer)
 
     def test_convert_size(self):
-        print("\nTesting get_dir_size function")
         main = Game(self.backup_path, self.db_loc)
         self.assertEqual(
             main.get_dir_size("test\Folder Test\Folder Example"), "124.0 B"
@@ -42,6 +39,5 @@ class TestGame(unittest.TestCase):
         self.assertEqual(main.get_dir_size("ValueError"), "0 bits")
 
     def test_database_check(self):
-        print("\nTesting database_check function")
         game = Game(self.backup_path, self.db_loc)
         self.assertEqual(game.database_check(), [])

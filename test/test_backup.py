@@ -8,7 +8,6 @@ class TestBackup(unittest.TestCase):
     pass
 
     # def test_delete_oldest(self):
-    #     print('\nTesting delete_oldest function')
     #     tests = {
     #     'Amnesia: The Dark Descent':'Amnesia The Dark Descent',
     #     'Is&this<>correct?':'Isthiscorrect',

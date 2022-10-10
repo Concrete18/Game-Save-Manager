@@ -1,9 +1,5 @@
 from main import Main  # type: ignore
-from config.config import Config
-from classes.save_search import Save_Search
 import datetime as dt
-from classes.game import Game
-from time import perf_counter
 import unittest
 
 
@@ -12,7 +8,6 @@ class TestGameSaveManager(unittest.TestCase):
         """
         readable_time_since
         """
-        print("\nTesting readable_time_since function")
         main = Main()
         checked_date = dt.datetime.strptime("2021/01/01 01:00:00", "%Y/%m/%d %H:%M:%S")
         dates = {
@@ -28,50 +23,3 @@ class TestGameSaveManager(unittest.TestCase):
         }
         for date, answer in dates.items():
             self.assertIn(main.readable_time_since(date, checked_date), answer)
-
-    def test_smart_browse(self):
-        """
-        Smart Browse
-        """
-        print("\nTesting smart_browse function")
-        main = Main()
-        main.debug = 0
-        main.output = 0
-        cfg = Config("config\settings.ini")
-        cfg.get_settings()
-        search = Save_Search(Game, cfg.custom_dirs, debug=False)
-        game_dict = {
-            # 'The Forgotten City':r'C:',
-            # 'HITMAN™ 2': r'C:\Program Files (x86)\Steam\userdata\22360464\863550',
-            "Mini Motorways": r"C:\Users\Michael\AppData\LocalLow\Dinosaur Polo Club\Mini Motorways",
-            "Phantom Abyss": r"C:\Users\Michael\AppData\Local\PhantomAbyss",
-            "Still There": r"C:\Users\Michael\AppData\LocalLow\GhostShark Games\Still There",
-            # "Factorio": r"C:\Users\Michael\AppData\Roaming\Factorio",
-            "Surviving Mars": r"C:\Users\Michael\AppData\Roaming\Surviving Mars",
-            "Wildfire": r"C:\Users\Michael\AppData\Local\wildfire",
-            "Teardown": r"C:\Users\Michael\AppData\Local\Teardown",
-            "Desperados III": r"C:\Users\Michael\AppData\Local\Desperados III",
-            "The Forest": r"C:\Users\Michael\AppData\LocalLow\SKS\TheForest",
-            "Manifold Garden": r"C:\Users\Michael\AppData\LocalLow\William Chyr Studio\Manifold Garden",
-            "Valheim": r"C:\Users\Michael\AppData\LocalLow\IronGate\Valheim",
-            "Boneworks": r"C:\Users\Michael\AppData\LocalLow\Stress Level Zero\BONEWORKS",
-            "Dishonored 2": r"C:\Users\Michael\Saved Games\Arkane Studios\Dishonored2",
-            "Cyberpunk 2077": r"C:\Users\Michael\Saved Games\CD Projekt Red\Cyberpunk 2077",
-            "Deep Rock Galactic": r"D:\My Installed Games\Steam Games\steamapps\common\Deep Rock Galactic",
-            "Timberborn": r"D:\My Documents\Timberborn",
-            "XCOM 2 War of the Chosen": r"D:\My Documents\My Games\XCOM2 War of the Chosen",
-        }
-        print("\n   Setting up search directories")
-        search.find_search_directories()
-        print("\n   Starting search for each game.")
-        elapsed_total = 0
-        for game, path in game_dict.items():
-            print(f"   > {game}", end="")
-            start = perf_counter()
-            self.assertIn(main.game_save_location_search(game), path)
-            finish = perf_counter()
-            elapsed_single = finish - start
-            elapsed_total += elapsed_single
-            print(f" | {round(elapsed_single, 2)} seconds")
-        average = round(elapsed_total / len(game_dict), 2)
-        print(f"   Average search time: {average} seconds")
