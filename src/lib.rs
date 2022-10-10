@@ -1,3 +1,4 @@
+use pyo3::prelude::*;
 use std::env;
 use walkdir::WalkDir;
 
@@ -87,32 +88,43 @@ fn pick_best_path(paths: Vec<String>) -> String {
     return best_path.to_string();
 }
 
-fn find_save_path(game_name: String, dirs_to_check: Vec<String>) -> String {
+// fn main() {
+//     let args: Vec<String> = env::args().collect();
+//     let game = args[1].to_string();
+//     let mut dirs_to_check: Vec<String> = Vec::new();
+//     for i in 2..args.len() {
+//         let dir = args[i].to_string();
+//         dirs_to_check.push(dir);
+//     }
+//     if dirs_to_check.len() < 1 {
+//         println!("No paths found to search.")
+//     }
+
+//     let best_path = find_save_path(game, dirs_to_check);
+//     println!("{best_path}");
+// }
+
+/// Formats the sum of two numbers as string.
+#[pyfunction]
+fn find_save_path(game_name: String, dirs_to_check: Vec<String>) -> PyResult<String> {
     let paths = find_possible_save_paths(&game_name, dirs_to_check);
     let total_paths = paths.len();
+    let mut best_path = String::new();
     if total_paths == 0 {
-        return "".to_string();
+        best_path = "".to_string();
     } else if paths.len() == 1 {
-        return paths[0].clone();
+        best_path = paths[0].clone();
     } else {
-        return pick_best_path(paths);
+        best_path = pick_best_path(paths);
     }
+    Ok(best_path.to_string())
 }
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    let game = args[1].to_string();
-    let mut dirs_to_check: Vec<String> = Vec::new();
-    for i in 2..args.len() {
-        let dir = args[i].to_string();
-        dirs_to_check.push(dir);
-    }
-    if dirs_to_check.len() < 1 {
-        println!("No paths found to search.")
-    }
-
-    let best_path = find_save_path(game, dirs_to_check);
-    println!("{best_path}");
+/// A Python module implemented in Rust.
+#[pymodule]
+fn save_search(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(find_save_path, m)?)?;
+    Ok(())
 }
 
 #[cfg(test)]

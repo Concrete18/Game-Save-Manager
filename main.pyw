@@ -5,6 +5,10 @@ from time import sleep, perf_counter
 from threading import Thread
 import datetime as dt
 
+# sets script directory in case current working directory is different
+script_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_dir)
+
 # classes
 from config.config import Config
 from classes.game import Game
@@ -16,10 +20,6 @@ from classes.helper import Helper
 
 
 class Main(Helper, Logger):
-
-    # sets script directory in case current working directory is different
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    os.chdir(script_dir)
 
     # config setup
     cfg = Config("config\settings.ini")
@@ -458,8 +458,9 @@ class Main(Helper, Logger):
         save_dir = filedialog.askdirectory(
             initialdir=initial_dir, title="Select Save Directory"
         )
-        self.GameSaveEntry.delete(0, Tk.END)
-        self.GameSaveEntry.insert(0, save_dir)
+        if save_dir:
+            self.GameSaveEntry.delete(0, Tk.END)
+            self.GameSaveEntry.insert(0, save_dir)
 
     def delete_game(self):
         """

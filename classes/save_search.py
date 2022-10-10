@@ -1,5 +1,6 @@
 from classes.logger import Logger
 import os, requests, json, re, os, sys, getpass, subprocess
+import save_search
 
 
 class Save_Search(Logger):
@@ -145,12 +146,4 @@ class Save_Search(Logger):
         """
         Runs a Rust version of game save search.
         """
-        rust_exe = "rust/target/release/save_search.exe"
-        if not os.path.exists(rust_exe):
-            return False
-        formatted_save_dirs = [f'"{dir}"' for dir in self.save_dirs]
-        # save_dirs_string = " ".join(formatted_save_dirs)
-        command = [rust_exe, full_game_name] + formatted_save_dirs
-        print(command)
-        output = subprocess.run(command, capture_output=True, shell=False)
-        return str(output.stdout).replace("\\n", "")[2:-1].replace(r"\\", "\\")
+        return save_search.find_save_path(full_game_name, self.save_dirs)
