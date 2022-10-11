@@ -10,33 +10,29 @@ Made with Python 3.8.3
 
 ### Backup and Restore
 
-* Up to 4 backup redundancy to prevent corruption issues.
-* Easily add, delete and update games in the backup database using the interface.
-* Selecting games shows useful info such as number of saves, size they all take combined and time since last backup.
+- Up to 4 backup redundancy to prevent corruption issues.
+- Easily add, delete and update games in the backup database using the interface.
+- Selecting games shows useful info such as number of saves, size they all take combined and time since last backup.
 
 ### Smart Browse
 
 ![Image of Smart Browse](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/images/Smart%20Browse%20Progress.png)
 ![Image of Smart Browse](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/images/Smart%20Browse%20Complete.png)
 
-* Smart Browse will use a game name to search for the best starting point for selecting the games save location.
-* Progress bar showing progress for Smart Browse Search.
-* Some games do not include the name in the save directory path so they can't be found.
-* If Smart Browse is uses while the Save Entry has a path, a pop up will let you know if the search found a
-different directory then what is currently entered.
-* If a game save is entered when searching, you will be told if the found save is different from the current.
+- Smart Browse will use a game name to search for the best starting point for selecting the games save location.
+- Some games do not include the name in the save directory path so they can't be found.
 
 ### Game Search
 
 ![Image of Smart Browse](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/images/Search%20Example.png)
 
-* Full game database search above game list.
-* Instant search results as you type without having to hit enter.
+- Full game database search above game list.
+- Instant search results as you type without having to hit enter.
 
 ### Backup Compression
 
-* Backup of saves uses compression for saving space.
-* Use below command to view available compression formats.
+- Backup of saves uses compression for saving space.
+- Use below command to view available compression formats.
 
 ```python
 shutil.get_archive_formats()
@@ -44,15 +40,16 @@ shutil.get_archive_formats()
 
 ### Misc
 
-* Detects any games with no longer existing save paths. (Allows listing only missing games for removing/updating)
+- Detects any games with no longer existing save paths. (Allows listing only missing games for removing/updating)
 
 ## Python Techniques Used
 
-* Tkinter messagebox and directory dialog
-* SQLite Database
-* File copying and other manipulations
-* Object oriented design
-* Full Logging System for most all actions and errors
+- Tkinter messagebox and directory dialog
+- SQLite Database
+- File copying and other manipulations
+- Object oriented design
+- Full Logging System for most all actions and errors
+- Rust Code used as a Python Package via Maturin for speeding up the save search
 
 ## Config
 
@@ -87,9 +84,17 @@ d_drive_steam = D:/My Installed Games/Steam Games/steamapps/common
 pip install -r requirements.txt
 ```
 
+## Setup
+
+- Install [Rust](https://www.rust-lang.org/) on your system if you do not already have it
+- Create Python Virtual Environment using `python3 -m venv .env`
+- Run `pip install -r requirements.txt`
+- Run `Maturin Develop` in order to create the rust package within the environment [Maturin Tutorial](https://www.youtube.com/watch?v=DpUlfWP_gtg&t=1s)
+- Run the Save manager with the `run_game_save_manager.vbs` file. You can make a shortcut out of it to make running it easier. (This is required due to the python virtual environment)
+
 ## Todo
 
-* Arrow Key listbox navigation
+- Arrow Key listbox navigation
 
 ## Testing
 
@@ -102,8 +107,8 @@ python -m unittest
 
 ## Bugs
 
-* Backing up the same game multiple times during the same selection causes duplication of the selected game in the
-listbox.
-* Renaming multiples times in one session causes issues.
-* leaving the file dialog open prevents closing interface.
-* Game backup size shows as 0 after finishing a backup until it is clicked again.
+- Backing up the same game multiple times during the same selection causes duplication of the selected game in the
+  listbox.
+- Renaming multiples times in one session causes issues.
+- leaving the file dialog open prevents closing interface.
+- Game backup size shows as 0 after finishing a backup until it is clicked again.
