@@ -1,3 +1,4 @@
+from genericpath import isfile
 from classes.logger import Logger
 import os, requests, json, re, os, sys, getpass
 import save_search
@@ -108,7 +109,14 @@ class SaveFinder(Logger):
         Runs a Rust version of game save search.
         """
         path = save_search.find_save_path(full_game_name, self.save_dirs)
+        # gets possible save location using app id if nothing is found
         if not path:
             appid = self.get_appid(full_game_name)
             path = self.check_userdata(appid)
-        return path.replace("\\", "/").replace("", "")
+        if path:
+            # fixes slashes
+            path = path.replace("\\", "/").replace("", "")
+            # gets directory only if path leads to a file
+            if os.path.isfile(path):
+                return os.path.dirname(path)
+            return path
