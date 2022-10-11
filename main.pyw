@@ -13,10 +13,10 @@ os.chdir(script_dir)
 from config.config import Config
 from classes.game import Game
 from classes.logger import Logger
+from classes.helper import Helper
 from classes.backup import Backup
 from classes.restore import Restore
 from classes.save_finder import SaveFinder
-from classes.helper import Helper
 
 
 class Main(Helper, Logger):
@@ -441,11 +441,14 @@ class Main(Helper, Logger):
             messagebox.showwarning(title=self.title, message=msg)
             return
         # looks for folders with the games name
-        best_dir = self.save.find_save_location(game_name)
-        if not best_dir:
-            print("Did not work")
-        # TODO wait for a threaded version of above function to finish to open browse
-        self.browse(best_dir)
+        found_dir = self.save.find_save_location(game_name)
+        if found_dir:
+            self.completion_sound()
+            self.browse(found_dir)
+        else:
+            self.warning_sound()
+            msg = f"Failed to save for {game_name}"
+            self.logger.warning(msg)
 
     def browse(self, directory="C:/"):
         """
