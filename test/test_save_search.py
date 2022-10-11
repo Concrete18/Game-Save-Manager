@@ -56,7 +56,7 @@ class TestSmartBrowse(unittest.TestCase):
             "Still There": r"c:/users/michael/appdata/locallow/ghostshark games/still there",
             "Factorio": r"c:/users/michael/appdata/roaming/factorio",
             "Surviving Mars": r"c:/users/michael/appdata/roaming/surviving mars",
-            "Wildfire": r"c:/users/michael/appdata/local/wildfire/",
+            "Wildfire": r"c:/users/michael/appdata/local/wildfire",
             "Teardown": r"c:/users/michael/AppData/local/teardown",
             "Desperados III": r"C:/users/michael/AppData/local/Desperados III",
             "The Forest": r"C:/users/michael/AppData/localLow/SKS/theForest",
