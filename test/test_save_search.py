@@ -34,7 +34,6 @@ class TestAppIDSearch(unittest.TestCase):
             "This is not a real game:the sequel": None,
             "Dishonored 2": 403640,
             "Monster Hunter: World": 582010,
-            # 'HITMAN™ 2': 863550
         }
         search = SaveFinder(Game, cfg.custom_dirs, debug=0)
         for test_value, answer in tests.items():
@@ -67,7 +66,6 @@ class TestSmartBrowse(unittest.TestCase):
             "Cyberpunk 2077": r"C:/users/michael/Saved Games/cD Projekt Red/cyberpunk 2077",
             "Deep Rock Galactic": r"D:/my Installed Games/Steam Games/steamapps/common/Deep Rock Galactic",
             "Timberborn": r"D:/my Documents/timberborn",
-            # "XCOM 2 War of the Chosen": r"D:/my Documents/my Games/xCOM2 War of the Chosen",
         }
         for game, actual_path in game_dict.items():
             with self.subTest(game=game, actual_path=actual_path):
