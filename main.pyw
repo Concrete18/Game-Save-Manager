@@ -430,6 +430,20 @@ class Main(Helper, Logger):
         Thread(target=threaded_sound).start()
         print("warning sound was played")
 
+    def browse(self, directory="C:/"):
+        """
+        Opens a file dialog so a save directory can be chosen.
+
+        TODO fix below
+        It starts in the My Games folder in My Documents if it exists within
+        a limited drive letter search.
+        """
+        msg = "Select Save Directory"
+        save_dir = filedialog.askdirectory(initialdir=directory, title=msg)
+        if save_dir:
+            self.GameSaveEntry.delete(0, Tk.END)
+            self.GameSaveEntry.insert(0, save_dir)
+
     def smart_browse(self):
         """
         Searches for a starting point for the save location browser.
@@ -449,20 +463,6 @@ class Main(Helper, Logger):
             self.warning_sound()
             msg = f"Failed to save for {game_name}"
             self.logger.warning(msg)
-
-    def browse(self, directory="C:/"):
-        """
-        Opens a file dialog so a save directory can be chosen.
-
-        TODO fix below
-        It starts in the My Games folder in My Documents if it exists within
-        a limited drive letter search.
-        """
-        msg = "Select Save Directory"
-        save_dir = filedialog.askdirectory(initialdir=directory, title=msg)
-        if save_dir:
-            self.GameSaveEntry.delete(0, Tk.END)
-            self.GameSaveEntry.insert(0, save_dir)
 
     def delete_game(self):
         """
