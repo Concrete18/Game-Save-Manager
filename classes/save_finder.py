@@ -5,9 +5,6 @@ import save_search
 
 # TODO rename class
 class SaveFinder(Logger):
-    # scoring init
-    with open("config\scoring.json") as json_file:
-        scoring = json.load(json_file)
 
     # var init
     app_list = None
@@ -101,7 +98,7 @@ class SaveFinder(Logger):
                 for dir in dirnames:
                     found_path = os.path.join(dirpath, dir)
                     if str(app_id) in found_path:
-                        return found_path.replace("/", "\\")
+                        return found_path
         return False
 
     def find_save_location(self, full_game_name):
@@ -115,7 +112,7 @@ class SaveFinder(Logger):
             path = self.check_userdata(appid)
         if path:
             # fixes slashes
-            path = path.replace("\\", "/").replace("", "")
+            path = path.replace("\\", "/")
             # gets directory only if path leads to a file
             if os.path.isfile(path):
                 return os.path.dirname(path)
