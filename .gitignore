@@ -134,3 +134,4 @@ game.db
 /.vscode
 *.lnk
 *output.txt
+settings.ini
