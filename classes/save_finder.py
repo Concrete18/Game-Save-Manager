@@ -1,6 +1,5 @@
-from genericpath import isfile
 from classes.logger import Logger
-import os, requests, json, re, os, sys, getpass
+import os, requests, re, os, sys, getpass
 import save_search
 
 # TODO rename class
@@ -109,10 +108,8 @@ class SaveFinder(Logger):
         # gets possible save location using app id if nothing is found
         if not path:
             appid = self.get_appid(full_game_name)
-            path = self.check_userdata(appid)
+            path = self.check_userdata(appid).replace("\\", "/")
         if path:
-            # fixes slashes
-            path = path.replace("\\", "/")
             # gets directory only if path leads to a file
             if os.path.isfile(path):
                 return os.path.dirname(path)
