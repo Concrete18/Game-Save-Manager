@@ -7,7 +7,7 @@ fn remove_whitespace(s: &str) -> String {
     s.split_whitespace().collect()
 }
 
-/// finds
+/// Finds matches for `search_string` in `path`.
 fn search_path(path: String, search_string: String) -> String {
     let mut found_path = "".to_string();
     for path in WalkDir::new(path)
@@ -32,6 +32,7 @@ fn search_path(path: String, search_string: String) -> String {
     found_path
 }
 
+/// Returns true if any value in `array` is in `string`.
 fn any_val_in_string(string: String, array: [&str; 16]) -> bool {
     for item in array {
         if string.contains(item) {
@@ -41,6 +42,7 @@ fn any_val_in_string(string: String, array: [&str; 16]) -> bool {
     false
 }
 
+/// Scores path points based on occurrences of
 fn score_path(path: String) -> i32 {
     let score_pos = [
         "autosave",
@@ -63,6 +65,7 @@ fn score_path(path: String) -> i32 {
     let mut total_score = 0;
     for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
         let cur_path = String::from(entry.path().to_string_lossy()).to_lowercase();
+        // TODO test switching to looping through score_pos here
         if any_val_in_string(cur_path, score_pos) {
             total_score = total_score + 25
         }
@@ -70,6 +73,7 @@ fn score_path(path: String) -> i32 {
     return total_score;
 }
 
+/// Finds the path that most likely leads to the games save folder by scoring each path.
 fn pick_best_path(paths: Vec<String>) -> String {
     let mut best_score = 0;
     let mut best_path = &paths[0];
@@ -83,7 +87,8 @@ fn pick_best_path(paths: Vec<String>) -> String {
     return best_path.to_string();
 }
 
-fn find_possible_save_paths(search_string: &String, dirs_to_check: Vec<String>) -> Vec<String> {
+/// TODO finish docstring
+fn find_possible_save_paths(search_string: String, dirs_to_check: Vec<String>) -> Vec<String> {
     // let dirs_to_check = find_dirs_to_check();
     let mut possible_paths = Vec::new();
     for dir in dirs_to_check {
@@ -95,11 +100,11 @@ fn find_possible_save_paths(search_string: &String, dirs_to_check: Vec<String>) 
     possible_paths
 }
 
-/// TODO finish comment
+/// Function that is run in Python.
 #[pyfunction]
 fn find_save_path(game_name: String, dirs_to_check: Vec<String>) -> PyResult<String> {
     // finds possible save paths
-    let paths = find_possible_save_paths(&game_name, dirs_to_check);
+    let paths = find_possible_save_paths(game_name, dirs_to_check);
     let total_paths = paths.len();
     let mut best_path = "".to_string();
     if total_paths == 1 {
@@ -120,6 +125,13 @@ fn save_search(_py: Python, m: &PyModule) -> PyResult<()> {
 #[cfg(test)]
 mod game_save_search_tests {
     use super::*;
+
+    #[test]
+    fn scoring_test() {
+        let path = "c:/users/michael/appdata/local/teardown".to_string();
+        let score = score_path(path);
+        assert_eq!(score, 225);
+    }
 
     fn find_dirs_to_check() -> Vec<String> {
         let dirs_to_check = vec![
