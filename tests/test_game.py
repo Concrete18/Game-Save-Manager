@@ -5,7 +5,7 @@ import unittest
 class TestGame(unittest.TestCase):
 
     backup_path = "Save Backup"
-    db_loc = "test\\testing.db"
+    db_loc = "tests\\testing.db"
 
     def test_set(self):
         game = Game(self.backup_path, self.db_loc)
@@ -34,7 +34,7 @@ class TestGame(unittest.TestCase):
     def test_convert_size(self):
         main = Game(self.backup_path, self.db_loc)
         self.assertEqual(
-            main.get_dir_size("test\Folder Test\Folder Example"), "124.0 B"
+            main.get_dir_size("tests\Folder Test\Folder Example"), "124.0 B"
         )
         self.assertEqual(main.get_dir_size("ValueError"), "0 bits")
 
