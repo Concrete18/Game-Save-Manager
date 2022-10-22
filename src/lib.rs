@@ -1,12 +1,6 @@
 use pyo3::prelude::*;
 use walkdir::WalkDir;
 
-// removes whitespace
-// TODO test versus replace
-fn remove_whitespace(s: &str) -> String {
-    s.split_whitespace().collect()
-}
-
 /// Finds matches for `search_string` in `path`.
 fn search_path(path: String, search_string: String) -> String {
     let mut found_path = "".to_string();
@@ -18,7 +12,7 @@ fn search_path(path: String, search_string: String) -> String {
         let cur_path = String::from(path.path().to_string_lossy()).to_lowercase();
         // creates path variations
         let with_space = search_string.to_lowercase();
-        let without_space = remove_whitespace(&with_space);
+        let without_space = with_space.replace(" ", "");
         let with_underscore = with_space.replace(" ", "_");
         // sets return value
         if cur_path.contains(&with_space) {
@@ -102,7 +96,7 @@ fn find_possible_save_paths(search_string: String, dirs_to_check: Vec<String>) -
 
 /// Function that is run in Python.
 #[pyfunction]
-fn find_save_path(game_name: String, dirs_to_check: Vec<String>) -> PyResult<String> {
+pub fn find_save_path(game_name: String, dirs_to_check: Vec<String>) -> PyResult<String> {
     // finds possible save paths
     let paths = find_possible_save_paths(game_name, dirs_to_check);
     let total_paths = paths.len();
