@@ -16,7 +16,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("find_save_path", |b| {
         b.iter(|| {
             find_save_path(
-                black_box("Vampire Survivor".to_string()),
+                black_box("Cyberpunk 2077".to_string()),
                 black_box(dirs_to_check.clone()),
             )
             .unwrap();
