@@ -12,14 +12,13 @@ pub fn search_path(path: String, search_string: String) -> String {
         let cur_path = String::from(path.path().to_string_lossy()).to_lowercase();
         // creates path variations
         let with_space = search_string.to_lowercase();
-        let without_space = with_space.replace(" ", "");
-        let with_underscore = with_space.replace(" ", "_");
+        let without_space = with_space.replace(' ', "");
+        let with_underscore = with_space.replace(' ', "_");
         // sets return value
-        if cur_path.contains(&with_space) {
-            found_path = cur_path;
-        } else if cur_path.contains(&without_space) {
-            found_path = cur_path;
-        } else if cur_path.contains(&with_underscore) {
+        if cur_path.contains(&with_space)
+            || cur_path.contains(&without_space)
+            || cur_path.contains(&with_underscore)
+        {
             found_path = cur_path;
         }
     }
@@ -61,10 +60,10 @@ pub fn score_path(path: String) -> i32 {
         let cur_path = String::from(entry.path().to_string_lossy()).to_lowercase();
         // TODO test switching to looping through score_pos here
         if any_val_in_string(cur_path, score_pos) {
-            total_score = total_score + 25
+            total_score += 25
         }
     }
-    return total_score;
+    total_score
 }
 
 /// Finds the path that most likely leads to the games save folder by scoring each path.
@@ -78,7 +77,7 @@ pub fn pick_best_path(paths: Vec<String>) -> String {
             best_path = path;
         }
     }
-    return best_path.to_string();
+    best_path.to_string()
 }
 
 /// TODO finish docstring
@@ -87,7 +86,7 @@ pub fn find_possible_save_paths(search_string: String, dirs_to_check: Vec<String
     let mut possible_paths = Vec::new();
     for dir in dirs_to_check {
         let found_path = search_path(dir, search_string.to_string());
-        if found_path.len() > 0 {
+        if !found_path.is_empty() {
             possible_paths.push(found_path);
         }
     }
@@ -100,13 +99,12 @@ pub fn find_save_path(game_name: String, dirs_to_check: Vec<String>) -> PyResult
     // finds possible save paths
     let paths = find_possible_save_paths(game_name, dirs_to_check);
     let total_paths = paths.len();
-    let mut best_path = "".to_string();
-    if total_paths == 1 {
-        best_path = paths[0].clone();
-    } else if total_paths > 1 {
-        best_path = pick_best_path(paths);
-    }
-    Ok(best_path.to_string().replace("\\", "/"))
+    let best_path = match total_paths {
+        0 => "".to_string(),
+        1 => paths[0].clone(),
+        _ => pick_best_path(paths),
+    };
+    Ok(best_path.replace('\\', "/"))
 }
 
 /// A Python module implemented in Rust.
