@@ -109,7 +109,7 @@ pub fn find_save_path(game_name: String, dirs_to_check: Vec<String>) -> PyResult
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn save_search(_py: Python, m: &PyModule) -> PyResult<()> {
+fn save_searcher(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(find_save_path, m)?)?;
     Ok(())
 }
