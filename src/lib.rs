@@ -93,11 +93,25 @@ pub fn find_possible_save_paths(search_string: String, dirs_to_check: Vec<String
     possible_paths
 }
 
+pub fn to_alphanumeric(string: String) -> String {
+    let mut cleaned_string = String::new();
+    for char in string.chars() {
+        if char.is_alphanumeric() || char == ' ' {
+            cleaned_string.push(char)
+        }
+    }
+    if cleaned_string.is_empty() {
+        return string;
+    }
+    cleaned_string
+}
+
 /// Function that is run in Python.
 #[pyfunction]
 pub fn find_save_path(game_name: String, dirs_to_check: Vec<String>) -> PyResult<String> {
+    let cleaned_name = to_alphanumeric(game_name);
     // finds possible save paths
-    let paths = find_possible_save_paths(game_name, dirs_to_check);
+    let paths = find_possible_save_paths(cleaned_name, dirs_to_check);
     let total_paths = paths.len();
     let best_path = match total_paths {
         0 => "".to_string(),
