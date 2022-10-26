@@ -60,7 +60,7 @@ pub fn score_path(path: String) -> i32 {
         let cur_path = String::from(entry.path().to_string_lossy()).to_lowercase();
         // TODO test switching to looping through score_pos here
         if any_val_in_string(cur_path, score_pos) {
-            total_score += 25
+            total_score += 25;
         }
     }
     total_score
