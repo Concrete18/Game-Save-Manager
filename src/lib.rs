@@ -93,20 +93,48 @@ pub fn find_possible_save_paths(search_string: String, dirs_to_check: Vec<String
     possible_paths
 }
 
+// trait TakeRandom<T> {
+//     fn take_random_item(self: &mut Self) -> T;
+// }
+
+// impl<T> TakeRandom<T> for Vec<T> {
+//     fn take_random_item(self: &mut Self) -> T {
+//         let mut rng = rand::thread_rng();
+//         let i = rng.gen_range(0..self.len());
+//         self.swap_remove(i)
+//     }
+// }
+
+// trait ToAlphanumeric<T> {
+//     fn to_alphanumeric(self: &mut Self) -> T;
+// }
+
+// impl<String> ToAlphanumeric<String> for String {
+//     fn to_alphanumeric(self: &mut Self) -> String {
+//         let mut cleaned_string = String::new();
+//         for char in String.chars() {
+//             if char.is_alphanumeric() || char == ' ' {
+//                 cleaned_string.push(char)
+//             }
+//         }
+//         if cleaned_string.is_empty() {
+//             return "".to_string();
+//         } else {
+//             return cleaned_string;
+//         }
+//     }
+// }
+
 /// turns `string` into alphanumeric only.
 /// TODO make into method on string
 pub fn to_alphanumeric(string: String) -> String {
-    let mut cleaned_string = String::new();
+    let mut cleaned_string = "".to_string();
     for char in string.chars() {
         if char.is_alphanumeric() || char == ' ' {
             cleaned_string.push(char)
         }
     }
-    if cleaned_string.is_empty() {
-        return "".to_string();
-    } else {
-        return cleaned_string;
-    }
+    cleaned_string
 }
 
 /// Function that is run in Python.

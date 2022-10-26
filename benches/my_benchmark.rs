@@ -1,5 +1,4 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-
 use save_searcher::{find_save_path, to_alphanumeric};
 
 fn criterion_benchmark(c: &mut Criterion) {
@@ -13,6 +12,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         "D:/My Documents".to_string(),
         "C:/Program Files (x86)/Steam/steamapps/common".to_string(),
     ];
+
     c.bench_function("find_save_path", |b| {
         b.iter(|| {
             find_save_path(
