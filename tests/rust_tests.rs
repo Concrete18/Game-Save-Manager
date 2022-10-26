@@ -4,7 +4,7 @@ use save_searcher::*;
 fn scoring_test() {
     let path = "c:/users/michael/appdata/local/teardown".to_string();
     let score = save_searcher::score_path(path);
-    assert_eq!(score, 225);
+    assert!(score >= 225);
 }
 
 #[test]
