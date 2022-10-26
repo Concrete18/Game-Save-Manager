@@ -103,9 +103,10 @@ pub fn to_alphanumeric(string: String) -> String {
         }
     }
     if cleaned_string.is_empty() {
-        return string;
+        return "".to_string();
+    } else {
+        return cleaned_string;
     }
-    cleaned_string
 }
 
 /// Function that is run in Python.
