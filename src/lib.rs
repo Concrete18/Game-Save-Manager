@@ -93,6 +93,8 @@ pub fn find_possible_save_paths(search_string: String, dirs_to_check: Vec<String
     possible_paths
 }
 
+/// turns `string` into alphanumeric only.
+/// TODO make into method on string
 pub fn to_alphanumeric(string: String) -> String {
     let mut cleaned_string = String::new();
     for char in string.chars() {
