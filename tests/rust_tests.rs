@@ -7,6 +7,13 @@ fn scoring_test() {
     assert_eq!(score, 225);
 }
 
+#[test]
+fn convert_to_alphanumeric() {
+    let string = "Batman™: Arkham Knight".to_string();
+    let new_string = save_searcher::to_alphanumeric(string);
+    assert_eq!(new_string, "Batman Arkham Knight".to_string());
+}
+
 /// returns dirs for tests
 fn find_dirs_to_check() -> Vec<String> {
     let dirs_to_check = vec![
@@ -75,6 +82,18 @@ fn has_underscore() {
     // test vars
     let game_name = "Vampire Survivor";
     let actual_save = "c:/users/michael/appdata/roaming/vampire_survivors_data";
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
+    // run test
+    let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
+    assert_eq!(found_path.contains(&actual_save.to_string()), true);
+}
+
+#[test]
+fn contains_non_alphanumeric() {
+    // test vars
+    let game_name = "Batman™: Arkham Knight";
+    let actual_save = "d:/my documents/wb games/batman arkham knight";
     // get dirs
     let dirs_to_check = find_dirs_to_check();
     // run test
