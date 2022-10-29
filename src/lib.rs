@@ -37,7 +37,7 @@ pub fn any_val_in_string(string: String, array: [&str; 16]) -> bool {
 
 /// Scores path points based on occurrences of
 pub fn score_path(path: String) -> i32 {
-    let score_pos = [
+    const SCORE_POS: [&str; 16] = [
         "autosave",
         "quicksave",
         "manualsave",
@@ -58,8 +58,7 @@ pub fn score_path(path: String) -> i32 {
     let mut total_score = 0;
     for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
         let cur_path = String::from(entry.path().to_string_lossy()).to_lowercase();
-        // TODO test switching to looping through score_pos here
-        if any_val_in_string(cur_path, score_pos) {
+        if any_val_in_string(cur_path, SCORE_POS) {
             total_score += 25;
         }
     }
