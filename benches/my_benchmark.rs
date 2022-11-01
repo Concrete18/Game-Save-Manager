@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use save_searcher::{find_save_path, to_alphanumeric};
+use save_searcher::find_save_path;
 
 fn criterion_benchmark(c: &mut Criterion) {
     let dirs_to_check = vec![
@@ -20,12 +20,6 @@ fn criterion_benchmark(c: &mut Criterion) {
                 black_box(dirs_to_check.clone()),
             )
             .unwrap();
-        })
-    });
-
-    c.bench_function("to_alphanumeric", |b| {
-        b.iter(|| {
-            to_alphanumeric(black_box("Batman™: Arkham Knight".to_string()));
         })
     });
 }
