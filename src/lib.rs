@@ -79,9 +79,8 @@ pub fn pick_best_path(paths: Vec<String>) -> String {
     best_path.to_string()
 }
 
-/// TODO finish docstring
+/// Finds possible save paths for `search_string` within `dirs_to_check`.
 pub fn find_possible_save_paths(search_string: String, dirs_to_check: Vec<String>) -> Vec<String> {
-    // let dirs_to_check = find_dirs_to_check();
     let mut possible_paths = Vec::new();
     for dir in dirs_to_check {
         let found_path = search_path(dir, search_string.to_string());
@@ -92,40 +91,7 @@ pub fn find_possible_save_paths(search_string: String, dirs_to_check: Vec<String
     possible_paths
 }
 
-// trait TakeRandom<T> {
-//     fn take_random_item(self: &mut Self) -> T;
-// }
-
-// impl<T> TakeRandom<T> for Vec<T> {
-//     fn take_random_item(self: &mut Self) -> T {
-//         let mut rng = rand::thread_rng();
-//         let i = rng.gen_range(0..self.len());
-//         self.swap_remove(i)
-//     }
-// }
-
-// trait ToAlphanumeric<T> {
-//     fn to_alphanumeric(self: &mut Self) -> T;
-// }
-
-// impl<String> ToAlphanumeric<String> for String {
-//     fn to_alphanumeric(self: &mut Self) -> String {
-//         let mut cleaned_string = String::new();
-//         for char in String.chars() {
-//             if char.is_alphanumeric() || char == ' ' {
-//                 cleaned_string.push(char)
-//             }
-//         }
-//         if cleaned_string.is_empty() {
-//             return "".to_string();
-//         } else {
-//             return cleaned_string;
-//         }
-//     }
-// }
-
 /// turns `string` into alphanumeric only.
-/// TODO make into method on string
 pub fn to_alphanumeric(string: String) -> String {
     let mut cleaned_string = "".to_string();
     for char in string.chars() {
@@ -139,6 +105,7 @@ pub fn to_alphanumeric(string: String) -> String {
 /// Function that is run in Python.
 #[pyfunction]
 pub fn find_save_path(game_name: String, dirs_to_check: Vec<String>) -> PyResult<String> {
+    // TODO add errors
     let cleaned_name = to_alphanumeric(game_name);
     // finds possible save paths
     let paths = find_possible_save_paths(cleaned_name, dirs_to_check);
