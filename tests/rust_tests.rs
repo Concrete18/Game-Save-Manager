@@ -1,5 +1,32 @@
 use save_searcher::*;
 
+/// returns dirs for tests
+fn find_dirs_to_check() -> Vec<String> {
+    let dirs_to_check = vec![
+        "C:/Program Files (x86)/Steam/steamapps/common".to_string(),
+        "C:/Users/Michael/AppData/LocalLow".to_string(),
+        "C:/Users/Michael/AppData/Roaming".to_string(),
+        "C:/Users/Michael/AppData/Local".to_string(),
+        "C:/Users/Michael/Saved Games".to_string(),
+        "C:/Users/Michael/Documents".to_string(),
+        "D:/My Installed Games/Steam Games/steamapps/common".to_string(),
+        "D:/My Documents".to_string(),
+    ];
+    dirs_to_check
+}
+
+#[test]
+fn find_possible_save_paths() {
+    let string = "Cyberpunk 2077".to_string();
+    let dirs_to_check = find_dirs_to_check();
+    let paths = save_searcher::find_possible_save_paths(string, dirs_to_check);
+    let answer = [
+        "c:/users/michael/appdata/local\\cd projekt red\\cyberpunk 2077",
+        "c:/users/michael/saved games\\cd projekt red\\cyberpunk 2077",
+    ];
+    assert_eq!(paths, answer);
+}
+
 #[test]
 fn scoring_test() {
     let path = "c:/users/michael/appdata/local/teardown".to_string();
@@ -12,21 +39,6 @@ fn convert_to_alphanumeric() {
     let string = "Batman™: Arkham Knight".to_string();
     let new_string = save_searcher::to_alphanumeric(string);
     assert_eq!(new_string, "Batman Arkham Knight".to_string());
-}
-
-/// returns dirs for tests
-fn find_dirs_to_check() -> Vec<String> {
-    let dirs_to_check = vec![
-        "D:/My Installed Games/Steam Games/steamapps/common".to_string(),
-        "C:/Users/Michael/AppData/Local".to_string(),
-        "C:/Users/Michael/AppData/LocalLow".to_string(),
-        "C:/Users/Michael/AppData/Roaming".to_string(),
-        "C:/Users/Michael/Saved Games".to_string(),
-        "C:/Users/Michael/Documents".to_string(),
-        "D:/My Documents".to_string(),
-        "C:/Program Files (x86)/Steam/steamapps/common".to_string(),
-    ];
-    return dirs_to_check;
 }
 
 #[test]
