@@ -109,6 +109,7 @@ pub fn find_save_path(game_name: String, dirs_to_check: Vec<String>) -> PyResult
     let cleaned_name = to_alphanumeric(game_name);
     // finds possible save paths
     let paths = find_possible_save_paths(cleaned_name, dirs_to_check);
+    // determines if multiples paths need to be scored so the best path can be picked
     let total_paths = paths.len();
     let best_path = match total_paths {
         0 => "".to_string(),
