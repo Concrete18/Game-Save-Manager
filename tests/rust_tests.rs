@@ -50,7 +50,7 @@ fn in_appdata() {
     let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
-    assert!(found_path.contains(&actual_save.to_string()));
+    assert_eq!(found_path, actual_save.to_string());
 }
 
 #[test]
@@ -62,7 +62,7 @@ fn in_steamapps() {
     let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
-    assert!(found_path.contains(&actual_save.to_string()));
+    assert_eq!(found_path, actual_save.to_string());
 }
 
 #[test]
@@ -74,7 +74,7 @@ fn in_saved_games() {
     let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
-    assert!(found_path.contains(&actual_save.to_string()));
+    assert_eq!(found_path, actual_save.to_string());
 }
 
 #[test]
@@ -86,7 +86,7 @@ fn no_space() {
     let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
-    assert!(found_path.contains(&actual_save.to_string()));
+    assert_eq!(found_path, actual_save.to_string());
 }
 
 #[test]
@@ -98,7 +98,7 @@ fn has_underscore() {
     let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
-    assert!(found_path.contains(&actual_save.to_string()));
+    assert_eq!(found_path, actual_save.to_string());
 }
 
 #[test]
@@ -110,7 +110,7 @@ fn contains_non_alphanumeric() {
     let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
-    assert!(found_path.contains(&actual_save.to_string()));
+    assert_eq!(found_path, actual_save.to_string());
 }
 
 #[test]
@@ -122,19 +122,19 @@ fn mini_motorway() {
     let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
-    assert!(found_path.contains(&actual_save.to_string()));
+    assert_eq!(found_path, actual_save.to_string());
 }
 
 #[test]
 fn phantom_abyss() {
     // test vars
     let game_name = "Phantom Abyss";
-    let actual_save = "c:/users/michael/appdata/local/phantomabyss/saved";
+    let actual_save = "c:/users/michael/appdata/local/phantomabyss";
     // get dirs
     let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
-    assert!(found_path.contains(&actual_save.to_string()));
+    assert_eq!(found_path, actual_save.to_string());
 }
 
 #[test]
@@ -146,7 +146,7 @@ fn desperados_3() {
     let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
-    assert!(found_path.contains(&actual_save.to_string()));
+    assert_eq!(found_path, actual_save.to_string());
 }
 
 #[test]
@@ -158,7 +158,7 @@ fn manifold_garden() {
     let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
-    assert!(found_path.contains(&actual_save.to_string()));
+    assert_eq!(found_path, actual_save.to_string());
 }
 
 #[test]
@@ -170,17 +170,17 @@ fn dishonored_2() {
     let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
-    assert!(found_path.contains(&actual_save.to_string()));
+    assert_eq!(found_path, actual_save.to_string());
 }
 
 #[test]
 fn timberborn() {
     // test vars
     let game_name = "Timberborn";
-    let actual_save = "d:/my documents/timberborn/saves";
+    let actual_save = "d:/my documents/timberborn";
     // get dirs
     let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
-    assert!(found_path.contains(&actual_save.to_string()));
+    assert_eq!(found_path, actual_save.to_string());
 }
