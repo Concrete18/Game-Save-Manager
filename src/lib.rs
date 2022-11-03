@@ -2,8 +2,8 @@ use pyo3::prelude::*;
 use walkdir::WalkDir;
 
 /// Finds matches for `search_string` in `path`.
-pub fn search_path(path: String, search_string: String) -> String {
-    let mut found_path = "".to_string();
+pub fn search_path(path: String, search_string: String) -> Vec<String> {
+    let mut found_paths: Vec<String> = Vec::new();
     for path in WalkDir::new(path)
         .max_depth(2)
         .into_iter()
@@ -11,18 +11,16 @@ pub fn search_path(path: String, search_string: String) -> String {
     {
         let cur_path = String::from(path.path().to_string_lossy()).to_lowercase();
         // creates path variations
-        let with_space = search_string.to_lowercase();
-        let without_space = with_space.replace(' ', "");
-        let with_underscore = with_space.replace(' ', "_");
+        let with_space_string = &search_string.to_lowercase();
+        let with_space = cur_path.contains(with_space_string);
+        let without_space = cur_path.contains(&with_space_string.replace(' ', ""));
+        let with_underscore = cur_path.contains(&with_space_string.replace(' ', "_"));
         // sets return value
-        if cur_path.contains(&with_space)
-            || cur_path.contains(&without_space)
-            || cur_path.contains(&with_underscore)
-        {
-            found_path = cur_path;
+        if with_space || without_space || with_underscore {
+            found_paths.push(cur_path);
         }
     }
-    found_path
+    found_paths
 }
 
 /// Returns true if any value in `array` is in `string`.
@@ -83,9 +81,9 @@ pub fn pick_best_path(paths: Vec<String>) -> String {
 pub fn find_possible_save_paths(search_string: String, dirs_to_check: Vec<String>) -> Vec<String> {
     let mut possible_paths = Vec::new();
     for dir in dirs_to_check {
-        let found_path = search_path(dir, search_string.to_string());
-        if !found_path.is_empty() {
-            possible_paths.push(found_path);
+        let found_paths = search_path(dir, search_string.to_string());
+        if !found_paths.is_empty() {
+            possible_paths.extend(found_paths);
         }
     }
     possible_paths
