@@ -17,4 +17,4 @@ pyo3 = { version = "0.17.1", features = ["extension-module"] }
 walkdir = "2"
 
 [dev-dependencies]
-criterion = "0.3"
+criterion = { version = "0.3", features = ["html_reports"] }
