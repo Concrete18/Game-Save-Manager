@@ -43,11 +43,11 @@ fn convert_to_alphanumeric() {
 
 #[test]
 fn in_appdata() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Teardown";
     let actual_save = "c:/users/michael/appdata/local/teardown";
-    // get dirs
-    let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
@@ -55,11 +55,11 @@ fn in_appdata() {
 
 #[test]
 fn in_steamapps() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Deep Rock Galactic";
     let actual_save = "d:/my installed games/steam games/steamapps/common/deep rock galactic";
-    // get dirs
-    let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
@@ -67,11 +67,11 @@ fn in_steamapps() {
 
 #[test]
 fn in_saved_games() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Cyberpunk 2077";
     let actual_save = "c:/users/michael/saved games/cd projekt red/cyberpunk 2077";
-    // get dirs
-    let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
@@ -79,11 +79,11 @@ fn in_saved_games() {
 
 #[test]
 fn no_space() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "The Forest";
     let actual_save = "c:/users/michael/appdata/locallow/sks/theforest";
-    // get dirs
-    let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
@@ -91,11 +91,11 @@ fn no_space() {
 
 #[test]
 fn has_underscore() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Vampire Survivor";
     let actual_save = "c:/users/michael/appdata/roaming/vampire_survivors_data";
-    // get dirs
-    let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
@@ -103,11 +103,11 @@ fn has_underscore() {
 
 #[test]
 fn contains_non_alphanumeric() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Batman™: Arkham Knight";
     let actual_save = "d:/my documents/wb games/batman arkham knight";
-    // get dirs
-    let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
@@ -115,11 +115,11 @@ fn contains_non_alphanumeric() {
 
 #[test]
 fn mini_motorway() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Mini Motorways";
     let actual_save = "c:/users/michael/appdata/locallow/dinosaur polo club/mini motorways";
-    // get dirs
-    let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
@@ -127,11 +127,11 @@ fn mini_motorway() {
 
 #[test]
 fn phantom_abyss() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Phantom Abyss";
     let actual_save = "c:/users/michael/appdata/local/phantomabyss";
-    // get dirs
-    let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
@@ -139,11 +139,11 @@ fn phantom_abyss() {
 
 #[test]
 fn desperados_3() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Desperados III";
     let actual_save = "c:/users/michael/appdata/local/desperados iii";
-    // get dirs
-    let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
@@ -151,11 +151,11 @@ fn desperados_3() {
 
 #[test]
 fn manifold_garden() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Manifold Garden";
     let actual_save = "c:/users/michael/appdata/locallow/william chyr studio/manifold garden";
-    // get dirs
-    let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
@@ -163,11 +163,11 @@ fn manifold_garden() {
 
 #[test]
 fn dishonored_2() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Dishonored 2";
     let actual_save = "c:/users/michael/saved games/arkane studios/dishonored2";
-    // get dirs
-    let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
@@ -175,11 +175,11 @@ fn dishonored_2() {
 
 #[test]
 fn timberborn() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Timberborn";
     let actual_save = "d:/my documents/timberborn";
-    // get dirs
-    let dirs_to_check = find_dirs_to_check();
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
