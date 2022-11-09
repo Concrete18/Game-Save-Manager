@@ -128,8 +128,11 @@ class Main(Helper, Logger):
         else:
             # checks if current folder and previous backup hashes are identical
             game_current_hash = self.get_hash(game_save_loc)
-            if game_previous_hash == game_current_hash:
-                msg = f"{game_name} Save has not changed since last backup."
+            print(game_previous_hash, game_current_hash)
+            msg = f"{game_name} Save has not changed since last backup."
+            # TODO add note about being able force backup if pressed twice
+            last_text = self.ActionInfo.cget("text").replace("\n", "")
+            if game_previous_hash == game_current_hash and last_text != msg:
                 self.set_info_text(msg=msg)
                 self.warning_sound()
                 return
@@ -455,13 +458,22 @@ class Main(Helper, Logger):
             messagebox.showwarning(title=self.title, message=msg)
             return
         # looks for folders with the games name
-        found_dir = self.save.find_save_location(game_name)
-        if found_dir:
+        new_path = self.save.find_save_location(game_name)
+        # used to check if paths are the same
+        cur_path = self.GameSaveEntry.get().lower().replace("\\", "/")
+        print("cur_path", cur_path)
+        print("new_path", new_path)
+        if new_path in cur_path:
+            print("Correct Save")
+        else:
+            print("Incorrect Save")
+        # opens file dialog with new path if one was found or gives a warning
+        if new_path:
             self.completion_sound()
-            self.browse(found_dir)
+            self.browse(new_path)
         else:
             self.warning_sound()
-            msg = f"Failed to save for {game_name}"
+            msg = f"Failed to find save for {game_name}"
             self.logger.warning(msg)
 
     def delete_game(self):
