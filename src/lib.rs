@@ -24,8 +24,8 @@ pub fn search_path(path: String, search_string: String) -> Vec<String> {
 }
 
 /// Returns true if any value in `array` is in `string`.
-pub fn any_val_in_string(string: String, array: [&str; 16]) -> bool {
-    for item in array {
+pub fn any_val_in_string<const N: usize>(string: &str, arr: [&str; N]) -> bool {
+    for item in arr {
         if string.contains(item) {
             return true;
         }
@@ -35,17 +35,21 @@ pub fn any_val_in_string(string: String, array: [&str; 16]) -> bool {
 
 /// Scores path points based on occurrences of
 pub fn score_path(path: String) -> i32 {
-    const SCORE_POS: [&str; 16] = [
+    const SCORE_POS: [&str; 20] = [
         "autosave",
         "quicksave",
         "manualsave",
         "saveslot",
+        "SteamSaves",
+        "Backup",
         "sav.",
         ".sav",
         "config.ini",
         "userdata",
         "steam_autocloud",
         "Player.log",
+        "Player-prev.log",
+        "output_log.txt",
         "slot",
         "screenshot",
         "save",
@@ -53,11 +57,15 @@ pub fn score_path(path: String) -> i32 {
         ".dat",
         "profile",
     ];
+    const SCORE_NEG: [&str; 4] = ["nvidia", ".exe", ".dll", ".assets"];
     let mut total_score = 0;
     for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
         let cur_path = String::from(entry.path().to_string_lossy()).to_lowercase();
-        if any_val_in_string(cur_path, SCORE_POS) {
+        if any_val_in_string(&cur_path, SCORE_POS) {
             total_score += 25;
+        }
+        if any_val_in_string(&cur_path, SCORE_NEG) {
+            total_score -= 30;
         }
     }
     total_score
@@ -99,6 +107,8 @@ pub fn to_alphanumeric(string: String) -> String {
     }
     cleaned_string
 }
+
+// TODO move out of file
 
 /// Function that is run in Python.
 #[pyfunction]
