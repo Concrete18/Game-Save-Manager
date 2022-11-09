@@ -51,10 +51,9 @@ class TestSmartBrowse(unittest.TestCase):
         search = SaveFinder(Game, cfg.custom_dirs, debug=False)
         game_dict = {
             "Mini Motorways": r"c:/users/michael/appdata/locallow/dinosaur polo club/mini motorways",
-            "Phantom Abyss": r"c:/users/michael/appdata/local/phantomabyss/saved",
+            "Phantom Abyss": r"c:/users/michael/appdata/local/phantomabyss",
             "Still There": r"c:/users/michael/appdata/locallow/ghostshark games/still there",
             "Factorio": r"c:/users/michael/appdata/roaming/factorio",
-            "Surviving Mars": r"c:/users/michael/appdata/roaming/surviving mars",
             "Wildfire": r"c:/users/michael/appdata/local/wildfire",
             "Teardown": r"c:/users/michael/AppData/local/teardown",
             "Desperados III": r"C:/users/michael/AppData/local/Desperados III",

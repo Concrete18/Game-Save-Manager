@@ -114,6 +114,30 @@ fn contains_non_alphanumeric() {
 }
 
 #[test]
+fn bonelab() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
+    // test vars
+    let game_name = "Bonelab";
+    let actual_save = "c:/users/michael/appdata/localLow/stress Level zero/bonelav";
+    // run test
+    let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
+    assert_eq!(found_path, actual_save.to_string());
+}
+
+#[test]
+fn outer_wilds() {
+    // get dirs
+    let dirs_to_check = find_dirs_to_check();
+    // test vars
+    let game_name = "Outer Wilds";
+    let actual_save = "c:/users/michael/appdata/locallow/mobius digital/outer wilds";
+    // run test
+    let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
+    assert_eq!(found_path, actual_save.to_string());
+}
+
+#[test]
 fn mini_motorway() {
     // get dirs
     let dirs_to_check = find_dirs_to_check();
@@ -184,3 +208,7 @@ fn timberborn() {
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
 }
+
+// TODO test bonelab with slot_0 added
+// test the following after maturin dev has run again
+// freshly frosted, rollerdrome, last call bbs and the rest below this entry
