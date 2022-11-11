@@ -17,9 +17,21 @@ pub fn search_path(path: String, search_string: String) -> Vec<String> {
         let with_underscore = cur_path.contains(&with_space_string.replace(' ', "_"));
         // sets return value
         if with_space || without_space || with_underscore {
+            // TODO make sure path is ignored if the base path already exists in found_paths
             found_paths.push(cur_path);
         }
     }
+
+    // example of duplicate places to check
+    // let test = [
+    //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic",
+    //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic\\engine",
+    //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic\\fsd",
+    //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic\\fsd.exe",
+    //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic\\manifest_debugfiles_win64.txt",
+    //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic\\manifest_nonufsfiles_win64.txt",
+    //     ];
+
     found_paths
 }
 
@@ -76,6 +88,9 @@ pub fn pick_best_path(paths: Vec<String>) -> String {
     let mut best_score = 0;
     let mut best_path = &paths[0];
     for path in &paths {
+        if path.contains('.') {
+            continue;
+        }
         let score = score_path(path.to_string());
         if score > best_score {
             best_score = score;
