@@ -23,6 +23,16 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
 
+    c.bench_function("find_save_path_with_many_paths", |b| {
+        b.iter(|| {
+            find_save_path(
+                black_box("Deep Rock Galactic".to_string()),
+                black_box(dirs_to_check.clone()),
+            )
+            .unwrap();
+        })
+    });
+
     c.bench_function("to_alphanumeric", |b| {
         b.iter(|| {
             to_alphanumeric(black_box("Batman™: Arkham Knight".to_string()));
