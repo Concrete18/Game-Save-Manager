@@ -59,7 +59,7 @@ fn in_steamapps() {
     let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Deep Rock Galactic";
-    let actual_save = "d:/my installed games/steam games/steamapps/common/deep rock galactic";
+    let actual_save = "c:/program files (x86)/steam/steamapps/common/deep rock galactic/fsd";
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
@@ -119,7 +119,7 @@ fn bonelab() {
     let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Bonelab";
-    let actual_save = "c:/users/michael/appdata/localLow/stress Level zero/bonelav";
+    let actual_save = "c:/users/michael/appdata/localLow/stress Level zero/bonelab";
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());
