@@ -1,3 +1,4 @@
+use aho_corasick::AhoCorasick;
 use pyo3::prelude::*;
 use walkdir::WalkDir;
 
@@ -21,32 +22,18 @@ pub fn search_path(path: String, search_string: String) -> Vec<String> {
             found_paths.push(cur_path);
         }
     }
-
     // example of duplicate places to check
     // let test = [
     //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic",
     //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic\\engine",
-    //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic\\fsd",
     //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic\\fsd.exe",
-    //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic\\manifest_debugfiles_win64.txt",
-    //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic\\manifest_nonufsfiles_win64.txt",
     //     ];
-
     found_paths
-}
-
-/// Returns true if any value in `array` is in `string`.
-pub fn any_val_in_string<const N: usize>(string: &str, arr: [&str; N]) -> bool {
-    for item in arr {
-        if string.contains(item) {
-            return true;
-        }
-    }
-    false
 }
 
 /// Scores path points based on occurrences of
 pub fn score_path(path: String) -> i32 {
+    // positive scoring array
     const SCORE_POS: [&str; 20] = [
         "autosave",
         "quicksave",
@@ -69,14 +56,20 @@ pub fn score_path(path: String) -> i32 {
         ".dat",
         "profile",
     ];
+    let ac_pos = AhoCorasick::new(SCORE_POS);
+    // negative scoring array
     const SCORE_NEG: [&str; 4] = ["nvidia", ".exe", ".dll", ".assets"];
+    let ac_neg = AhoCorasick::new(SCORE_NEG);
+    // get total score
     let mut total_score = 0;
     for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
         let cur_path = String::from(entry.path().to_string_lossy()).to_lowercase();
-        if any_val_in_string(&cur_path, SCORE_POS) {
+
+        for _match in ac_pos.find_iter(&cur_path) {
             total_score += 25;
         }
-        if any_val_in_string(&cur_path, SCORE_NEG) {
+
+        for _match in ac_neg.find_iter(&cur_path) {
             total_score -= 30;
         }
     }
