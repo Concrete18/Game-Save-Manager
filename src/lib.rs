@@ -1,15 +1,10 @@
+use aho_corasick::AhoCorasick;
 use pyo3::prelude::*;
 use walkdir::WalkDir;
 
-// removes whitespace
-// TODO test versus replace
-fn remove_whitespace(s: &str) -> String {
-    s.split_whitespace().collect()
-}
-
-/// finds
-fn search_path(path: String, search_string: String) -> String {
-    let mut found_path = "".to_string();
+/// Finds matches for `search_string` in `path`.
+pub fn search_path(path: String, search_string: String) -> Vec<String> {
+    let mut found_paths: Vec<String> = Vec::new();
     for path in WalkDir::new(path)
         .max_depth(2)
         .into_iter()
@@ -17,42 +12,43 @@ fn search_path(path: String, search_string: String) -> String {
     {
         let cur_path = String::from(path.path().to_string_lossy()).to_lowercase();
         // creates path variations
-        let with_space = search_string.to_lowercase();
-        let without_space = remove_whitespace(&with_space);
-        let with_underscore = with_space.replace(" ", "_");
+        let with_space_string = &search_string.to_lowercase();
+        let with_space = cur_path.contains(with_space_string);
+        let without_space = cur_path.contains(&with_space_string.replace(' ', ""));
+        let with_underscore = cur_path.contains(&with_space_string.replace(' ', "_"));
         // sets return value
-        if cur_path.contains(&with_space) {
-            found_path = cur_path;
-        } else if cur_path.contains(&without_space) {
-            found_path = cur_path;
-        } else if cur_path.contains(&with_underscore) {
-            found_path = cur_path;
+        if with_space || without_space || with_underscore {
+            // TODO make sure path is ignored if the base path already exists in found_paths
+            found_paths.push(cur_path);
         }
     }
-    found_path
+    // example of duplicate places to check
+    // let test = [
+    //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic",
+    //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic\\engine",
+    //         "c:/program files (x86)/steam/steamapps/common\\deep rock galactic\\fsd.exe",
+    //     ];
+    found_paths
 }
 
-fn any_val_in_string(string: String, array: [&str; 16]) -> bool {
-    for item in array {
-        if string.contains(item) {
-            return true;
-        }
-    }
-    false
-}
-
-fn score_path(path: String) -> i32 {
-    let score_pos = [
+/// Scores path points based on occurrences of
+pub fn score_path(path: String) -> i32 {
+    // positive scoring array
+    const SCORE_POS: [&str; 20] = [
         "autosave",
         "quicksave",
         "manualsave",
         "saveslot",
+        "SteamSaves",
+        "Backup",
         "sav.",
         ".sav",
         "config.ini",
         "userdata",
         "steam_autocloud",
         "Player.log",
+        "Player-prev.log",
+        "output_log.txt",
         "slot",
         "screenshot",
         "save",
@@ -60,166 +56,88 @@ fn score_path(path: String) -> i32 {
         ".dat",
         "profile",
     ];
+    let ac_pos = AhoCorasick::new(SCORE_POS);
+    // negative scoring array
+    const SCORE_NEG: [&str; 4] = ["nvidia", ".exe", ".dll", ".assets"];
+    let ac_neg = AhoCorasick::new(SCORE_NEG);
+    // get total score
     let mut total_score = 0;
     for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
         let cur_path = String::from(entry.path().to_string_lossy()).to_lowercase();
-        if any_val_in_string(cur_path, score_pos) {
-            total_score = total_score + 25
+
+        for _match in ac_pos.find_iter(&cur_path) {
+            total_score += 25;
+        }
+
+        for _match in ac_neg.find_iter(&cur_path) {
+            total_score -= 30;
         }
     }
-    return total_score;
+    total_score
 }
 
-fn pick_best_path(paths: Vec<String>) -> String {
+/// Finds the path that most likely leads to the games save folder by scoring each path.
+pub fn pick_best_path(paths: Vec<String>) -> String {
     let mut best_score = 0;
     let mut best_path = &paths[0];
     for path in &paths {
+        if path.contains('.') {
+            continue;
+        }
         let score = score_path(path.to_string());
         if score > best_score {
             best_score = score;
             best_path = path;
         }
     }
-    return best_path.to_string();
+    best_path.to_string()
 }
 
-fn find_possible_save_paths(search_string: &String, dirs_to_check: Vec<String>) -> Vec<String> {
-    // let dirs_to_check = find_dirs_to_check();
+/// Finds possible save paths for `search_string` within `dirs_to_check`.
+pub fn find_possible_save_paths(search_string: String, dirs_to_check: Vec<String>) -> Vec<String> {
     let mut possible_paths = Vec::new();
     for dir in dirs_to_check {
-        let found_path = search_path(dir, search_string.to_string());
-        if found_path.len() > 0 {
-            possible_paths.push(found_path);
+        let found_paths = search_path(dir, search_string.to_string());
+        if !found_paths.is_empty() {
+            possible_paths.extend(found_paths);
         }
     }
     possible_paths
 }
 
-/// TODO finish comment
-#[pyfunction]
-fn find_save_path(game_name: String, dirs_to_check: Vec<String>) -> PyResult<String> {
-    // finds possible save paths
-    let paths = find_possible_save_paths(&game_name, dirs_to_check);
-    let total_paths = paths.len();
-    let mut best_path = "".to_string();
-    if total_paths == 1 {
-        best_path = paths[0].clone();
-    } else if total_paths > 1 {
-        best_path = pick_best_path(paths);
+/// turns `string` into alphanumeric only.
+pub fn to_alphanumeric(string: String) -> String {
+    let mut cleaned_string = "".to_string();
+    for char in string.chars() {
+        if char.is_alphanumeric() || char == ' ' {
+            cleaned_string.push(char)
+        }
     }
-    Ok(best_path.to_string().replace("\\", "/"))
+    cleaned_string
+}
+
+// TODO move out of file
+
+/// Function that is run in Python.
+#[pyfunction]
+pub fn find_save_path(game_name: String, dirs_to_check: Vec<String>) -> PyResult<String> {
+    // TODO add errors
+    let cleaned_name = to_alphanumeric(game_name);
+    // finds possible save paths
+    let paths = find_possible_save_paths(cleaned_name, dirs_to_check);
+    // determines if multiples paths need to be scored so the best path can be picked
+    let total_paths = paths.len();
+    let best_path = match total_paths {
+        0 => "".to_string(),
+        1 => paths[0].clone(),
+        _ => pick_best_path(paths),
+    };
+    Ok(best_path.replace('\\', "/"))
 }
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn save_search(_py: Python, m: &PyModule) -> PyResult<()> {
+fn save_searcher(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(find_save_path, m)?)?;
     Ok(())
-}
-
-#[cfg(test)]
-mod game_save_search_tests {
-    use super::*;
-
-    fn find_dirs_to_check() -> Vec<String> {
-        let dirs_to_check = vec![
-            "D:/My Installed Games/Steam Games/steamapps/common".to_string(),
-            "C:/Users/Michael/AppData/Local".to_string(),
-            "C:/Users/Michael/AppData/LocalLow".to_string(),
-            "C:/Users/Michael/AppData/Roaming".to_string(),
-            "C:/Users/Michael/Saved Games".to_string(),
-            "C:/Users/Michael/Documents".to_string(),
-            "D:/My Documents".to_string(),
-            "C:/Program Files (x86)/Steam/steamapps/common".to_string(),
-        ];
-        return dirs_to_check;
-    }
-
-    #[test]
-    fn in_appdata() {
-        let dirs_to_check = find_dirs_to_check();
-        let found_path = find_save_path("Teardown".to_string(), dirs_to_check).unwrap();
-        let actual_path = "c:/users/michael/appdata/local/teardown".to_string();
-        println!("Found: {found_path}\nActual: {actual_path}");
-        assert_eq!(found_path.contains(&actual_path), true);
-    }
-
-    #[test]
-    fn in_steamapps() {
-        let dirs_to_check = find_dirs_to_check();
-        let found_path = find_save_path("Deep Rock Galactic".to_string(), dirs_to_check).unwrap();
-        let actual_path =
-            "d:/my installed games/steam games/steamapps/common/deep rock galactic".to_string();
-        println!("Found: {found_path}\nActual: {actual_path}");
-        assert_eq!(found_path.contains(&actual_path), true);
-    }
-
-    #[test]
-    fn in_saved_games() {
-        let dirs_to_check = find_dirs_to_check();
-        let found_path = find_save_path("Cyberpunk 2077".to_string(), dirs_to_check).unwrap();
-        let actual_path = "c:/users/michael/saved games/cd projekt red/cyberpunk 2077".to_string();
-        println!("Found: {found_path}\nActual: {actual_path}");
-        assert_eq!(found_path.contains(&actual_path), true);
-    }
-
-    #[test]
-    fn no_space() {
-        let dirs_to_check = find_dirs_to_check();
-        let found_path = find_save_path("The Forest".to_string(), dirs_to_check).unwrap();
-        let actual_path = "c:/users/michael/appdata/locallow/sks/theforest".to_string();
-        println!("Found: {found_path}\nActual: {actual_path}");
-        assert_eq!(found_path.contains(&actual_path), true);
-    }
-
-    #[test]
-    fn has_underscore() {
-        let dirs_to_check = find_dirs_to_check();
-        let found_path = find_save_path("Vampire Survivor".to_string(), dirs_to_check).unwrap();
-        let actual_path = "c:/users/michael/appdata/roaming/vampire_survivors_data".to_string();
-        println!("Found: {found_path}\nActual: {actual_path}");
-        assert_eq!(found_path.contains(&actual_path), true);
-    }
-
-    #[test]
-    fn group_check() {
-        let games = [
-            (
-                "Mini Motorways",
-                "c:/users/michael/appdata/locallow/dinosaur polo club/mini motorways",
-            ),
-            (
-                "Phantom Abyss",
-                "c:/users/michael/appdata/local/phantomabyss/saved",
-            ),
-            (
-                "Still There",
-                "c:/users/michael/appdata/locallow/ghostshark games/still there",
-            ),
-            ("Wildfire", "c:/users/michael/appdata/local/wildfire"),
-            (
-                "Desperados III",
-                "c:/users/michael/appdata/local/desperados iii",
-            ),
-            (
-                "Manifold Garden",
-                "c:/users/michael/appdata/locallow/william chyr studio/manifold garden",
-            ),
-            (
-                "Boneworks",
-                "c:/users/michael/appdata/locallow/stress level zero/boneworks",
-            ),
-            (
-                "Dishonored 2",
-                "c:/users/michael/saved games/arkane studios/dishonored2",
-            ),
-            ("Timberborn", "d:/my documents/timberborn/saves"),
-        ];
-        for (game, actual_path) in games {
-            let dirs_to_check = find_dirs_to_check();
-            let found_path = find_save_path(game.to_string(), dirs_to_check).unwrap();
-            println!("\nFound: {found_path}\nActual: {actual_path}\n");
-            assert_eq!(found_path.contains(&actual_path.to_string()), true);
-        }
-    }
 }

@@ -1,13 +1,21 @@
 [package]
-name = "save_search"
-version = "0.1.0"
+name = "save_searcher"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "save_search"
-crate-type = ["cdylib"]
+name = "save_searcher"
+crate-type = ["cdylib", "rlib"]
+
+[[bench]]
+name = "my_benchmark"
+harness = false
 
 [dependencies]
 pyo3 = { version = "0.17.1", features = ["extension-module"] }
 walkdir = "2"
+aho-corasick = "*"
+
+[dev-dependencies]
+criterion = { version = "0.3", features = ["html_reports"] }

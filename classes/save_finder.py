@@ -1,6 +1,6 @@
 from classes.logger import Logger
 import os, requests, re, os, sys, getpass
-import save_search
+import save_searcher
 
 # TODO rename class
 class SaveFinder(Logger):
@@ -104,7 +104,7 @@ class SaveFinder(Logger):
         """
         Runs a Rust version of game save search.
         """
-        path = save_search.find_save_path(full_game_name, self.save_dirs)
+        path = save_searcher.find_save_path(full_game_name, self.save_dirs)
         # gets possible save location using app id if nothing is found
         if not path:
             appid = self.get_appid(full_game_name)
