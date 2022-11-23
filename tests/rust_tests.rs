@@ -16,10 +16,10 @@ fn find_dirs_to_check() -> Vec<String> {
 }
 
 #[test]
-fn find_possible_save_paths() {
+fn find_possible_save_paths_test() {
     let string = "Cyberpunk 2077".to_string();
     let dirs_to_check = find_dirs_to_check();
-    let paths = save_searcher::find_possible_save_paths(string, dirs_to_check);
+    let paths = find_possible_save_paths(string, dirs_to_check);
     let answer = [
         "c:/users/michael/appdata/local\\cd projekt red\\cyberpunk 2077",
         "c:/users/michael/saved games\\cd projekt red\\cyberpunk 2077",
@@ -30,14 +30,14 @@ fn find_possible_save_paths() {
 #[test]
 fn scoring_test() {
     let path = "c:/users/michael/appdata/local/teardown".to_string();
-    let score = save_searcher::score_path(path);
+    let score = score_path(path);
     assert!(score >= 225);
 }
 
 #[test]
 fn convert_to_alphanumeric() {
     let string = "Batman™: Arkham Knight".to_string();
-    let new_string = save_searcher::to_alphanumeric(string);
+    let new_string = to_alphanumeric(string);
     assert_eq!(new_string, "Batman Arkham Knight".to_string());
 }
 
