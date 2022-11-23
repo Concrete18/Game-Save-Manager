@@ -33,6 +33,14 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
 
+    c.bench_function("score_path", |b| {
+        b.iter(|| {
+            score_path(black_box(
+                "c:/program files (x86)/steam/steamapps/common/deep rock galactic".to_string(),
+            ));
+        })
+    });
+
     c.bench_function("to_alphanumeric", |b| {
         b.iter(|| {
             to_alphanumeric(black_box("Batman™: Arkham Knight".to_string()));
