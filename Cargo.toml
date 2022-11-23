@@ -15,6 +15,7 @@ harness = false
 [dependencies]
 pyo3 = { version = "0.17.1", features = ["extension-module"] }
 walkdir = "2"
+aho-corasick = "*"
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
