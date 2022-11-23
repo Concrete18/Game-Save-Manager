@@ -16,11 +16,10 @@ Made with Python 3.8.3
 
 ### Smart Browse
 
-![Image of Smart Browse](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/images/Smart%20Browse%20Progress.png)
-![Image of Smart Browse](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/images/Smart%20Browse%20Complete.png)
-
 - Smart Browse will use a game name to search for the best starting point for selecting the games save location.
 - Some games do not include the name in the save directory path so they can't be found.
+
+Written in Rust unlike the rest of the code.
 
 ### Game Search
 
