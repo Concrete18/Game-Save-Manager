@@ -13,7 +13,7 @@ os.chdir(script_dir)
 from config.config import Config
 from classes.game import Game
 from classes.logger import Logger
-from classes.helper import Helper
+from classes.helper import Helper, benchmark
 from classes.backup import Backup
 from classes.restore import Restore
 from classes.save_finder import SaveFinder
@@ -38,6 +38,7 @@ class Main(Helper, Logger):
     restore = Restore(game, backup)
     save = SaveFinder(game, cfg.custom_dirs, cfg.debug)
 
+    @benchmark
     def backup_dest_check(self):
         """
         Checks if backup destination in settings exists and asks if you want
@@ -50,7 +51,7 @@ class Main(Helper, Logger):
             if response:
                 title = "Select Save Backup Directory"
                 new_backup_dest = filedialog.askdirectory(
-                    mustexist=True, initialdir=self.script_dir, title=title
+                    mustexist=True, initialdir=script_dir, title=title
                 )
                 if os.path.exists(new_backup_dest):
                     self.cfg.backup_dest = new_backup_dest

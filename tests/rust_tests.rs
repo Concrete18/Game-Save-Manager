@@ -95,7 +95,7 @@ fn has_underscore() {
     let dirs_to_check = find_dirs_to_check();
     // test vars
     let game_name = "Vampire Survivor";
-    let actual_save = "c:/users/michael/appdata/roaming/vampire_survivors_data";
+    let actual_save = "c:/users/michael/appdata/roaming/vampire_survivors";
     // run test
     let found_path = find_save_path(game_name.to_string(), dirs_to_check).unwrap();
     assert_eq!(found_path, actual_save.to_string());

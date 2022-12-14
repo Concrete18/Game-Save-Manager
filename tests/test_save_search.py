@@ -63,7 +63,6 @@ class TestSmartBrowse(unittest.TestCase):
             "Boneworks": r"C:/users/michael/AppData/localLow/Stress Level Zero/BONEWORKS",
             "Dishonored 2": r"C:/users/michael/Saved Games/Arkane Studios/Dishonored2",
             "Cyberpunk 2077": r"C:/users/michael/Saved Games/cD Projekt Red/cyberpunk 2077",
-            "Deep Rock Galactic": r"D:/my Installed Games/Steam Games/steamapps/common/Deep Rock Galactic",
             "Timberborn": r"D:/my Documents/timberborn",
         }
         for game, actual_path in game_dict.items():
