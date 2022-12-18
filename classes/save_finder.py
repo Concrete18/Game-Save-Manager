@@ -2,6 +2,8 @@ from classes.logger import Logger
 import os, requests, re, os, sys, getpass
 import save_searcher
 
+from classes.helper import benchmark
+
 # TODO rename class
 class SaveFinder(Logger):
 
@@ -18,6 +20,7 @@ class SaveFinder(Logger):
         self.drive_letters = self.find_drive_letters()
         self.save_dirs = self.find_search_directories() + custom_dirs
 
+    @benchmark
     def find_drive_letters(self):
         """
         Finds the active drive letters for storage.
@@ -58,6 +61,7 @@ class SaveFinder(Logger):
                     directories.append(current_dir)
         return directories
 
+    @benchmark
     def get_app_list(self):
         """
         Gets the applist from the steam API
@@ -69,6 +73,7 @@ class SaveFinder(Logger):
         else:
             return None
 
+    @benchmark
     def get_appid(self, game):
         """
         Checks the Steam App list for a `game` and returns its app id if it
@@ -82,6 +87,7 @@ class SaveFinder(Logger):
                 return item["appid"]
         return None
 
+    @benchmark
     def check_userdata(self, app_id):
         """
         Checks for a save folder within the steam userdata folder by looking
@@ -100,6 +106,7 @@ class SaveFinder(Logger):
                         return found_path
         return False
 
+    @benchmark
     def find_save_location(self, full_game_name):
         """
         Runs a Rust version of game save search.

@@ -462,12 +462,12 @@ class Main(Helper, Logger):
         new_path = self.save.find_save_location(game_name)
         # used to check if paths are the same
         cur_path = self.GameSaveEntry.get().lower().replace("\\", "/")
-        print("cur_path", cur_path)
-        print("new_path", new_path)
         if new_path in cur_path:
-            print("Correct Save")
+            print("\nCorrect Save")
         else:
-            print("Incorrect Save")
+            print("\nIncorrect Save")
+            print("Current Path:", cur_path)
+            print("New Path:", new_path)
         # opens file dialog with new path if one was found or gives a warning
         if new_path:
             self.completion_sound()

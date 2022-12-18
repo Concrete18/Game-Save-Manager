@@ -2,6 +2,8 @@ from classes.logger import Logger
 import sqlite3, os, re, math
 import datetime as dt
 
+from classes.helper import benchmark
+
 
 class Game(Logger):
     def __init__(self, backup_dest, db_loc) -> None:

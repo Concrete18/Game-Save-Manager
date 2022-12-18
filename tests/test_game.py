@@ -12,7 +12,7 @@ class TestGame(unittest.TestCase):
         game.set("Dishonored 2")
         self.assertEqual(game.name, "Dishonored 2")
         save_location = (
-            r"C:\Users\Michael\Saved Games\Arkane Studios\Dishonored2\base\savegame"
+            r"C:/Users/Michael\Saved Games\Arkane Studios\Dishonored2\base\savegame"
         )
         self.assertEqual(game.save_location, save_location)
         self.assertEqual(game.filename, "Dishonored 2")
