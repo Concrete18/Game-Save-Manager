@@ -349,16 +349,21 @@ class Main(Helper, Logger):
         """
         if not self.game.selected():
             return
-        if folder_type == "Game Save":  # open game save location in explorer
-            if not os.path.isdir(self.game.save_location):
-                msg = f"Save location for {self.game.name} no longer exists"
-                messagebox.showwarning(title=self.title, message=msg)
-            subprocess.Popen(f'explorer "{self.game.save_location}"')
-        elif folder_type == "Backup":  # open game backup location in explorer
-            if not os.path.isdir(self.game.backup_loc):
-                msg = f"{self.game.name} has not been backed up yet."
-                messagebox.showwarning(title=self.title, message=msg)
-            subprocess.Popen(f'explorer "{self.game.backup_loc}"')
+        chosen_folder = None
+        error_msg = None
+        match folder_type:
+            case "Game Save":  # open game save location in explorer
+                chosen_folder = self.game.save_location
+                if not os.path.isdir(chosen_folder):
+                    error_msg = f"Save location for {self.game.name} no longer exists"
+            case "Backup":  # open game backup location in explorer
+                chosen_folder = self.game.backup_loc
+                if not os.path.isdir(chosen_folder):
+                    error_msg = f"{self.game.name} has not been backed up yet."
+        if not error_msg:
+            subprocess.Popen(f'explorer "{chosen_folder}"')
+        else:
+            messagebox.showwarning(title=self.title, message=error_msg)
 
     def add_game_to_database(self):
         """
@@ -711,6 +716,8 @@ class Main(Helper, Logger):
             self.toggle_buttons()
             if self.game.last_backup == "Never":
                 msg = f"{self.game.name} has not been backed up\n"
+            elif not os.path.exists(self.game.save_location):
+                msg = f"{self.game.name} save location is missing\n"
             else:
                 time_since = self.readable_time_since(self.game.last_backup)
                 total_size = self.game.get_dir_size(self.game.backup_loc)
@@ -805,7 +812,6 @@ class Main(Helper, Logger):
         instruction = "Select a Game\nto continue"
         self.ActionInfo = Tk.Label(self.root, text=instruction, font=(BoldBaseFont, 10))
         self.ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady=5)
-        "word".upper()
         # Main Row 2
         self.ListboxFrame = Tk.Frame(self.root)
         self.ListboxFrame.grid(
@@ -845,11 +851,7 @@ class Main(Helper, Logger):
         self.scrollbar.config(command=self.game_listbox.yview)
         # listbox fill
         self.sorted_list = self.game.sorted_games()
-        missing_games = self.game.database_check()
-        if len(missing_games) > 0:
-            self.update_listbox(missing_games)
-        else:
-            self.update_listbox()
+        self.update_listbox()
 
         # Main Row 3
         Add_Game_Frame = Tk.LabelFrame(self.root, text="Manage Games")

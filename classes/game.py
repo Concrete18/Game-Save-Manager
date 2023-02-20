@@ -20,27 +20,18 @@ class Game(Logger):
         self.cursor.execute(main + args)
         self.total_executions = 1
 
-    def database_check(self):
-        """
-        Checks for no longer existing save directories from the database and
-        allows showing the missing entries for fixing.
-        """
-        self.cursor.execute("SELECT game_name, save_location FROM games")
-        self.total_executions += 1
-        return [
-            name
-            for name, save_location in self.cursor.fetchall()
-            if not os.path.exists(save_location)
-        ]
-
     def sorted_games(self):
         """
         Sorts the game list from the SQLite database based on the last backup and then returns a list.
         """
-        self.cursor.execute("SELECT game_name FROM games ORDER BY last_backup DESC")
-        data = self.cursor.fetchall()
+        query = "SELECT game_name, save_location FROM games ORDER BY last_backup DESC"
+        self.cursor.execute(query)
+        games = self.cursor.fetchall()
         self.total_executions += 1
-        return [name[0] for name in data]
+        games_list = []
+        for name, sav_loc in games:
+            games_list.append(name)
+        return games_list
 
     @staticmethod
     def get_dir_size(directory):

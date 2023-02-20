@@ -12,7 +12,7 @@ class TestGame(unittest.TestCase):
         game.set("Dishonored 2")
         self.assertEqual(game.name, "Dishonored 2")
         save_location = (
-            r"C:/Users/Michael\Saved Games\Arkane Studios\Dishonored2\base\savegame"
+            r"C:\Users\Michael\Saved Games\Arkane Studios\Dishonored2\base\savegame"
         )
         self.assertEqual(game.save_location, save_location)
         self.assertEqual(game.filename, "Dishonored 2")
@@ -37,7 +37,3 @@ class TestGame(unittest.TestCase):
             main.get_dir_size("tests\Folder Test\Folder Example"), "124.0 B"
         )
         self.assertEqual(main.get_dir_size("ValueError"), "0 bits")
-
-    def test_database_check(self):
-        game = Game(self.backup_path, self.db_loc)
-        self.assertEqual(game.database_check(), [])
