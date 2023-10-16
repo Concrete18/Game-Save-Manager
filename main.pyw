@@ -20,7 +20,6 @@ from classes.save_finder import SaveFinder
 
 
 class Main(Helper, Logger):
-
     # config setup
     cfg = Config("config\settings.ini")
     cfg.get_settings()
@@ -644,6 +643,7 @@ class Main(Helper, Logger):
         Finds all items in the sorted_list that have the search box data in it.
         It then updates the listbox data to only include matching results.
         """
+
         # TODO test to be sure threading here does not cause issues.
         def search():
             typed = self.search_entry.get()
@@ -743,6 +743,7 @@ class Main(Helper, Logger):
             sleep(0.05)
         # BUG interface fails to exit if filedialog is left open
         # fix using subclassed filedialog commands that can close it
+        self.root.withdraw()
         self.game.close_database()
         exit()
 

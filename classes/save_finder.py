@@ -67,7 +67,7 @@ class SaveFinder(Logger):
         Gets the applist from the steam API
         """
         url = "http://api.steampowered.com/ISteamApps/GetAppList/v0002/?l=english"
-        data = requests.get(url)
+        data = requests.get(url, allow_redirects=False)
         if data.status_code == requests.codes.ok:
             return data.json()["applist"]["apps"]
         else:
@@ -113,11 +113,16 @@ class SaveFinder(Logger):
         """
         path = save_searcher.find_save_path(full_game_name, self.save_dirs)
         # gets possible save location using app id if nothing is found
-        if not path:
-            appid = self.get_appid(full_game_name)
-            path = self.check_userdata(appid).replace("\\", "/")
         if path:
             # gets directory only if path leads to a file
             if os.path.isfile(path):
                 return os.path.dirname(path)
             return path
+        else:
+            appid = self.get_appid(full_game_name)
+            path = self.check_userdata(appid)
+            print(path)
+            if type(path) == str:
+                return path.replace("\\", "/")
+            else:
+                return ""

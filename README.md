@@ -86,14 +86,15 @@ pip install -r requirements.txt
 ## Setup
 
 - Install [Rust](https://www.rust-lang.org/) on your system if you do not already have it
-- Create Python Virtual Environment using `python -m venv .env` and activate it
+- Create Python Virtual Environment using `python -m venv .env`
+- Activate the env using `.env\Scripts\activate`
 - Run `pip install -r requirements.txt`
-- Run `Maturin Develop` in order to create the rust package within the environment (Info on how I did this was found in this [Maturin Tutorial](https://www.youtube.com/watch?v=DpUlfWP_gtg&t=1s))
+- Run `maturin develop` in order to create the rust package within the environment (Info on how I did this was found in this [Maturin Tutorial](https://www.youtube.com/watch?v=DpUlfWP_gtg&t=1s))
 - Run the Save manager with the `run_game_save_manager.vbs` file. You can make a shortcut out of it to make running it easier. (This is required due to the python virtual environment)
 
-## Todo
+<!-- ## Todo
 
-- Arrow Key listbox navigation
+- Arrow Key listbox navigation -->
 
 ## Testing
 
