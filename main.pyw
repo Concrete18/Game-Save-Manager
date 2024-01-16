@@ -375,6 +375,7 @@ class Main(Helper, Logger):
             messagebox.showwarning(title=self.title, message=msg)
             return
         found_name, found_save = self.game.get_game_info(game_name)
+        # BUG ValueError: too many values to unpack (expected 2)
         if found_name != None:
             # if save_location != found_save and os.path.isdir(save_location):
             #     msg = f"{game_name} is already in the database.\nThe save path is different, would you like to update it?"
@@ -458,7 +459,7 @@ class Main(Helper, Logger):
         """
         # checks if no game name is in entry box.
         game_name = self.GameNameEntry.get()
-        if game_name == None:
+        if not game_name:
             msg = "Smart Browse requires a game name to be entered."
             messagebox.showwarning(title=self.title, message=msg)
             return
