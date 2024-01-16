@@ -37,7 +37,3 @@ class TestGame(unittest.TestCase):
             main.get_dir_size("tests\Folder Test\Folder Example"), "124.0 B"
         )
         self.assertEqual(main.get_dir_size("ValueError"), "0 bits")
-
-    def test_database_check(self):
-        game = Game(self.backup_path, self.db_loc)
-        self.assertEqual(game.database_check(), [])

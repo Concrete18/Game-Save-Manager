@@ -1,5 +1,7 @@
 import configparser, os
 
+from classes.helper import benchmark
+
 
 class Config:
     def __init__(self, config_path):
@@ -48,6 +50,7 @@ class Config:
         self.set_setting("SETTINGS", "backup_redundancy", str(redundancy))
         return redundancy
 
+    @benchmark
     def get_settings(self):
         """
         Gets the setting variables based on the ini.
