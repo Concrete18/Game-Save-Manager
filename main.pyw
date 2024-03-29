@@ -368,6 +368,7 @@ class Main(Helper, Logger):
         """
         Adds game to database using entry inputs.
         """
+        # TODO select game once it is added
         game_name = self.GameNameEntry.get()
         save_location = self.GameSaveEntry.get().replace("/", "\\")
         if len(self.game.get_filename(game_name)) == 0:
