@@ -54,8 +54,8 @@ class Main(Helper, Logger):
                 )
                 if os.path.exists(new_backup_dest):
                     self.cfg.backup_dest = new_backup_dest
-                    self.cfg.set_setting("SETTINGS", "backup_dest", new_backup_dest)
-                    self.logger.info(f"Set new backup_dest to {new_backup_dest}")
+                    self.cfg.set_setting("SETTINGS", "backup_destination", new_backup_dest)
+                    self.logger.info(f"Set new backup_destination to {new_backup_dest}")
                 else:
                     msg = "Path does not exist."
                     messagebox.showwarning(title=self.title, message=msg)

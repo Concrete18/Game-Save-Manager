@@ -55,7 +55,7 @@ shutil.get_archive_formats()
 ```ini
 [SETTINGS]
 # sets the folder name (within script dir) or full directory that you you backups to go to
-backup_dest = Save Backup
+backup_destination = Save Backup
 # determines type of compression used. Must be supported by python shutil
 compression_type = zip
 # determines how many previous backups to keep as a redundancy
