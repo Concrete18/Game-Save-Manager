@@ -111,7 +111,7 @@ maturin develop --release
 ## Shortcut Creation
 
 This section is a work in progress and may not be useful.
- 
+
 Add this to location field of a windows shortcut.
 
 ```cmd
