@@ -732,7 +732,8 @@ class Main(Helper, Logger):
                 else:
                     total_backups = 0
                 msg = (
-                    f"{self.game.name} was last backed up {time_since}\n"
+                    f"{self.game.name.strip()}\n"
+                    f"Last backed up {time_since}\n"
                     f"Game Backup Size: {total_size} from {total_backups} backups"
                 )
             self.set_info_text(msg=msg)
