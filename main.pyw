@@ -632,7 +632,7 @@ class Main(Helper, Logger):
         self.game_listbox.delete(0, Tk.END)
         for item in data:
             self.game_listbox.insert(Tk.END, item)
-        msg = "Select a Game\nto continue"
+        msg = "Select a Game\nto continue\n"
         self.set_info_text(msg=msg)
         # updates title info label
         info_text = (
