@@ -54,8 +54,10 @@ class Main(Helper, Logger):
                 )
                 if os.path.exists(new_backup_dest):
                     self.cfg.backup_dest = new_backup_dest
-                    self.cfg.set_setting("SETTINGS", "backup_dest", new_backup_dest)
-                    self.logger.info(f"Set new backup_dest to {new_backup_dest}")
+                    self.cfg.set_setting(
+                        "SETTINGS", "backup_destination", new_backup_dest
+                    )
+                    self.logger.info(f"Set new backup_destination to {new_backup_dest}")
                 else:
                     msg = "Path does not exist."
                     messagebox.showwarning(title=self.title, message=msg)
@@ -368,6 +370,7 @@ class Main(Helper, Logger):
         """
         Adds game to database using entry inputs.
         """
+        # TODO select game once it is added
         game_name = self.GameNameEntry.get()
         save_location = self.GameSaveEntry.get().replace("/", "\\")
         if len(self.game.get_filename(game_name)) == 0:
@@ -629,7 +632,7 @@ class Main(Helper, Logger):
         self.game_listbox.delete(0, Tk.END)
         for item in data:
             self.game_listbox.insert(Tk.END, item)
-        msg = "Select a Game\nto continue"
+        msg = "Select a Game\nto continue\n"
         self.set_info_text(msg=msg)
         # updates title info label
         info_text = (
@@ -680,7 +683,7 @@ class Main(Helper, Logger):
             self.game_listbox.selection_anchor(index)
             self.game_listbox.activate(index)
 
-    def unfocus_entry(self, e):
+    def unfocus_entry(self):
         """
         Resets search box to default_entry_value when it loses focus.
         """
@@ -696,7 +699,9 @@ class Main(Helper, Logger):
 
         Update -- 1 or 0 (default = 0)
         """
-        self.game.set(self.game_listbox.get(self.game_listbox.curselection()))
+        selection = self.game_listbox.curselection()
+        listbox_selection = self.game_listbox.get(selection[0])
+        self.game.set(listbox_selection)
         # ignores function if listbox is empty
         if self.game_listbox.size() == 0:
             return
@@ -727,7 +732,8 @@ class Main(Helper, Logger):
                 else:
                     total_backups = 0
                 msg = (
-                    f"{self.game.name} was last backed up {time_since}\n"
+                    f"{self.game.name.strip()}\n"
+                    f"Last backed up {time_since}\n"
                     f"Game Backup Size: {total_size} from {total_backups} backups"
                 )
             self.set_info_text(msg=msg)

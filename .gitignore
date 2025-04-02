@@ -130,7 +130,7 @@ dmypy.json
 
 # custom
 game.db
-/Save Backup
+/Game Save Backup
 /.vscode
 *.lnk
 *output.txt

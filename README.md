@@ -55,7 +55,7 @@ shutil.get_archive_formats()
 ```ini
 [SETTINGS]
 # sets the folder name (within script dir) or full directory that you you backups to go to
-backup_dest = Save Backup
+backup_destination = Save Backup
 # determines type of compression used. Must be supported by python shutil
 compression_type = zip
 # determines how many previous backups to keep as a redundancy
@@ -85,16 +85,44 @@ pip install -r requirements.txt
 
 ## Setup
 
+### Setup Steps with Explanations
+
 - Install [Rust](https://www.rust-lang.org/) on your system if you do not already have it
 - Create Python Virtual Environment using `python -m venv .env`
-- Activate the env using `.env\Scripts\activate`
+- Activate the env using `.env\Scripts\activate` or `. ../.env/bin/activate`
 - Run `pip install -r requirements.txt`
-- Run `maturin develop` in order to create the rust package within the environment (Info on how I did this was found in this [Maturin Tutorial](https://www.youtube.com/watch?v=DpUlfWP_gtg&t=1s))
+- Run `maturin develop --release`
+  ` in order to create the rust package within the environment (Info on how I did this was found in this [Maturin Tutorial](https://www.youtube.com/watch?v=DpUlfWP_gtg&t=1s))
 - Run the Save manager with the `run_game_save_manager.vbs` file. You can make a shortcut out of it to make running it easier. (This is required due to the python virtual environment)
+
+### Commands Only
+
+```bash
+python -m venv .env
+. ../.env/bin/activate
+pip install -r requirements.txt
+maturin develop --release
+```
 
 <!-- ## Todo
 
 - Arrow Key listbox navigation -->
+
+## Shortcut Creation
+
+This section is a work in progress and may not be useful.
+
+Add this to location field of a windows shortcut.
+
+```cmd
+cmd.exe /k "/env/bin/activate && python main.pyw"
+```
+
+My Example that I use.
+
+```cmd
+cmd.exe /k "d:/Dropbox/Coding/Projects/Python/1-Complete-Projects/Game_Save_Manager/.env/Scripts/activate && d:/Dropbox/Coding/Projects/Python/1-Complete-Projects/Game_Save_Manager/main.pyw"
+```
 
 ## Testing
 

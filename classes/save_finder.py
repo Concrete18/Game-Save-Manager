@@ -4,6 +4,7 @@ import save_searcher
 
 from classes.helper import benchmark
 
+
 # TODO rename class
 class SaveFinder(Logger):
 

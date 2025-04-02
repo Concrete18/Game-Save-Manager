@@ -14,7 +14,7 @@ class Config:
         Makes the ini file with default settings.
         """
         # base settings
-        self.config["SETTINGS"]["backup_dest"] = "unset"
+        self.config["SETTINGS"]["backup_destination"] = "unset"
         self.config["SETTINGS"]["compression_type"] = "zip"
         self.config["SETTINGS"]["backup_redundancy"] = "3"
         self.config["SETTINGS"]["quick_backup"] = "True"
@@ -58,7 +58,7 @@ class Config:
         if not os.path.exists(self.config_path):
             self.make_ini()
         # settings
-        self.backup_dest = self.config["SETTINGS"]["backup_dest"]
+        self.backup_dest = self.config["SETTINGS"]["backup_destination"]
         self.compression_type = self.config["SETTINGS"]["compression_type"]
         self.backup_redundancy = self.set_redundancy(
             self.config["SETTINGS"]["backup_redundancy"]
