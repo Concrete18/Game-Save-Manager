@@ -1,9 +1,9 @@
-from classes.logger import Logger
+# standard library
 from zipfile import ZipFile
 import os, shutil
 
 
-class Backup(Logger):
+class Backup:
     def __init__(self, game, compression_type) -> None:
         """
         Backup class with save backup methods.
@@ -57,18 +57,11 @@ class Backup(Logger):
                     try:
                         shutil.rmtree(file_to_delete)
                     except PermissionError:
-                        self.logger.warn(
-                            f"Failed to delete oldest save for {game_name} due to permission error."
-                        )
+
                         # tries to delete the folder again if it managed to delete the contents only
                         try:
                             os.rmdir(file_to_delete)
                         except PermissionError:
-                            self.logger.warn(
-                                f"Failed to delete empty folder for {game_name} due to permission error."
-                            )
+                            pass
                 else:
                     os.remove(file_to_delete)
-            self.logger.info(
-                f"{game_name} had more then {redundancy} Saves. Deleted oldest saves."
-            )

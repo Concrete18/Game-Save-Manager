@@ -1,14 +1,20 @@
-from main import Main  # type: ignore
+# standard library
 import datetime as dt
-import unittest
+
+# local application imports
+from main import SaveManager  # type: ignore
+
+# third-party imports
+import pytest
 
 
-class TestGameSaveManager(unittest.TestCase):
+# @pytest.mark.skip
+class TestGameSaveManager:
     def test_readable_time_since(self):
         """
         readable_time_since
         """
-        main = Main()
+        app = SaveManager()
         checked_date = dt.datetime.strptime("2021/01/01 01:00:00", "%Y/%m/%d %H:%M:%S")
         dates = {
             "2019/01/01 01:00:00": "2.0 years ago",
@@ -22,4 +28,4 @@ class TestGameSaveManager(unittest.TestCase):
             "2021/01/01 00:59:55": "5.0 seconds ago",
         }
         for date, answer in dates.items():
-            self.assertIn(main.readable_time_since(date, checked_date), answer)
+            assert app.readable_time_since(date, checked_date) in answer

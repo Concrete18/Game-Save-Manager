@@ -1,12 +1,13 @@
-from classes.logger import Logger
+# standard library
 import os, requests, re, os, sys, getpass
-import save_searcher
 
+# local application imports
 from classes.helper import benchmark
+import save_searcher
 
 
 # TODO rename class
-class SaveFinder(Logger):
+class SaveFinder:
 
     # var init
     app_list = None
@@ -28,7 +29,7 @@ class SaveFinder(Logger):
         """
         with os.popen("fsutil fsinfo drives") as data:
             letter_output = data.readlines()[1]
-        return [letters[0] for letters in re.findall("\S+", letter_output)[1:]]
+        return [letters[0] for letters in re.findall("/S+", letter_output)[1:]]
 
     def find_search_directories(self):
         """
@@ -38,6 +39,7 @@ class SaveFinder(Logger):
         # os specific settings
         platform = sys.platform
         username = getpass.getuser()
+        dirs_to_check = []
         if platform == "win32":
             dirs_to_check = [
                 rf":/Users/{username}/AppData/Local",
@@ -81,8 +83,10 @@ class SaveFinder(Logger):
         exists as entered. If the app_list has not been populated yet then it
         will be aquired first.
         """
-        if self.app_list == None:
+        if not self.app_list:
             self.app_list = self.get_app_list()
+        if not self.app_list:
+            return None
         for item in self.app_list:
             if item["name"] == game:
                 return item["appid"]
@@ -108,7 +112,7 @@ class SaveFinder(Logger):
         return False
 
     @benchmark
-    def find_save_location(self, full_game_name):
+    def find_save_location(self, full_game_name: str) -> str:
         """
         Runs a Rust version of game save search.
         """

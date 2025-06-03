@@ -14,7 +14,7 @@ class Config:
         Makes the ini file with default settings.
         """
         # base settings
-        self.config["SETTINGS"]["backup_destination"] = "unset"
+        self.config["SETTINGS"]["backup_folder"] = "unset"
         self.config["SETTINGS"]["compression_type"] = "zip"
         self.config["SETTINGS"]["backup_redundancy"] = "3"
         self.config["SETTINGS"]["quick_backup"] = "True"
@@ -58,7 +58,7 @@ class Config:
         if not os.path.exists(self.config_path):
             self.make_ini()
         # settings
-        self.backup_dest = self.config["SETTINGS"]["backup_destination"]
+        self.backup_folder = self.config["SETTINGS"]["backup_folder"]
         self.compression_type = self.config["SETTINGS"]["compression_type"]
         self.backup_redundancy = self.set_redundancy(
             self.config["SETTINGS"]["backup_redundancy"]
@@ -71,12 +71,5 @@ class Config:
         self.debug = self.config["DEBUG"].getboolean("enable_debug")
         # custom save directories
         self.custom_dirs = [
-            dir for name, dir in self.config["CUSTOM_SAVE_DIRECTORIES"].items()
+            dir for _, dir in self.config["CUSTOM_SAVE_DIRECTORIES"].items()
         ]
-
-
-if __name__ == "__main__":
-    cfg = Config("config\settings.ini")
-    cfg.get_settings()
-    # testing
-    print(cfg.backup_redundancy)

@@ -55,7 +55,7 @@ shutil.get_archive_formats()
 ```ini
 [SETTINGS]
 # sets the folder name (within script dir) or full directory that you you backups to go to
-backup_destination = Save Backup
+backup_folder = Save Backup
 # determines type of compression used. Must be supported by python shutil
 compression_type = zip
 # determines how many previous backups to keep as a redundancy
@@ -88,6 +88,7 @@ pip install -r requirements.txt
 ### Setup Steps with Explanations
 
 - Install [Rust](https://www.rust-lang.org/) on your system if you do not already have it
+  - rustc Version is 1.84.1
 - Create Python Virtual Environment using `python -m venv .env`
 - Activate the env using `.env\Scripts\activate` or `. ../.env/bin/activate`
 - Run `pip install -r requirements.txt`

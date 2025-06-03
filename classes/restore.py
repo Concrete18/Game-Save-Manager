@@ -1,8 +1,8 @@
-from classes.logger import Logger
+# standard library
 import os, shutil
 
 
-class Restore(Logger):
+class Restore:
     def __init__(self, game, backup) -> None:
         """
         Restore class with restore methods.

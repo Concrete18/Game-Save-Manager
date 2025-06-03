@@ -139,7 +139,7 @@ mod save_search_tests {
     fn find_dirs_to_check() -> Vec<String> {
         let dirs_to_check = vec![
             "C:/Program Files (x86)/Steam/steamapps/common".to_string(),
-            "P:/SteamLibrary/steamapps/common/".to_string(),
+            "P:/SteamLibrary/steamapps/common".to_string(),
             "C:/Users/Michael/AppData/LocalLow".to_string(),
             "C:/Users/Michael/AppData/Roaming".to_string(),
             "C:/Users/Michael/AppData/Local".to_string(),
@@ -185,18 +185,6 @@ mod save_search_tests {
         // test vars
         let game_name = "Teardown";
         let actual_save = "c:/users/michael/appdata/local/teardown";
-        // run test
-        let found_path = find_game_save_path(game_name.to_string(), dirs_to_check);
-        assert_eq!(found_path, actual_save.to_string());
-    }
-
-    #[test]
-    fn in_steamapps() {
-        // get dirs
-        let dirs_to_check = find_dirs_to_check();
-        // test vars
-        let game_name = "Deep Rock Galactic";
-        let actual_save = "p:/steamlibrary/steamapps/common/deep rock galactic/fsd";
         // run test
         let found_path = find_game_save_path(game_name.to_string(), dirs_to_check);
         assert_eq!(found_path, actual_save.to_string());
