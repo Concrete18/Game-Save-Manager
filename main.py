@@ -17,7 +17,6 @@ from classes.database import Database
 from classes.helper import *
 from classes.backup import Backup
 from classes.restore import Restore
-from classes.save_finder import SaveFinder
 
 
 class SaveManager:
@@ -39,7 +38,6 @@ class SaveManager:
         )
         self.backup = Backup(self.database, self.cfg.compression_type)
         self.restore = Restore(self.database, self.backup)
-        self.save = SaveFinder(self.database, self.cfg.custom_dirs, self.cfg.debug)
 
         self.cur_game = Game()
 
@@ -467,35 +465,6 @@ class SaveManager:
             self.GameSaveEntry.delete(0, Tk.END)
             self.GameSaveEntry.insert(0, save_dir)
 
-    def smart_browse(self):
-        """
-        Searches for a starting point for the save location browser.
-        """
-        # FIXME set to return due to being broken
-        return
-        # checks if no game name is in entry box.
-        game_name = self.GameNameEntry.get()
-        if not game_name:
-            msg = "Smart Browse requires a game name to be entered."
-            messagebox.showwarning(title=self.title, message=msg)
-            return
-        # looks for folders with the games name
-        new_path = self.save.find_save_location(game_name)
-        # used to check if paths are the same
-        cur_path = self.GameSaveEntry.get().lower().replace("\\", "/")
-        if new_path in cur_path:
-            print("\nCorrect Save")
-        else:
-            print("\nIncorrect Save")
-            print("Current Path:", cur_path)
-            print("New Path:", new_path)
-        # opens file dialog with new path if one was found or gives a warning
-        if new_path:
-            self.completion_sound()
-            self.browse(new_path)
-        else:
-            self.warning_sound()
-
     def delete_game(self):
         """
         Deletes selected game from SQLite Database.
@@ -897,13 +866,6 @@ class SaveManager:
         self.GameSaveEntry.grid(row=1, column=1, columnspan=3, pady=5, padx=10)
 
         browse_button_width = 13
-        SmartBrowseButton = ttk.Button(
-            Add_Game_Frame,
-            text="Smart Browse",
-            width=browse_button_width,
-            command=self.smart_browse,
-        )
-        SmartBrowseButton.grid(row=0, column=4, padx=10)
 
         BrowseButton = ttk.Button(
             Add_Game_Frame,
