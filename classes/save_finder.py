@@ -3,7 +3,8 @@ import os, requests, re, os, sys, getpass
 
 # local application imports
 from classes.helper import benchmark
-import save_searcher
+
+# import save_searcher
 
 
 # TODO rename class
@@ -116,7 +117,10 @@ class SaveFinder:
         """
         Runs a Rust version of game save search.
         """
-        path = save_searcher.find_save_path(full_game_name, self.save_dirs)
+        # FIXME commented out due to errors
+        # path = save_searcher.find_save_path(full_game_name, self.save_dirs)
+        path = ""
+
         # gets possible save location using app id if nothing is found
         if path:
             # gets directory only if path leads to a file

@@ -89,8 +89,8 @@ pip install -r requirements.txt
 
 - Install [Rust](https://www.rust-lang.org/) on your system if you do not already have it
   - rustc Version is 1.84.1
-- Create Python Virtual Environment using `python -m venv .env`
-- Activate the env using `.env\Scripts\activate` or `. ../.env/bin/activate`
+- Create Python Virtual Environment using `python -m venv .venv`
+- Activate the env using `.venv\Scripts\activate` or `. ../.venv/bin/activate`
 - Run `pip install -r requirements.txt`
 - Run `maturin develop --release`
   ` in order to create the rust package within the environment (Info on how I did this was found in this [Maturin Tutorial](https://www.youtube.com/watch?v=DpUlfWP_gtg&t=1s))
@@ -99,8 +99,8 @@ pip install -r requirements.txt
 ### Commands Only
 
 ```bash
-python -m venv .env
-. ../.env/bin/activate
+python -m venv .venv
+. ../.venv/bin/activate
 pip install -r requirements.txt
 maturin develop --release
 ```
@@ -122,7 +122,7 @@ cmd.exe /k "/env/bin/activate && python main.pyw"
 My Example that I use.
 
 ```cmd
-cmd.exe /k "d:/Dropbox/Coding/Projects/Python/1-Complete-Projects/Game_Save_Manager/.env/Scripts/activate && d:/Dropbox/Coding/Projects/Python/1-Complete-Projects/Game_Save_Manager/main.pyw"
+cmd.exe /k "d:/Dropbox/Coding/Projects/Python/1-Complete-Projects/Game_Save_Manager/.venv/Scripts/activate && d:/Dropbox/Coding/Projects/Python/1-Complete-Projects/Game_Save_Manager/main.pyw"
 ```
 
 ## Testing
