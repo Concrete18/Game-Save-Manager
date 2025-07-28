@@ -14,19 +14,9 @@ Made with Python 3.8.3
 - Easily add, delete and update games in the backup database using the interface.
 - Selecting games shows useful info such as number of saves, size they all take combined and time since last backup.
 
-### Smart Browse
-
-- Smart Browse will use a game name to search for the best starting point for selecting the games save location.
-- Some games do not include the name in the save directory path so they can't be found.
-
-Written in Rust unlike the rest of the code.
-
 ### Game Search
 
-![Image of Smart Browse](https://raw.githubusercontent.com/Concrete18/Game-Save-Manager/master/images/Search%20Example.png)
-
 - Full game database search above game list.
-- Instant search results as you type without having to hit enter.
 
 ### Backup Compression
 
@@ -48,7 +38,6 @@ shutil.get_archive_formats()
 - File copying and other manipulations
 - Object oriented design
 - Full Logging System for most all actions and errors
-- Rust Code used as a Python Package via Maturin for speeding up the save search
 
 ## Config
 
@@ -81,48 +70,6 @@ d_drive_steam = D:/My Installed Games/Steam Games/steamapps/common
 
 ```pip
 pip install -r requirements.txt
-```
-
-## Setup
-
-### Setup Steps with Explanations
-
-- Install [Rust](https://www.rust-lang.org/) on your system if you do not already have it
-  - rustc Version is 1.84.1
-- Create Python Virtual Environment using `python -m venv .venv`
-- Activate the env using `.venv\Scripts\activate` or `. ../.venv/bin/activate`
-- Run `pip install -r requirements.txt`
-- Run `maturin develop --release`
-  ` in order to create the rust package within the environment (Info on how I did this was found in this [Maturin Tutorial](https://www.youtube.com/watch?v=DpUlfWP_gtg&t=1s))
-- Run the Save manager with the `run_game_save_manager.vbs` file. You can make a shortcut out of it to make running it easier. (This is required due to the python virtual environment)
-
-### Commands Only
-
-```bash
-python -m venv .venv
-. ../.venv/bin/activate
-pip install -r requirements.txt
-maturin develop --release
-```
-
-<!-- ## Todo
-
-- Arrow Key listbox navigation -->
-
-## Shortcut Creation
-
-This section is a work in progress and may not be useful.
-
-Add this to location field of a windows shortcut.
-
-```cmd
-cmd.exe /k "/env/bin/activate && python main.pyw"
-```
-
-My Example that I use.
-
-```cmd
-cmd.exe /k "d:/Dropbox/Coding/Projects/Python/1-Complete-Projects/Game_Save_Manager/.venv/Scripts/activate && d:/Dropbox/Coding/Projects/Python/1-Complete-Projects/Game_Save_Manager/main.pyw"
 ```
 
 ## Testing
