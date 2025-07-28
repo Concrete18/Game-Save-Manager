@@ -83,7 +83,16 @@ class Database:
         Sets the current game to `game_name`.
         """
         prev_data = self.get_game_info(game_name)
-        return Game(game_name, prev_data, self.backup_folder)
+        self.save_location = prev_data.get("save_location", "")
+        self.last_backup = prev_data.get("last_backup", "")
+        self.prev_backup_hash = prev_data.get("previous_backup_hash", "")
+        return Game(
+            game_name,
+            self.save_location,
+            self.last_backup,
+            self.prev_backup_hash,
+            self.backup_folder,
+        )
 
     def update(self, old_name, new_name, new_save):
         """

@@ -10,19 +10,20 @@ class Game:
     def __init__(
         self,
         name: str = "",
-        prev_data: dict = {},
+        save_location: str = "",
+        last_backup: str = "",
+        prev_backup_hash: str = "",
         backup_folder: str = "",
     ) -> None:
         self.name = name.strip()
-        self.save_location = prev_data.get("save_location", "")
-        self.last_backup = prev_data.get("last_backup", "")
-        self.prev_backup_hash = prev_data.get("previous_backup_hash", "")
-
+        self.save_location = save_location
+        self.last_backup = last_backup
+        self.prev_backup_hash = prev_backup_hash
         self.backup_folder = backup_folder
         self.backup_path = os.path.join(self.backup_folder, self.filename)
 
     def __str__(self) -> str:
-        return f"Game({self.name}, {self.save_location})"
+        return f'Game("{self.name}", "{self.save_location}")'
 
     @property
     def filename(self) -> str:

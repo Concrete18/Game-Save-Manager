@@ -380,23 +380,15 @@ class SaveManager:
         """
         Adds game to database using entry inputs.
         """
-        # TODO select game once it is added
         game_name = self.GameNameEntry.get()
         save_location = self.GameSaveEntry.get().replace("/", "\\")
+        self.cur_game = Game(name=game_name, save_location=save_location)
         if len(self.cur_game.filename) == 0:
             msg = f"Game name has no legal characters for a filename"
             messagebox.showwarning(title=self.title, message=msg)
             return
         game_dict = self.database.get_game_info(game_name)
-        # BUG ValueError: too many values to unpack (expected 2)
-        if not game_dict.get("save_location"):
-            # if save_location != found_save and os.path.isdir(save_location):
-            #     msg = f"{game_name} is already in the database.\nThe save path is different, would you like to update it?"
-            #     print(save_location)
-            #     if messagebox.askyesnocancel(title=self.title, message=msg):
-            #         # BUG this wont work
-            #         self.database.update(found_name, found_name, save_location)
-            # else:
+        if game_dict.get("save_location"):
             msg = f"Can't add {game_name} to database.\nGame already exists."
             messagebox.showwarning(title=self.title, message=msg)
         else:
@@ -848,7 +840,7 @@ class SaveManager:
         Add_Game_Frame = Tk.LabelFrame(self.root, text="Manage Games")
         Add_Game_Frame.grid(columnspan=4, row=3, padx=15, pady=(5, 17))
 
-        EnterGameLabel = ttk.Label(Add_Game_Frame, text="Enter Game Name")
+        EnterGameLabel = ttk.Label(Add_Game_Frame, text="Game Name")
         EnterGameLabel.grid(row=0, column=0)
 
         entry_width = 65
@@ -857,7 +849,7 @@ class SaveManager:
         )
         self.GameNameEntry.grid(row=0, column=1, columnspan=3, pady=8, padx=5)
 
-        EnterSaveLabeL = ttk.Label(Add_Game_Frame, text="Enter Save Location")
+        EnterSaveLabeL = ttk.Label(Add_Game_Frame, text="Save Location")
         EnterSaveLabeL.grid(row=1, column=0)
 
         self.GameSaveEntry = ttk.Entry(
