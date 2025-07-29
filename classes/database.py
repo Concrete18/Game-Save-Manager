@@ -16,9 +16,11 @@ class Database:
         self.db_loc = db_loc
         self.database = sqlite3.connect(db_loc)
         self.cursor = self.database.cursor()
-        main = "CREATE TABLE IF NOT EXISTS games"
-        args = "(game_name TEXT, save_location TEXT, last_backup TEXT, previous_backup_hash TEXT)"
-        self.cursor.execute(main + args)
+        query = """
+            CREATE TABLE IF NOT EXISTS games
+            (game_name TEXT, save_location TEXT, last_backup TEXT, previous_backup_hash TEXT)
+        """
+        self.cursor.execute(query)
         self.total_executions = 1
 
     def sorted_games(self):
@@ -36,31 +38,33 @@ class Database:
 
     def get_game_info(self, game_name: str) -> dict:
         """
-        Returns the save location and last backup of `game_name` from the
-        SQLite Database.
+        Returns the save location and last backup of `game_name` from the SQLite Database.
         """
-        self.cursor.execute(
-            "SELECT save_location, last_backup, previous_backup_hash FROM games WHERE game_name=:game_name",
-            {"game_name": game_name},
-        )
+        query = """
+            SELECT save_location, last_backup, previous_backup_hash
+            FROM games
+            WHERE game_name = :game_name
+        """
+        self.cursor.execute(query, {"game_name": game_name})
         self.total_executions += 1
-        game = self.cursor.fetchone()
-        if game:
-            return {
-                "save_location": game[0],
-                "last_backup": game[1],
-                "previous_backup_hash": game[2],
-            }
-        return {}
+
+        row = self.cursor.fetchone()
+        if row is None:
+            return {}
+
+        keys = ("save_location", "last_backup", "previous_backup_hash")
+        return dict(zip(keys, row))
 
     def update_last_backup(self, game_name):
         """
         Updates the last_backup time for `game_name` to the current datetime.
         """
         last_backup = dt.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
-        query = (
-            "UPDATE games SET last_backup = :last_backup WHERE game_name = :game_name"
-        )
+        query = """
+            UPDATE games
+            SET last_backup = :last_backup
+            WHERE game_name = :game_name"
+        """
         args = {"game_name": game_name, "last_backup": last_backup}
         self.cursor.execute(query, args)
         self.total_executions += 1
@@ -70,9 +74,11 @@ class Database:
         """
         Updates the last_backup time for `game_name` to the current datetime.
         """
-        query = (
-            "UPDATE games SET previous_backup_hash = :hash WHERE game_name = :game_name"
-        )
+        query = """
+            UPDATE games
+            SET previous_backup_hash = :hash
+            WHERE game_name = :game_name"
+        """
         args = {"game_name": game_name, "hash": hash}
         self.cursor.execute(query, args)
         self.total_executions += 1
@@ -98,7 +104,11 @@ class Database:
         """
         Updates a game data in the database with `old_name` to `new_name` and `new_save`.
         """
-        query = "UPDATE games SET game_name = ?, save_location = ? WHERE game_name = ?;"
+        query = """
+            UPDATE games
+            SET game_name = ?, save_location = ?
+            WHERE game_name = ?;
+        """
         args = (new_name, new_save, old_name)
         self.cursor.execute(query, args)
         self.database.commit()
@@ -109,7 +119,10 @@ class Database:
         """
         Adds game to database with `game_name`, `save_location` data.
         """
-        query = "INSERT INTO games VALUES (:game_name, :save_location, :last_backup, :previous_backup_hash)"
+        query = """
+            INSERT INTO games
+            VALUES (:game_name, :save_location, :last_backup, :previous_backup_hash)
+        """
         args = {
             "game_name": game_name,
             "save_location": save_location,
@@ -124,10 +137,11 @@ class Database:
         """
         Deletes selected game from SQLite Database.
         """
-        self.cursor.execute(
-            "DELETE FROM games WHERE game_name = :game_name",
-            {"game_name": game_name},
-        )
+        query = """
+            DELETE FROM games 
+            WHERE game_name = :game_name
+        """
+        self.cursor.execute(query, {"game_name": game_name})
         self.database.commit()
         self.total_executions += 1
 
