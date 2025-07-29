@@ -93,7 +93,7 @@ class SaveManager:
             return
         game_name = self.cur_game.name
         game_backup_loc = self.cur_game.backup_path
-        current_save_hash = get_hash(self.cur_game.save_location)
+        current_save_hash = self.cur_game.curr_save_hash
         game_previous_hash = self.cur_game.prev_backup_hash
 
         def backup():
@@ -351,30 +351,30 @@ class SaveManager:
 
     def explore_folder(self, folder_type):
         """
-        Opens the selected games save location in explorer or backup folder.
+        Opens the selected games save location or backup folder in explorer.
 
-        Set `folder_type` to "Game Save" or "Backup" to determine folder that
-        is opened in explorer.
+        Set `folder_type` to "Game Save" or "Backup" to select what to open in explorer.
         """
         if not self.cur_game.name:
             return
-        chosen_folder = None
-        error_msg = None
-        match folder_type:
-            case "Game Save":  # open game save location in explorer
-                chosen_folder = self.cur_game.save_location
-                if not os.path.isdir(chosen_folder):
-                    error_msg = (
-                        f"Save location for {self.cur_game.name} no longer exists"
-                    )
-            case "Backup":  # open game backup location in explorer
-                chosen_folder = self.cur_game.backup_path
-                if not os.path.isdir(chosen_folder):
-                    error_msg = f"{self.cur_game.name} has not been backed up yet."
-        if not error_msg:
-            subprocess.Popen(f'explorer "{chosen_folder}"')
+
+        paths = {
+            "Game Save": self.cur_game.save_location,
+            "Backup": self.cur_game.backup_path,
+        }
+
+        path = paths.get(folder_type)
+        if path and os.path.isdir(path):
+            os.startfile(path)
         else:
-            messagebox.showwarning(title=self.title, message=error_msg)
+            match folder_type:
+                case "Game Save":
+                    msg = f"Save location for {self.cur_game.name} no longer exists."
+                case "Backup":
+                    msg = f"{self.cur_game.name} has not been backed up yet."
+                case _:
+                    msg = f"Unknown folder type: {folder_type}"
+            messagebox.showwarning(title=self.title, message=msg)
 
     def add_game_to_database(self):
         """
