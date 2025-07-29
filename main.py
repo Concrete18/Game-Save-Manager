@@ -1,8 +1,7 @@
 # standard library
-import shutil, os, sys, subprocess, winsound
 from tkinter import ttk, filedialog, messagebox
 import tkinter as Tk
-from time import sleep, perf_counter
+import shutil, os, sys, winsound, time
 from threading import Thread
 import datetime as dt
 
@@ -91,10 +90,8 @@ class SaveManager:
         if not self.cur_game:
             print("No game is set")
             return
-        game_name = self.cur_game.name
-        game_backup_loc = self.cur_game.backup_path
-        current_save_hash = self.cur_game.curr_save_hash
-        game_previous_hash = self.cur_game.prev_backup_hash
+        # sets selected game so other games can be selected during backup without issue
+        selected_game = self.cur_game
 
         def backup():
             """
@@ -105,27 +102,27 @@ class SaveManager:
             self.backup_restore_in_progress = True
             current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
             self.backup.compress(
-                self.cur_game.save_location, game_backup_loc, current_time
+                selected_game.save_location, selected_game.backup_path, current_time
             )
-            if not os.path.exists(game_backup_loc):
+            if not os.path.exists(selected_game.backup_path):
                 self.warning_sound()
                 return
             self.backup.delete_oldest(
-                game_name,
-                game_backup_loc,
+                selected_game.name,
+                selected_game.backup_path,
                 self.cfg.backup_redundancy,
                 self.post_save_name,
             )
-            sleep(0.3)
+            time.sleep(0.3)
             # BUG total_size is wrong for some games right after it finishes backing up
-            total_backups = len(os.listdir(game_backup_loc))
-            msg = f"{game_name} has been backed up.\nGame Backup Size: {self.cur_game.backup_size} from {total_backups} backups\n"
+            total_backups = len(os.listdir(selected_game.backup_path))
+            msg = f"{selected_game.name} has been backed up.\nGame Backup Size: {self.cur_game.backup_size} from {total_backups} backups\n"
             self.set_info_text(msg=msg)
             self.backup_restore_in_progress = False
             self.completion_sound()
 
         # nothing is selected
-        if game_name is None:
+        if selected_game.name is None:
             msg = "No game is selected yet."
             self.set_info_text(msg=msg)
             self.warning_sound()
@@ -138,24 +135,25 @@ class SaveManager:
         else:
             # checks if current folder and previous backup hashes are identical
             game_current_hash = get_hash(self.cur_game.save_location)
-            print(game_previous_hash, game_current_hash)
-            msg = f"{game_name} Save has not changed since last backup."
-            # TODO add note about being able force backup if pressed twice
+            # gets last info text so double click backup works
             last_text = self.ActionInfo.cget("text").replace("\n", "")
-            if game_previous_hash == game_current_hash and last_text != msg:
+            msg = f"{selected_game.name}\nSave has not changed since last backup.\nPress Enter again to force backup."
+            if not selected_game.is_new_hash(game_current_hash) and last_text != msg:
                 self.set_info_text(msg=msg)
                 self.warning_sound()
                 return
             # moves clicked game to the top
             self.game_listbox.delete(Tk.ACTIVE)
-            self.game_listbox.insert(0, game_name)
+            self.game_listbox.insert(0, selected_game.name)
             self.ActionInfo.config(
-                text=f"Backing up {game_name}\nDo not close program.\n"
+                text=f"Backing up {selected_game.name}\nDo not close program.\n"
             )
             # starts backup function as a new thread
             Thread(target=backup).start()
-            self.database.update_previous_backup_hash(game_name, current_save_hash)
-            self.database.update_last_backup(game_name)
+            self.database.update_previous_backup_hash(
+                selected_game.name, selected_game.curr_save_hash
+            )
+            self.database.update_last_backup(selected_game.name)
 
     def tk_window_options(
         self, window_name, window_width, window_height, define_size=0
@@ -614,7 +612,7 @@ class SaveManager:
         self.Title.config(text=info_text)
         self.toggle_buttons("disable")
 
-    def entry_search(self, e):
+    def entry_search(self, _):
         """
         Finds all items in the sorted_list that have the search box data in it.
         It then updates the listbox data to only include matching results.
@@ -633,7 +631,7 @@ class SaveManager:
 
         Thread(target=search, daemon=True).start()
 
-    def select_entry(self, e):
+    def select_entry(self, _):
         """
         Deletes only search box default text on click.
         """
@@ -715,22 +713,23 @@ class SaveManager:
         """
         Closes the database and quits the program when closing the interface.
         """
-        # if self.backup_restore_in_progress:
-        #     msg = f'Backup/Restore in progress.\n{self.title} will close after completion when you close this message.'
-        #     messagebox.showerror(title=self.title, message=msg)
+        if self.backup_restore_in_progress:
+            msg = f"Backup/Restore in progress.\n{self.title} will close after completion when you close this message."
+            self.set_info_text(msg=msg)
+
         while self.backup_restore_in_progress:
-            sleep(0.05)
+            time.sleep(0.05)
         # BUG interface fails to exit if filedialog is left open
         # fix using subclassed filedialog commands that can close it
         self.root.withdraw()
         self.database.close_database()
-        exit()
+        sys.exit()
 
     def open_interface_window(self):
         """
         Opens the main Game Save Manager interface.
         """
-        start = perf_counter()
+        start = time.perf_counter()
         # Defaults
         BoldBaseFont = "Arial Bold"
         self.root = Tk.Tk()
@@ -902,7 +901,7 @@ class SaveManager:
         ClearButton.grid(row=2, column=4, padx=button_padx, pady=button_pady)
 
         # interface startup time check
-        end = perf_counter()
+        end = time.perf_counter()
         start_elapsed = round(end - start, 2)
         if start_elapsed > 0.5:
             print("Interface Ready: ", start_elapsed)

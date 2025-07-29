@@ -30,10 +30,12 @@ class Game:
         Removes illegal characters and shortens `name` so it can become a
         valid filename.
         """
+        # removes illegal characters
         name = re.sub(
             r"[^A-Za-z0-9'(){}\s]+", "", self.name.replace("&", "and")
         ).strip()
-        return re.sub(r"\s\s+", " ", name)[0:50]  # removes duplicate spaces and returns
+        # removes duplicate spaces
+        return re.sub(r"\s\s+", " ", name)[0:50]
 
     @property
     def backup_path(self) -> str:
@@ -46,3 +48,15 @@ class Game:
     @property
     def backup_size(self) -> str:
         return get_dir_size(self.backup_path)
+
+    def is_new_hash(self, new_hash: str | None) -> bool:
+        """
+        Returns True if old hash and `new_hash` are not identical.
+        """
+        if not isinstance(new_hash, str):
+            print("New hash is invalid")
+            raise (TypeError)
+        if not isinstance(self.prev_backup_hash, str):
+            print("Previous hash does not exist")
+            return True
+        return new_hash != self.prev_backup_hash

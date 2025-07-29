@@ -3,27 +3,29 @@ import re
 
 # local application imports
 from classes.game import Game
-from classes.database import Database
 
 
 class TestGame:
 
-    backup_path = "tests/Folder Test"
-    db_loc = "tests/testing.db"
+    save_location = (
+        "C:/Users/Michael/Saved Games/Arkane Studios/Dishonored2/base/savegame"
+    )
+    game = Game(
+        name="Dishonored 2",
+        save_location=save_location,
+        backup_folder="tests/Folder Test",
+        prev_backup_hash="45sa456dasd",
+        last_backup="2021/07/24 9:56:37",
+    )
 
-    def test_get(self):
-        database = Database(self.backup_path, self.db_loc)
-        game = database.get("Dishonored 2")
-        assert game.name == "Dishonored 2"
-        save_location = (
-            r"C:\Users\Michael\Saved Games\Arkane Studios\Dishonored2\base\savegame"
-        )
-        assert game.save_location == save_location
-        assert game.filename == "Dishonored 2"
-        assert game.backup_path == r"tests/Folder Test\Dishonored 2"
-        assert re.search(r"\d+(\.\d+)?\s*(B|KB|MB|GB|TB)", "386.0 B")
-        assert game.last_backup == "2021/07/24 9:56:37"
-        assert game.prev_backup_hash == "45sa456dasd"
+    def test_Game(self):
+        assert self.game.name == "Dishonored 2"
+        assert self.game.save_location == self.save_location
+        assert self.game.filename == "Dishonored 2"
+        assert self.game.backup_path == r"tests/Folder Test\Dishonored 2"
+        assert re.search(r"\d+(\.\d+)?\s*(B|KB|MB|GB|TB)", self.game.backup_size)
+        assert self.game.last_backup == "2021/07/24 9:56:37"
+        assert self.game.prev_backup_hash == "45sa456dasd"
 
     def test_get_filename(self):
         tests = {
@@ -36,7 +38,8 @@ class TestGame:
             assert game.filename == answer
 
     def test_convert_size(self):
-        database = Database(self.backup_path, self.db_loc)
-        game = database.get("Dishonored 2")
+        assert self.game.backup_size == "386.0 B"
 
-        assert game.backup_size == "386.0 B"
+    def test_is_new_hash(self):
+        game = Game(name="Dishonored 2: End of Time", prev_backup_hash="123")
+        assert not game.is_new_hash("123")
