@@ -1,6 +1,6 @@
 # standard library
 from tkinter import ttk, filedialog, messagebox
-import tkinter as Tk
+import tkinter as tk
 import shutil, os, sys, winsound, time
 from threading import Thread
 import datetime as dt
@@ -46,7 +46,7 @@ class SaveManager:
         Checks if backup destination in settings exists and asks if you want
         to choose one if it does not.
         """
-        Tk.Tk().withdraw()
+        tk.Tk().withdraw()
         if not os.path.exists(self.cfg.backup_folder):
             msg = "Do you want to choose a save backup directory instead of using a default within the program folder?"
             response = messagebox.askyesno(title=self.title, message=msg)
@@ -143,7 +143,7 @@ class SaveManager:
                 self.warning_sound()
                 return
             # moves clicked game to the top
-            self.game_listbox.delete(Tk.ACTIVE)
+            self.game_listbox.delete(tk.ACTIVE)
             self.game_listbox.insert(0, selected_game.name)
             self.ActionInfo.config(
                 text=f"Backing up {selected_game.name}\nDo not close program.\n"
@@ -301,7 +301,7 @@ class SaveManager:
                 )
             close_restore_win()
 
-        self.Restore_Game_Window = Tk.Toplevel(takefocus=True)
+        self.Restore_Game_Window = tk.Toplevel(takefocus=True)
         self.Restore_Game_Window.protocol("WM_DELETE_WINDOW", close_restore_win)
         window_width = 300
         window_height = 220
@@ -320,7 +320,7 @@ class SaveManager:
         )
         RestoreGame.grid(columnspan=2, row=1, column=0, pady=(0, 10), padx=10)
 
-        save_listbox = Tk.Listbox(
+        save_listbox = tk.Listbox(
             self.Restore_Game_Window,
             exportselection=False,
             font=("Arial Bold", 12),
@@ -330,7 +330,7 @@ class SaveManager:
         save_listbox.grid(columnspan=2, row=2, column=0, pady=5, padx=10)
 
         for item in self.save_dic:
-            save_listbox.insert(Tk.END, item)
+            save_listbox.insert(tk.END, item)
 
         confirm_button = ttk.Button(
             self.Restore_Game_Window,
@@ -393,8 +393,8 @@ class SaveManager:
             if os.path.exists(save_location):
                 self.database.add(game_name, save_location)
                 # delete entry data
-                self.GameSaveEntry.delete(0, Tk.END)
-                self.GameNameEntry.delete(0, Tk.END)
+                self.GameSaveEntry.delete(0, tk.END)
+                self.GameNameEntry.delete(0, tk.END)
                 # update listbox with new game
                 self.sorted_list.insert(0, game_name)
                 self.game_listbox.insert(0, game_name)
@@ -452,7 +452,7 @@ class SaveManager:
         msg = "Select Save Directory"
         save_dir = filedialog.askdirectory(initialdir=directory, title=msg)
         if save_dir:
-            self.GameSaveEntry.delete(0, Tk.END)
+            self.GameSaveEntry.delete(0, tk.END)
             self.GameSaveEntry.insert(0, save_dir)
 
     def delete_game(self):
@@ -468,7 +468,7 @@ class SaveManager:
             # the wrong game form the list
             self.database.delete_from_db(self.cur_game.name)
             # deletes game from game_listbox and sorted_list
-            index = self.game_listbox.get(0, Tk.END).index(self.cur_game.name)
+            index = self.game_listbox.get(0, tk.END).index(self.cur_game.name)
             self.game_listbox.delete(index)
             self.sorted_list.pop(index)
             self.update_listbox()
@@ -507,7 +507,7 @@ class SaveManager:
                 index = self.game_listbox.curselection()
             else:
                 index = 0
-            self.game_listbox.delete(Tk.ACTIVE)
+            self.game_listbox.delete(tk.ACTIVE)
             self.game_listbox.insert(index, game_name)
         else:
             msg = "Save Location does not exist."
@@ -598,9 +598,9 @@ class SaveManager:
         if data is None:
             # refreshes the value of sorted_list
             data = self.sorted_list
-        self.game_listbox.delete(0, Tk.END)
+        self.game_listbox.delete(0, tk.END)
         for item in data:
-            self.game_listbox.insert(Tk.END, item)
+            self.game_listbox.insert(tk.END, item)
         msg = "Select a Game\nto continue\n"
         self.set_info_text(msg=msg)
         # updates title info label
@@ -636,7 +636,7 @@ class SaveManager:
         Deletes only search box default text on click.
         """
         if self.search_entry.get() == self.default_entry_value:
-            self.search_entry.delete(0, Tk.END)
+            self.search_entry.delete(0, tk.END)
 
     def listbox_nav(self, e):
         """
@@ -648,7 +648,7 @@ class SaveManager:
         if e.keysym == "Down":
             index += 1
         if 0 <= index < self.game_listbox.size():
-            self.game_listbox.selection_clear(0, Tk.END)
+            self.game_listbox.selection_clear(0, tk.END)
             self.game_listbox.select_set(index)
             self.game_listbox.selection_anchor(index)
             self.game_listbox.activate(index)
@@ -657,7 +657,7 @@ class SaveManager:
         """
         Resets search box to default_entry_value when it loses focus.
         """
-        self.search_entry.delete(0, Tk.END)
+        self.search_entry.delete(0, tk.END)
         self.search_entry.insert(0, self.default_entry_value)
 
     def select_listbox_entry(self, Update=0):
@@ -676,8 +676,8 @@ class SaveManager:
         if self.game_listbox.size() == 0:
             return
         # clears entry boxes
-        self.GameNameEntry.delete(0, Tk.END)
-        self.GameSaveEntry.delete(0, Tk.END)
+        self.GameNameEntry.delete(0, tk.END)
+        self.GameSaveEntry.delete(0, tk.END)
         if self.backup_restore_in_progress:
             return
         # updates entry boxes to show currently selected game in listbox
@@ -686,7 +686,7 @@ class SaveManager:
             self.GameNameEntry.insert(0, self.cur_game.name)
             self.GameSaveEntry.insert(0, self.cur_game.save_location)
             # search box update
-            self.search_entry.delete(0, Tk.END)
+            self.search_entry.delete(0, tk.END)
             self.search_entry.insert(0, self.default_entry_value)
             # enables all buttons to be pressed once a selection is made
             self.toggle_buttons()
@@ -707,7 +707,6 @@ class SaveManager:
                     f"Game Backup Size: {self.cur_game.backup_size} from {total_backups} backups"
                 )
             self.set_info_text(msg=msg)
-            self.BackupButton.focus_set()
 
     def exit_program(self):
         """
@@ -732,7 +731,7 @@ class SaveManager:
         start = time.perf_counter()
         # Defaults
         BoldBaseFont = "Arial Bold"
-        self.root = Tk.Tk()
+        self.root = tk.Tk()
         self.root.protocol("WM_DELETE_WINDOW", self.exit_program)
         window_width = 680
         window_height = 550
@@ -744,10 +743,10 @@ class SaveManager:
             self.root.bind("<Return>", self.backup_shortcut)
 
         # Main Row 0
-        Backup_Frame = Tk.Frame(self.root)
+        Backup_Frame = tk.Frame(self.root)
         Backup_Frame.grid(columnspan=4, column=0, row=0, padx=(20, 20), pady=(5, 0))
 
-        self.Title = Tk.Label(Backup_Frame, text="\n", font=(BoldBaseFont, 10))
+        self.Title = tk.Label(Backup_Frame, text="\n", font=(BoldBaseFont, 10))
         self.Title.grid(columnspan=4, row=0, column=1)
 
         button_width = 23
@@ -789,15 +788,15 @@ class SaveManager:
 
         # Main Row 1
         instruction = "Select a Game\nto continue"
-        self.ActionInfo = Tk.Label(self.root, text=instruction, font=(BoldBaseFont, 10))
+        self.ActionInfo = tk.Label(self.root, text=instruction, font=(BoldBaseFont, 10))
         self.ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady=5)
         # Main Row 2
-        self.ListboxFrame = Tk.Frame(self.root)
+        self.ListboxFrame = tk.Frame(self.root)
         self.ListboxFrame.grid(
             columnspan=4, row=2, column=0, padx=(20, 20), pady=(5, 10)
         )
 
-        self.scrollbar = Tk.Scrollbar(self.ListboxFrame, orient=Tk.VERTICAL)
+        self.scrollbar = tk.Scrollbar(self.ListboxFrame, orient=tk.VERTICAL)
         self.scrollbar.grid(row=1, column=3, sticky="ns", rowspan=3)
 
         self.search_entry = ttk.Entry(
@@ -810,7 +809,7 @@ class SaveManager:
         # self.search_entry.bind("<FocusOut>", self.unfocus_entry)
         self.search_entry.bind("<KeyRelease>", self.entry_search)
 
-        self.game_listbox = Tk.Listbox(
+        self.game_listbox = tk.Listbox(
             self.ListboxFrame,
             exportselection=False,
             yscrollcommand=self.scrollbar.set,
@@ -824,11 +823,6 @@ class SaveManager:
             lambda event, game_listbox=self.game_listbox,: self.select_listbox_entry(1),
         )
 
-        # WIP finish or delete up and down control of listbox
-        # full interface bind for lisxtbox navigation
-        # self.root.bind('<Up>', lambda event,arg=.1:self.listbox_nav(event))
-        # self.root.bind('<Down>', lambda event,arg=.1:self.listbox_nav(event))
-
         # scrollbar config
         self.scrollbar.config(command=self.game_listbox.yview)
         # listbox fill
@@ -836,7 +830,7 @@ class SaveManager:
         self.update_listbox()
 
         # Main Row 3
-        Add_Game_Frame = Tk.LabelFrame(self.root, text="Manage Games")
+        Add_Game_Frame = tk.LabelFrame(self.root, text="Manage Games")
         Add_Game_Frame.grid(columnspan=4, row=3, padx=15, pady=(5, 17))
 
         EnterGameLabel = ttk.Label(Add_Game_Frame, text="Game Name")
@@ -867,7 +861,7 @@ class SaveManager:
         BrowseButton.grid(row=1, column=4, padx=10)
 
         # Button Frame Row 2
-        Button_Frame = Tk.Frame(Add_Game_Frame)
+        Button_Frame = tk.Frame(Add_Game_Frame)
         Button_Frame.grid(columnspan=5, row=2, pady=(5, 5))
 
         button_padx = 4
