@@ -63,7 +63,7 @@ class Database:
         query = """
             UPDATE games
             SET last_backup = :last_backup
-            WHERE game_name = :game_name"
+            WHERE game_name = :game_name
         """
         args = {"game_name": game_name, "last_backup": last_backup}
         self.cursor.execute(query, args)
@@ -77,7 +77,7 @@ class Database:
         query = """
             UPDATE games
             SET previous_backup_hash = :hash
-            WHERE game_name = :game_name"
+            WHERE game_name = :game_name
         """
         args = {"game_name": game_name, "hash": hash}
         self.cursor.execute(query, args)
