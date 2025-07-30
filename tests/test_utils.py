@@ -6,13 +6,13 @@ from utils.utils import *
 
 
 class TestGetHash:
-    def success(self):
+    def test_success(self):
         path = "tests/Folder Test/Folder Example"
         assert get_hash(path) == "c391af98a15c45425f1cd3d7714d0354"
 
 
 class TestReadableTimeSince:
-    def success(self):
+    def test_success(self):
         checked_date = dt.datetime.strptime("2021/01/01 01:00:00", "%Y/%m/%d %H:%M:%S")
         dates = {
             "2019/01/01 01:00:00": "2.0 years ago",
