@@ -7,12 +7,12 @@ from utils.game import Game
 
 class TestGame:
 
-    save_location = (
+    save_path = (
         "C:/Users/Michael/Saved Games/Arkane Studios/Dishonored2/base/savegame"
     )
     game = Game(
         name="Dishonored 2",
-        save_location=save_location,
+        save_path=save_path,
         backup_folder="tests/Folder Test",
         prev_backup_hash="45sa456dasd",
         last_backup="2021/07/24 9:56:37",
@@ -20,7 +20,7 @@ class TestGame:
 
     def test_Game(self):
         assert self.game.name == "Dishonored 2"
-        assert self.game.save_location == self.save_location
+        assert self.game.save_path == self.save_path
         assert self.game.filename == "Dishonored 2"
         assert self.game.backup_path == r"tests/Folder Test\Dishonored 2"
         assert re.search(r"\d+(\.\d+)?\s*(B|KB|MB|GB|TB)", self.game.backup_size)

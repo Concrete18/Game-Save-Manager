@@ -18,7 +18,7 @@ class Database:
         self.cursor = self.database.cursor()
         query = """
             CREATE TABLE IF NOT EXISTS games
-            (game_name TEXT, save_location TEXT, last_backup TEXT, previous_backup_hash TEXT)
+            (game_name TEXT, save_path TEXT, last_backup TEXT, previous_backup_hash TEXT)
         """
         self.cursor.execute(query)
         self.total_executions = 1
@@ -27,7 +27,7 @@ class Database:
         """
         Sorts the game list from the SQLite database based on the last backup and then returns a list.
         """
-        query = "SELECT game_name, save_location FROM games ORDER BY last_backup DESC"
+        query = "SELECT game_name, save_path FROM games ORDER BY last_backup DESC"
         self.cursor.execute(query)
         games = self.cursor.fetchall()
         self.total_executions += 1
@@ -41,7 +41,7 @@ class Database:
         Returns the save location and last backup of `game_name` from the SQLite Database.
         """
         query = """
-            SELECT save_location, last_backup, previous_backup_hash
+            SELECT save_path, last_backup, previous_backup_hash
             FROM games
             WHERE game_name = :game_name
         """
@@ -52,7 +52,7 @@ class Database:
         if row is None:
             return {}
 
-        keys = ("save_location", "last_backup", "previous_backup_hash")
+        keys = ("save_path", "last_backup", "previous_backup_hash")
         return dict(zip(keys, row))
 
     def update_last_backup(self, game_name):
@@ -89,12 +89,12 @@ class Database:
         Sets the current game to `game_name`.
         """
         prev_data = self.get_game_info(game_name)
-        self.save_location = prev_data.get("save_location", "")
+        self.save_path = prev_data.get("save_path", "")
         self.last_backup = prev_data.get("last_backup", "")
         self.prev_backup_hash = prev_data.get("previous_backup_hash", "")
         return Game(
             game_name,
-            self.save_location,
+            self.save_path,
             self.last_backup,
             self.prev_backup_hash,
             self.backup_folder,
@@ -106,7 +106,7 @@ class Database:
         """
         query = """
             UPDATE games
-            SET game_name = ?, save_location = ?
+            SET game_name = ?, save_path = ?
             WHERE game_name = ?;
         """
         args = (new_name, new_save, old_name)
@@ -115,17 +115,17 @@ class Database:
         self.get(new_name)
         self.total_executions += 1
 
-    def add(self, game_name, save_location):
+    def add(self, game_name, save_path):
         """
-        Adds game to database with `game_name`, `save_location` data.
+        Adds game to database with `game_name`, `save_path` data.
         """
         query = """
             INSERT INTO games
-            VALUES (:game_name, :save_location, :last_backup, :previous_backup_hash)
+            VALUES (:game_name, :save_path, :last_backup, :previous_backup_hash)
         """
         args = {
             "game_name": game_name,
-            "save_location": save_location,
+            "save_path": save_path,
             "last_backup": "Never",
             "previous_backup_hash": 0,
         }

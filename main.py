@@ -17,8 +17,6 @@ from utils.utils import *
 from utils.backup import Backup
 from utils.restore import Restore
 
-# TODO change save_location to save_path
-
 
 class SaveManager:
     def __init__(self):
@@ -104,7 +102,7 @@ class SaveManager:
             self.backup_restore_in_progress = True
             current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
             self.backup.compress(
-                selected_game.save_location, selected_game.backup_path, current_time
+                selected_game.save_path, selected_game.backup_path, current_time
             )
             if not selected_game.backup_path_exists():
                 self.warning_sound()
@@ -136,7 +134,7 @@ class SaveManager:
         # actual run if it clears
         else:
             # checks if current folder and previous backup hashes are identical
-            game_current_hash = get_hash(self.cur_game.save_location)
+            game_current_hash = get_hash(self.cur_game.save_path)
             # gets last info text so double click backup works
             last_text = self.ActionInfo.cget("text").replace("\n", "")
             msg = f"{selected_game.name}\nSave has not changed since last backup.\nPress Enter again to force backup."
@@ -265,9 +263,9 @@ class SaveManager:
                 )
                 response = messagebox.askyesno(title=self.title, message=msg)
                 if response:
-                    self.restore.delete_dir_contents(self.cur_game.save_location)
+                    self.restore.delete_dir_contents(self.cur_game.save_path)
                     self.restore.decompress(
-                        selected_backup.path, self.cur_game.save_location
+                        selected_backup.path, self.cur_game.save_path
                     )
             else:
                 # check if a last restore backup exists already
@@ -293,15 +291,11 @@ class SaveManager:
                             self.Restore_Game_Window.grab_release()
                             return
                 dest = os.path.join(self.cfg.backup_folder, self.cur_game.name)
-                self.backup.compress(
-                    self.cur_game.save_location, dest, self.post_save_name
-                )
+                self.backup.compress(self.cur_game.save_path, dest, self.post_save_name)
                 self.restore.delete_dir_contents(
-                    self.cur_game.save_location
+                    self.cur_game.save_path
                 )  # delete existing save
-                self.restore.decompress(
-                    selected_backup.path, self.cur_game.save_location
-                )
+                self.restore.decompress(selected_backup.path, self.cur_game.save_path)
             close_restore_win()
 
         self.Restore_Game_Window = tk.Toplevel(takefocus=True)
@@ -360,7 +354,7 @@ class SaveManager:
             return
 
         paths = {
-            "Game Save": self.cur_game.save_location,
+            "Game Save": self.cur_game.save_path,
             "Backup": self.cur_game.backup_path,
         }
 
@@ -382,19 +376,19 @@ class SaveManager:
         Adds game to database using entry inputs.
         """
         game_name = self.GameNameEntry.get()
-        save_location = self.GameSaveEntry.get().replace("/", "\\")
-        self.cur_game = Game(name=game_name, save_location=save_location)
+        save_path = self.GameSaveEntry.get().replace("/", "\\")
+        self.cur_game = Game(name=game_name, save_path=save_path)
         if len(self.cur_game.filename) == 0:
             msg = f"Game name has no legal characters for a filename"
             messagebox.showwarning(title=self.title, message=msg)
             return
         game_dict = self.database.get_game_info(game_name)
-        if game_dict.get("save_location"):
+        if game_dict.get("save_path"):
             msg = f"Can't add {game_name} to database.\nGame already exists."
             messagebox.showwarning(title=self.title, message=msg)
         else:
-            if os.path.exists(save_location):
-                self.database.add(game_name, save_location)
+            if os.path.exists(save_path):
+                self.database.add(game_name, save_path)
                 # delete entry data
                 self.GameSaveEntry.delete(0, tk.END)
                 self.GameNameEntry.delete(0, tk.END)
@@ -497,10 +491,10 @@ class SaveManager:
             return
         # gets entered game info
         game_name = self.GameNameEntry.get()
-        save_location = self.GameSaveEntry.get().replace("/", "\\")
-        if os.path.exists(save_location):
+        save_path = self.GameSaveEntry.get().replace("/", "\\")
+        if os.path.exists(save_path):
             old_backup = self.cur_game.backup_path
-            self.database.update(self.cur_game.name, game_name, save_location)
+            self.database.update(self.cur_game.name, game_name, save_path)
             # error when path is changed
             print(old_backup)
             print(self.cur_game.backup_path)
@@ -633,7 +627,7 @@ class SaveManager:
 
         # update name and save path fields
         self.GameNameEntry.insert(0, self.cur_game.name)
-        self.GameSaveEntry.insert(0, self.cur_game.save_location)
+        self.GameSaveEntry.insert(0, self.cur_game.save_path)
 
         # reset the search box
         self.search_entry.delete(0, tk.END)

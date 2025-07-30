@@ -10,19 +10,19 @@ class Game:
     def __init__(
         self,
         name: str = "",
-        save_location: str = "",
+        save_path: str = "",
         last_backup: str = "",
         prev_backup_hash: str = "",
         backup_folder: str = "",
     ) -> None:
         self.name = name.strip()
-        self.save_location = save_location
+        self.save_path = save_path
         self.last_backup = last_backup
         self.prev_backup_hash = prev_backup_hash
         self.backup_folder = backup_folder
 
     def __str__(self) -> str:
-        return f'Game("{self.name}", "{self.save_location}")'
+        return f'Game("{self.name}", "{self.save_path}")'
 
     @property
     def filename(self) -> str:
@@ -43,7 +43,7 @@ class Game:
 
     @property
     def curr_save_hash(self) -> str | None:
-        return get_hash(self.save_location)
+        return get_hash(self.save_path)
 
     @property
     def backup_size(self) -> str:
@@ -62,7 +62,7 @@ class Game:
         return new_hash != self.prev_backup_hash
 
     def save_path_exists(self):
-        return os.path.exists(self.save_location)
+        return os.path.exists(self.save_path)
 
     def backup_path_exists(self):
         return os.path.exists(self.backup_path)
