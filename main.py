@@ -25,31 +25,34 @@ class SaveManager:
         self.cfg.get_settings()
 
         # var init
-        self.title = "Game Save Manager"
-        self.allowed_filename_characters = r"[^a-zA-Z0-9.,\s]"
+        self.TITLE: str = "Game Save Manager"
         self.backup_restore_in_progress = False
         self.default_entry_value = "Type Search Query Here"
         self.post_save_name = "Post-Restore Save"
 
-        # game class
+        # database setup
         self.database = Database(
-            backup_folder=self.cfg.backup_folder, db_loc="config/game.db"
+            backup_folder=self.cfg.backup_folder,
+            db_loc="config/game.db",
         )
+
+        # class init
         self.backup = Backup(self.database, self.cfg.compression_type)
         self.restore = Restore(self.database, self.backup)
-
         self.cur_game = Game()
 
-    @benchmark
     def backup_folder_check(self):
         """
         Checks if backup destination in settings exists and asks if you want
         to choose one if it does not.
         """
         tk.Tk().withdraw()
-        if not os.path.exists(self.cfg.backup_folder):
-            msg = "Do you want to choose a save backup directory instead of using a default within the program folder?"
-            response = messagebox.askyesno(title=self.title, message=msg)
+        if os.path.exists(self.cfg.backup_folder):
+            print("backup folder is ready")
+            return
+        else:
+            msg = "Do you want to choose a save backup directory instead of using the default within the program folder?"
+            response = messagebox.askyesno(title=self.TITLE, message=msg)
             if response:
                 title = "Select Save Backup Directory"
                 new_backup_folder = filedialog.askdirectory(
@@ -66,7 +69,7 @@ class SaveManager:
                     )
                 else:
                     msg = "Path does not exist."
-                    messagebox.showwarning(title=self.title, message=msg)
+                    messagebox.showwarning(title=self.TITLE, message=msg)
             else:
                 os.mkdir(self.cfg.backup_folder)
 
@@ -96,8 +99,7 @@ class SaveManager:
         def backup():
             """
             Runs a single backup for the entered arg.
-            Also sets self.backup_restore_in_progress to True so the program
-            wont quick during a backup. Function is ready to be run as a thread.
+            Sets `self.backup_restore_in_progress` to True so the program wont quit during a backup.
             """
             self.backup_restore_in_progress = True
             current_time = dt.datetime.now().strftime("%m-%d-%y %H-%M-%S")
@@ -108,7 +110,6 @@ class SaveManager:
                 self.warning_sound()
                 return
             self.backup.delete_oldest(
-                selected_game.name,
                 selected_game.backup_path,
                 self.cfg.backup_redundancy,
                 self.post_save_name,
@@ -161,7 +162,7 @@ class SaveManager:
         """
         Disables window resize and centers window if config enables each.
         """
-        window_name.title(self.title)
+        window_name.title(self.TITLE)
         if sys.platform == "win32":
             window_name.iconbitmap(window_name, "images/Save_icon.ico")
         if (
@@ -183,7 +184,7 @@ class SaveManager:
         Shortcut that activates when pressing enter while a game is selected.
         """
         response = messagebox.askquestion(
-            title=self.title,
+            title=self.TITLE,
             message=f"Are you sure you want to backup {self.cur_game.name}",
         )
         if response == "yes":
@@ -229,7 +230,7 @@ class SaveManager:
         else:
             # brings up a warning if no backup exists for the selected game.
             messagebox.showwarning(
-                title=self.title,
+                title=self.TITLE,
                 message=f"No backed up saves exist for {self.cur_game.name}.",
             )
             self.backup_restore_in_progress = False
@@ -261,7 +262,7 @@ class SaveManager:
                     "\nAre you sure that you revert to the backup?"
                     "\nThis will not send to the recycle bin."
                 )
-                response = messagebox.askyesno(title=self.title, message=msg)
+                response = messagebox.askyesno(title=self.TITLE, message=msg)
                 if response:
                     self.restore.delete_dir_contents(self.cur_game.save_path)
                     self.restore.decompress(
@@ -277,7 +278,7 @@ class SaveManager:
                             f"Backup of Post-Restore Save already exists."
                             "\nDo you want to delete it in order to continue?"
                         )
-                        response = messagebox.askyesno(title=self.title, message=msg)
+                        response = messagebox.askyesno(title=self.TITLE, message=msg)
                         if response:
                             # finds the post_save_name
                             backup_folder = os.path.join(
@@ -369,7 +370,7 @@ class SaveManager:
                     msg = f"{self.cur_game.name} has not been backed up yet."
                 case _:
                     msg = f"Unknown folder type: {folder_type}"
-            messagebox.showwarning(title=self.title, message=msg)
+            messagebox.showwarning(title=self.TITLE, message=msg)
 
     def add_game_to_database(self):
         """
@@ -380,12 +381,12 @@ class SaveManager:
         self.cur_game = Game(name=game_name, save_path=save_path)
         if len(self.cur_game.filename) == 0:
             msg = f"Game name has no legal characters for a filename"
-            messagebox.showwarning(title=self.title, message=msg)
+            messagebox.showwarning(title=self.TITLE, message=msg)
             return
         game_dict = self.database.get_game_info(game_name)
         if game_dict.get("save_path"):
             msg = f"Can't add {game_name} to database.\nGame already exists."
-            messagebox.showwarning(title=self.title, message=msg)
+            messagebox.showwarning(title=self.TITLE, message=msg)
         else:
             if os.path.exists(save_path):
                 self.database.add(game_name, save_path)
@@ -398,7 +399,7 @@ class SaveManager:
                 self.update_listbox()
             else:
                 msg = f"Save Location for {game_name} does not exist."
-                messagebox.showwarning(title=self.title, message=msg)
+                messagebox.showwarning(title=self.TITLE, message=msg)
 
     @staticmethod
     def nonascii(string):
@@ -455,7 +456,7 @@ class SaveManager:
         if not self.cur_game.name:
             return
         msg = f"Are you sure that you want to delete {self.cur_game.name}?"
-        delete_check = messagebox.askyesno(title=self.title, message=msg)
+        delete_check = messagebox.askyesno(title=self.TITLE, message=msg)
         if delete_check:
             # BUG deletes game that is selected but often removes
             # the wrong game form the list
@@ -468,13 +469,13 @@ class SaveManager:
             # checks if you want to delete the games save backups as well
             if os.path.isdir(self.cur_game.backup_path):
                 msg = "Do you want to delete the backed up saves as well?"
-                response = messagebox.askyesno(title=self.title, message=msg)
+                response = messagebox.askyesno(title=self.TITLE, message=msg)
                 if response:
                     try:
                         shutil.rmtree(self.cur_game.backup_path)
                     except PermissionError:
                         msg = "Failed to delete directory\nPermission Error"
-                        messagebox.showerror(title=self.title, message=msg)
+                        messagebox.showerror(title=self.TITLE, message=msg)
 
     def update_game(self):
         """
@@ -503,7 +504,7 @@ class SaveManager:
             self.game_listbox.insert(index, game_name)
         else:
             msg = "Save Location does not exist."
-            messagebox.showwarning(title=self.title, message=msg)
+            messagebox.showwarning(title=self.TITLE, message=msg)
 
     def toggle_buttons(self, action=""):
         """
@@ -548,7 +549,7 @@ class SaveManager:
             f"Total Games: {len(self.sorted_list)}\n"
             f"Total Backup Size: {total_backup_size}"
         )
-        self.Title.config(text=info_text)
+        self.window_title.config(text=info_text)
         self.toggle_buttons("disable")
 
     def entry_search(self, _):
@@ -657,7 +658,7 @@ class SaveManager:
         Closes the database and quits the program when closing the interface.
         """
         if self.backup_restore_in_progress:
-            msg = f"Backup/Restore in progress.\n{self.title} will close after completion when you close this message."
+            msg = f"Backup/Restore in progress.\n{self.TITLE} will close after completion when you close this message."
             self.set_info_text(msg=msg)
 
         while self.backup_restore_in_progress:
@@ -672,7 +673,6 @@ class SaveManager:
         """
         Opens the main Game Save Manager interface.
         """
-        start = time.perf_counter()
         BOLDBASEFONT = "Arial Bold"
         self.root = tk.Tk()
         self.root.protocol("WM_DELETE_WINDOW", self.exit_program)
@@ -687,8 +687,8 @@ class SaveManager:
         backup_frame = tk.Frame(self.root)
         backup_frame.grid(columnspan=4, column=0, row=0, padx=(20, 20), pady=(5, 0))
 
-        self.Title = tk.Label(backup_frame, text="\n", font=(BOLDBASEFONT, 10))
-        self.Title.grid(columnspan=4, row=0, column=1)
+        self.window_title = tk.Label(backup_frame, text="\n", font=(BOLDBASEFONT, 10))
+        self.window_title.grid(columnspan=4, row=0, column=1)
 
         button_width = 23
         self.BackupButton = ttk.Button(
@@ -831,17 +831,9 @@ class SaveManager:
         )
         ClearButton.grid(row=2, column=4, padx=button_padx, pady=button_pady)
 
-        # interface startup time check
-        end = time.perf_counter()
-        start_elapsed = round(end - start, 2)
-        if start_elapsed > 0.5:
-            print("Interface Ready: ", start_elapsed)
         self.root.mainloop()
 
     def run(self):
-        """
-        Runs everything needed to make the program work.
-        """
         if self.cfg.output:
             sys.stdout = open("output.txt", "w")
         self.backup_folder_check()

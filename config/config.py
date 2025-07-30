@@ -1,6 +1,5 @@
+# standard library
 import configparser, os
-
-from utils.utils import benchmark
 
 
 class Config:
@@ -11,7 +10,7 @@ class Config:
 
     def make_ini(self):
         """
-        Makes the ini file with default settings.
+        Creates the ini file with default settings.
         """
         # base settings
         self.config["SETTINGS"]["backup_folder"] = "unset"
@@ -39,7 +38,7 @@ class Config:
 
     def set_redundancy(self, redundancy):
         """
-        Sets redundancyso it is always a valid value.
+        Sets redundancy so it is always a valid value.
         """
         if redundancy.isnumeric():
             redundancy = int(redundancy)
@@ -50,7 +49,6 @@ class Config:
         self.set_setting("SETTINGS", "backup_redundancy", str(redundancy))
         return redundancy
 
-    @benchmark
     def get_settings(self):
         """
         Gets the setting variables based on the ini.
@@ -70,6 +68,5 @@ class Config:
         self.output = self.config["DEBUG"].getboolean("text_output")
         self.debug = self.config["DEBUG"].getboolean("enable_debug")
         # custom save directories
-        self.custom_dirs = [
-            dir for _, dir in self.config["CUSTOM_SAVE_DIRECTORIES"].items()
-        ]
+        custom_dirs = self.config["CUSTOM_SAVE_DIRECTORIES"]
+        self.custom_dirs = [dir for _, dir in custom_dirs.items()]

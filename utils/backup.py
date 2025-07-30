@@ -18,15 +18,20 @@ class Backup:
         destination = os.path.join(game_backup_loc, file_name)
         if os.path.isdir(file_path):
             shutil.make_archive(
-                base_name=destination, format=self.compression_type, root_dir=file_path
+                base_name=destination,
+                format=self.compression_type,
+                root_dir=file_path,
             )
         elif os.path.isfile(file_path):
+            # creates backup folder if it does not exist
             if not os.path.exists(game_backup_loc):
                 os.mkdir(game_backup_loc)
+
             try:
                 # with ZipFile(destination + '.zip', 'w') as zipf:
                 #     zipf.write(file_path, arcname=file_name)
-                print(os.path.dirname(file_path))
+
+                # TODO see if changing the director is needed
                 os.chdir(os.path.dirname(file_path))
                 ZipFile(destination + ".zip", mode="w").write(file_path)
                 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -36,7 +41,7 @@ class Backup:
                 print("file_path", file_path)
                 print(os.path.exists(destination))
 
-    def delete_oldest(self, game_name, path, redundancy, ignore):
+    def delete_oldest(self, backup_path, redundancy, ignore):
         """
         Deletes the oldest saves within the given `path` so only the newest
         specified amount (`redundancy`) is left.
@@ -44,24 +49,25 @@ class Backup:
         If the value of `ignore` is in the filename then it will be ignored
         during this process.
         """
-        # creates save list
-        saves_list = [file.path for file in os.scandir(path) if ignore not in file.name]
+        saves_list = [
+            file.path for file in os.scandir(backup_path) if ignore not in file.name
+        ]
+
         # exits if the save list is shorted then the backup_redundancy
         if len(saves_list) <= redundancy:
             return
-        else:
-            sorted_list = sorted(saves_list, key=os.path.getctime, reverse=True)
-            for i in range(redundancy, len(saves_list)):
-                file_to_delete = sorted_list[i]
-                if os.path.isdir(sorted_list[i]):
-                    try:
-                        shutil.rmtree(file_to_delete)
-                    except PermissionError:
 
-                        # tries to delete the folder again if it managed to delete the contents only
-                        try:
-                            os.rmdir(file_to_delete)
-                        except PermissionError:
-                            pass
-                else:
-                    os.remove(file_to_delete)
+        sorted_list = sorted(saves_list, key=os.path.getctime, reverse=True)
+        for i in range(redundancy, len(saves_list)):
+            file_to_delete = sorted_list[i]
+            if os.path.isdir(sorted_list[i]):
+                try:
+                    shutil.rmtree(file_to_delete)
+                except PermissionError:
+                    # tries to delete the folder again if it managed to delete the contents only
+                    try:
+                        os.rmdir(file_to_delete)
+                    except PermissionError:
+                        print(f"Failed to delete {file_to_delete}")
+            else:
+                os.remove(file_to_delete)

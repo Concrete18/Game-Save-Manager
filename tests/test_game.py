@@ -7,9 +7,7 @@ from utils.game import Game
 
 class TestGame:
 
-    save_path = (
-        "C:/Users/Michael/Saved Games/Arkane Studios/Dishonored2/base/savegame"
-    )
+    save_path = "C:/Users/John/Saved Games/Arkane/Dishonored2/savegame"
     game = Game(
         name="Dishonored 2",
         save_path=save_path,
