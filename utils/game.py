@@ -2,7 +2,7 @@
 import re
 
 # local application imports
-from classes.helper import *
+from utils.utils import *
 
 
 class Game:
@@ -60,3 +60,9 @@ class Game:
             print("Previous hash does not exist")
             return True
         return new_hash != self.prev_backup_hash
+
+    def save_path_exists(self):
+        return os.path.exists(self.save_location)
+
+    def backup_path_exists(self):
+        return os.path.exists(self.backup_path)

@@ -1,6 +1,6 @@
 import configparser, os
 
-from classes.helper import benchmark
+from utils.utils import benchmark
 
 
 class Config:

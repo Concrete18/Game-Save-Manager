@@ -2,8 +2,7 @@
 import re
 
 # local application imports
-from classes.game import Game
-from classes.database import Database
+from utils.database import Database
 
 
 class TestDatabase:

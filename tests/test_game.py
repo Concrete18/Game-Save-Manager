@@ -2,7 +2,7 @@
 import re
 
 # local application imports
-from classes.game import Game
+from utils.game import Game
 
 
 class TestGame:

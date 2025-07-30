@@ -11,11 +11,13 @@ os.chdir(script_dir)
 
 # local application imports
 from config.config import Config
-from classes.game import Game
-from classes.database import Database
-from classes.helper import *
-from classes.backup import Backup
-from classes.restore import Restore
+from utils.game import Game
+from utils.database import Database
+from utils.utils import *
+from utils.backup import Backup
+from utils.restore import Restore
+
+# TODO change save_location to save_path
 
 
 class SaveManager:
@@ -104,7 +106,7 @@ class SaveManager:
             self.backup.compress(
                 selected_game.save_location, selected_game.backup_path, current_time
             )
-            if not os.path.exists(selected_game.backup_path):
+            if not selected_game.backup_path_exists():
                 self.warning_sound()
                 return
             self.backup.delete_oldest(
@@ -127,7 +129,7 @@ class SaveManager:
             self.set_info_text(msg=msg)
             self.warning_sound()
         # save path does not exists
-        elif not os.path.exists(self.cur_game.save_location):
+        elif not self.cur_game.save_path_exists():
             msg = "Save no longer exists."
             self.set_info_text(msg=msg)
             self.warning_sound()
@@ -190,6 +192,7 @@ class SaveManager:
         if response == "yes":
             self.run_full_backup()
         else:
+            # FIXME arrow keys stop working at this point
             self.game_listbox.activate(0)
             return
         print(event)
@@ -210,7 +213,7 @@ class SaveManager:
             True  # disables closing the interface until restore completes
         )
         # checks if the game has a backup folder
-        if os.path.exists(self.cur_game.backup_path):
+        if self.cur_game.backup_path_exists():
             # creates list of backups that can be restored
             self.save_dic = {}
             for file in os.scandir(self.cur_game.backup_path):
@@ -513,59 +516,6 @@ class SaveManager:
             msg = "Save Location does not exist."
             messagebox.showwarning(title=self.title, message=msg)
 
-    @staticmethod
-    def readable_time_since(
-        since_date: dt.datetime | str, checked_date: dt.datetime | None = None
-    ):
-        """
-        Converts into time since for the given datetime object given
-        as `since_date`.
-
-        Examples:
-
-        1.2 seconds ago | 3.4 minutes ago | 5.6 hours ago | 7.8 days ago
-        | 9.1 months ago | 10.1 years ago
-
-        `since_date`: Past date
-        `checked_date`: Current or more recent date (Optional) defaults to
-        current date if not given.
-        """
-        if not checked_date:
-            checked_date = dt.datetime.now()
-        if type(since_date) == str:
-            since_date = dt.datetime.strptime(since_date, "%Y/%m/%d %H:%M:%S")
-        if not isinstance(since_date, dt.datetime):
-            raise Exception("Incorrect since_date given")
-        seconds = (
-            checked_date - since_date
-        ).total_seconds()  # converts datetime object into seconds
-        if seconds <= 0:
-            raise Exception(
-                "Invalid Response - since_date takes place after the checked date."
-            )
-        minutes = seconds / 60  # seconds in a minute
-        hours = seconds / 3600  # minutes in a hour
-        days = seconds / 86400  # hours in a day
-        months = seconds / (30 * 24 * 60 * 60)  # days in an average month rounded down
-        years = seconds / dt.timedelta(days=365).total_seconds()  # months in a year
-        if years >= 1:
-            s = "" if round(years, 2) == 1 else "s"
-            return f"{round(years, 1)} year{s} ago"
-        if months >= 1:
-            s = "" if months == 1 else "s"
-            return f"{round(months, 1)} month{s} ago"
-        if days >= 1:
-            s = "" if days == 1 else "s"
-            return f"{round(days, 1)} day{s} ago"
-        if hours >= 1:
-            s = "" if hours == 1 else "s"
-            return f"{round(hours, 1)} hour{s} ago"
-        if minutes >= 1:
-            s = "" if minutes == 1 else "s"
-            return f"{round(minutes, 1)} minute{s} ago"
-        else:
-            return f"{round(seconds, 1)} seconds ago"
-
     def toggle_buttons(self, action=""):
         """
         Disables all buttons within the buttons list.
@@ -638,7 +588,7 @@ class SaveManager:
         if self.search_entry.get() == self.default_entry_value:
             self.search_entry.delete(0, tk.END)
 
-    def listbox_nav(self, e):
+    def listbox_nav(self, e) -> None:
         """
         Allows Up and Down arrow keys to navigate the listbox.
         """
@@ -653,60 +603,65 @@ class SaveManager:
             self.game_listbox.selection_anchor(index)
             self.game_listbox.activate(index)
 
-    def unfocus_entry(self):
+    def select_listbox_entry(self, update: bool = False):
         """
-        Resets search box to default_entry_value when it loses focus.
+        Loads the selected game from the listbox and updates UI entries.
+
+        Args:
+            update (bool): Whether to update UI fields and show info. Default is False.
         """
+        if self.game_listbox.size() == 0:
+            return
+
+        selection = self.game_listbox.curselection()
+        if not selection:
+            return
+
+        game_name = self.game_listbox.get(selection[0])
+        self.cur_game = self.database.get(game_name)
+        if self.cur_game is None:
+            return
+
+        self.GameNameEntry.delete(0, tk.END)
+        self.GameSaveEntry.delete(0, tk.END)
+
+        if self.backup_restore_in_progress:
+            return
+
+        if not update:
+            return
+
+        # update name and save path fields
+        self.GameNameEntry.insert(0, self.cur_game.name)
+        self.GameSaveEntry.insert(0, self.cur_game.save_location)
+
+        # reset the search box
         self.search_entry.delete(0, tk.END)
         self.search_entry.insert(0, self.default_entry_value)
 
-    def select_listbox_entry(self, Update=0):
-        """
-        Updates Game Data into Name and Save Entry for viewing.
-        Allows for updating specific entries in the database as well.
+        # enable buttons
+        self.toggle_buttons()
 
-        Arguments:
+        # compose status message
+        if self.cur_game.last_backup == "Never":
+            msg = f"{self.cur_game.name} has not been backed up\n\n"
+        elif not self.cur_game.save_path_exists():
+            print(self.cur_game)
+            msg = f"{self.cur_game.name} Save Location Is Missing\n"
+        else:
+            time_since = readable_time_since(self.cur_game.last_backup)
+            total_backups = (
+                len(os.listdir(self.cur_game.backup_path))
+                if self.cur_game.backup_path_exists()
+                else 0
+            )
+            msg = (
+                f"{self.cur_game.name}\n"
+                f"Last backed up {time_since}\n"
+                f"Game Backup Size: {self.cur_game.backup_size} from {total_backups} backups"
+            )
 
-        Update -- 1 or 0 (default = 0)
-        """
-        selection = self.game_listbox.curselection()
-        listbox_selection = self.game_listbox.get(selection[0])
-        self.cur_game = self.database.get(listbox_selection)
-        # ignores function if listbox is empty
-        if self.game_listbox.size() == 0:
-            return
-        # clears entry boxes
-        self.GameNameEntry.delete(0, tk.END)
-        self.GameSaveEntry.delete(0, tk.END)
-        if self.backup_restore_in_progress:
-            return
-        # updates entry boxes to show currently selected game in listbox
-        if Update == 1:
-            # game name and entry box update
-            self.GameNameEntry.insert(0, self.cur_game.name)
-            self.GameSaveEntry.insert(0, self.cur_game.save_location)
-            # search box update
-            self.search_entry.delete(0, tk.END)
-            self.search_entry.insert(0, self.default_entry_value)
-            # enables all buttons to be pressed once a selection is made
-            self.toggle_buttons()
-            if self.cur_game.last_backup == "Never":
-                msg = f"{self.cur_game.name} has not been backed up\n\n"
-            elif not os.path.exists(self.cur_game.save_location):
-                print(self.cur_game)
-                msg = f"{self.cur_game.name} Save Location Is Missing\n"
-            else:
-                time_since = self.readable_time_since(self.cur_game.last_backup)
-                if os.path.exists(self.cur_game.backup_path):
-                    total_backups = len(os.listdir(self.cur_game.backup_path))
-                else:
-                    total_backups = 0
-                msg = (
-                    f"{self.cur_game.name}\n"
-                    f"Last backed up {time_since}\n"
-                    f"Game Backup Size: {self.cur_game.backup_size} from {total_backups} backups"
-                )
-            self.set_info_text(msg=msg)
+        self.set_info_text(msg=msg)
 
     def exit_program(self):
         """
@@ -729,29 +684,26 @@ class SaveManager:
         Opens the main Game Save Manager interface.
         """
         start = time.perf_counter()
-        # Defaults
-        BoldBaseFont = "Arial Bold"
+        BOLDBASEFONT = "Arial Bold"
         self.root = tk.Tk()
         self.root.protocol("WM_DELETE_WINDOW", self.exit_program)
-        window_width = 680
-        window_height = 550
-        self.tk_window_options(self.root, window_width, window_height)
-        # self.root.geometry(f'{window_width}x{window_height}+{width}+{height}')
+        WINDOW_WIDTH = 680
+        WINDOW_HEIGHT = 550
+        self.tk_window_options(self.root, WINDOW_WIDTH, WINDOW_HEIGHT)
 
         # binding
         if self.cfg.quick_backup:
             self.root.bind("<Return>", self.backup_shortcut)
 
-        # Main Row 0
-        Backup_Frame = tk.Frame(self.root)
-        Backup_Frame.grid(columnspan=4, column=0, row=0, padx=(20, 20), pady=(5, 0))
+        backup_frame = tk.Frame(self.root)
+        backup_frame.grid(columnspan=4, column=0, row=0, padx=(20, 20), pady=(5, 0))
 
-        self.Title = tk.Label(Backup_Frame, text="\n", font=(BoldBaseFont, 10))
+        self.Title = tk.Label(backup_frame, text="\n", font=(BOLDBASEFONT, 10))
         self.Title.grid(columnspan=4, row=0, column=1)
 
         button_width = 23
         self.BackupButton = ttk.Button(
-            Backup_Frame,
+            backup_frame,
             text="Backup Save",
             state="disabled",
             command=self.run_full_backup,
@@ -760,7 +712,7 @@ class SaveManager:
         self.BackupButton.grid(row=3, column=1, padx=5, pady=5)
 
         self.RestoreButton = ttk.Button(
-            Backup_Frame,
+            backup_frame,
             text="Restore Save",
             state="disabled",
             command=self.restore_save,
@@ -769,7 +721,7 @@ class SaveManager:
         self.RestoreButton.grid(row=3, column=2, padx=5)
 
         self.ExploreSaveButton = ttk.Button(
-            Backup_Frame,
+            backup_frame,
             text="Explore Save Location",
             state="disabled",
             command=lambda: self.explore_folder("Game Save"),
@@ -778,7 +730,7 @@ class SaveManager:
         self.ExploreSaveButton.grid(row=4, column=1, padx=5)
 
         self.ExploreBackupButton = ttk.Button(
-            Backup_Frame,
+            backup_frame,
             text="Explore Backup Location",
             state="disabled",
             command=lambda: self.explore_folder("Backup"),
@@ -788,7 +740,7 @@ class SaveManager:
 
         # Main Row 1
         instruction = "Select a Game\nto continue"
-        self.ActionInfo = tk.Label(self.root, text=instruction, font=(BoldBaseFont, 10))
+        self.ActionInfo = tk.Label(self.root, text=instruction, font=(BOLDBASEFONT, 10))
         self.ActionInfo.grid(columnspan=4, row=1, column=0, padx=5, pady=5)
         # Main Row 2
         self.ListboxFrame = tk.Frame(self.root)
@@ -805,22 +757,20 @@ class SaveManager:
         self.search_entry.grid(columnspan=3, row=0, column=0, pady=(0, 3))
         self.search_entry.insert(0, self.default_entry_value)
         self.search_entry.bind("<1>", self.select_entry)
-        # TODO fix this
-        # self.search_entry.bind("<FocusOut>", self.unfocus_entry)
         self.search_entry.bind("<KeyRelease>", self.entry_search)
 
         self.game_listbox = tk.Listbox(
             self.ListboxFrame,
             exportselection=False,
             yscrollcommand=self.scrollbar.set,
-            font=(BoldBaseFont, 12),
+            font=(BOLDBASEFONT, 12),
             height=10,
             width=60,
         )
         self.game_listbox.grid(columnspan=3, row=1, column=0)
         self.game_listbox.bind(
             "<<ListboxSelect>>",
-            lambda event, game_listbox=self.game_listbox,: self.select_listbox_entry(1),
+            lambda _, game_listbox=self.game_listbox,: self.select_listbox_entry(True),
         )
 
         # scrollbar config
@@ -829,7 +779,6 @@ class SaveManager:
         self.sorted_list = self.database.sorted_games()
         self.update_listbox()
 
-        # Main Row 3
         Add_Game_Frame = tk.LabelFrame(self.root, text="Manage Games")
         Add_Game_Frame.grid(columnspan=4, row=3, padx=15, pady=(5, 17))
 
@@ -860,7 +809,6 @@ class SaveManager:
         )
         BrowseButton.grid(row=1, column=4, padx=10)
 
-        # Button Frame Row 2
         Button_Frame = tk.Frame(Add_Game_Frame)
         Button_Frame.grid(columnspan=5, row=2, pady=(5, 5))
 

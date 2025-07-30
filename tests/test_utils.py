@@ -2,19 +2,17 @@
 import datetime as dt
 
 # local application imports
-from main import SaveManager  # type: ignore
-
-# third-party imports
-import pytest
+from utils.utils import *
 
 
-# @pytest.mark.skip
-class TestGameSaveManager:
-    def test_readable_time_since(self):
-        """
-        readable_time_since
-        """
-        app = SaveManager()
+class TestGetHash:
+    def success(self):
+        path = "tests/Folder Test/Folder Example"
+        assert get_hash(path) == "c391af98a15c45425f1cd3d7714d0354"
+
+
+class TestReadableTimeSince:
+    def success(self):
         checked_date = dt.datetime.strptime("2021/01/01 01:00:00", "%Y/%m/%d %H:%M:%S")
         dates = {
             "2019/01/01 01:00:00": "2.0 years ago",
@@ -28,4 +26,4 @@ class TestGameSaveManager:
             "2021/01/01 00:59:55": "5.0 seconds ago",
         }
         for date, answer in dates.items():
-            assert app.readable_time_since(date, checked_date) in answer
+            assert readable_time_since(date, checked_date) in answer

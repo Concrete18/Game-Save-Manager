@@ -3,7 +3,7 @@ import sqlite3
 import datetime as dt
 
 # local application imports
-from classes.game import Game
+from utils.game import Game
 
 
 class Database:
