@@ -182,7 +182,6 @@ class SaveManager:
         """
         Shortcut that activates when pressing enter while a game is selected.
         """
-        # TODO add setting so if no game is selected, it will ask if you want to backup the most recently backed up game.
         response = messagebox.askquestion(
             title=self.title,
             message=f"Are you sure you want to backup {self.cur_game.name}",
@@ -192,6 +191,7 @@ class SaveManager:
         else:
             # FIXME arrow keys stop working at this point
             self.game_listbox.activate(0)
+            self.game_listbox.focus_set()
             return
         print(event)
 
@@ -441,10 +441,6 @@ class SaveManager:
     def browse(self, directory="C:/"):
         """
         Opens a file dialog so a save directory can be chosen.
-
-        TODO fix below
-        It starts in the My Games folder in My Documents if it exists within
-        a limited drive letter search.
         """
         msg = "Select Save Directory"
         save_dir = filedialog.askdirectory(initialdir=directory, title=msg)
@@ -475,7 +471,6 @@ class SaveManager:
                 response = messagebox.askyesno(title=self.title, message=msg)
                 if response:
                     try:
-                        # BUG gets permission errors often
                         shutil.rmtree(self.cur_game.backup_path)
                     except PermissionError:
                         msg = "Failed to delete directory\nPermission Error"
