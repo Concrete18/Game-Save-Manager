@@ -48,7 +48,7 @@ class SaveManager:
         """
         tk.Tk().withdraw()
         if os.path.exists(self.cfg.backup_folder):
-            print("backup folder is ready")
+            print("Backup folder is ready")
             return
         else:
             msg = "Do you want to choose a save backup directory instead of using the default within the program folder?"
@@ -95,6 +95,8 @@ class SaveManager:
             return
         # sets selected game so other games can be selected during backup without issue
         selected_game = self.cur_game
+
+        # TODO move backup into game class as a method
 
         def backup():
             """
@@ -249,12 +251,10 @@ class SaveManager:
             Restores selected game save based on save clicked within the
             Restore_Game_Window window.
             """
+            # TODO test and fix
             selected_backup = self.save_dic[
                 save_listbox.get(save_listbox.curselection())
             ]
-            full_save_path = os.path.join(
-                self.cfg.backup_folder, self.cur_game.name, selected_backup.name
-            )
             # check if the last post restore save is being restored
             if self.post_save_name in selected_backup.name:
                 msg = (
@@ -383,8 +383,8 @@ class SaveManager:
             msg = f"Game name has no legal characters for a filename"
             messagebox.showwarning(title=self.TITLE, message=msg)
             return
-        game_dict = self.database.get_game_info(game_name)
-        if game_dict.get("save_path"):
+        game = self.database.get_game(game_name)
+        if game:
             msg = f"Can't add {game_name} to database.\nGame already exists."
             messagebox.showwarning(title=self.TITLE, message=msg)
         else:
@@ -608,7 +608,7 @@ class SaveManager:
             return
 
         game_name = self.game_listbox.get(selection[0])
-        self.cur_game = self.database.get(game_name)
+        self.cur_game = self.database.get_game(game_name)
         if self.cur_game is None:
             return
 
@@ -666,7 +666,7 @@ class SaveManager:
         # BUG interface fails to exit if filedialog is left open
         # fix using subclassed filedialog commands that can close it
         self.root.withdraw()
-        self.database.close_database()
+        self.database.close()
         sys.exit()
 
     def open_interface_window(self):

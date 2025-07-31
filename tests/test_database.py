@@ -10,9 +10,9 @@ class TestDatabase:
     backup_path = "tests/Folder Test"
     db_loc = "tests/testing.db"
 
-    def test_get(self):
+    def test_get_game(self):
         database = Database(self.backup_path, self.db_loc)
-        game = database.get("Dishonored 2")
+        game = database.get_game("Dishonored 2")
         assert game.name == "Dishonored 2"
         save_path = (
             r"C:\Users\Michael\Saved Games\Arkane Studios\Dishonored2\base\savegame"

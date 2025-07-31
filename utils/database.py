@@ -21,7 +21,6 @@ class Database:
             (game_name TEXT, save_path TEXT, last_backup TEXT, previous_backup_hash TEXT)
         """
         self.cursor.execute(query)
-        self.total_executions = 1
 
     def sorted_games(self):
         """
@@ -30,30 +29,7 @@ class Database:
         query = "SELECT game_name, save_path FROM games ORDER BY last_backup DESC"
         self.cursor.execute(query)
         games = self.cursor.fetchall()
-        self.total_executions += 1
-        games_list = []
-        for name, _ in games:
-            games_list.append(name)
-        return games_list
-
-    def get_game_info(self, game_name: str) -> dict:
-        """
-        Returns the save location and last backup of `game_name` from the SQLite Database.
-        """
-        query = """
-            SELECT save_path, last_backup, previous_backup_hash
-            FROM games
-            WHERE game_name = :game_name
-        """
-        self.cursor.execute(query, {"game_name": game_name})
-        self.total_executions += 1
-
-        row = self.cursor.fetchone()
-        if row is None:
-            return {}
-
-        keys = ("save_path", "last_backup", "previous_backup_hash")
-        return dict(zip(keys, row))
+        return [game for game, _ in games]
 
     def update_last_backup(self, game_name):
         """
@@ -67,7 +43,6 @@ class Database:
         """
         args = {"game_name": game_name, "last_backup": last_backup}
         self.cursor.execute(query, args)
-        self.total_executions += 1
         self.database.commit()
 
     def update_previous_backup_hash(self, game_name, hash):
@@ -81,23 +56,28 @@ class Database:
         """
         args = {"game_name": game_name, "hash": hash}
         self.cursor.execute(query, args)
-        self.total_executions += 1
         self.database.commit()
 
-    def get(self, game_name):
+    def get_game(self, game_name: str) -> Game:
         """
-        Sets the current game to `game_name`.
+        Gets a Game object by `game_name` from the SQLite Database.
         """
-        prev_data = self.get_game_info(game_name)
-        self.save_path = prev_data.get("save_path", "")
-        self.last_backup = prev_data.get("last_backup", "")
-        self.prev_backup_hash = prev_data.get("previous_backup_hash", "")
+        query = """
+            SELECT save_path, last_backup, previous_backup_hash
+            FROM games
+            WHERE game_name = :game_name
+        """
+        self.cursor.execute(query, {"game_name": game_name})
+        row = self.cursor.fetchone()
+        if row is None:
+            return Game()
+
         return Game(
             game_name,
-            self.save_path,
-            self.last_backup,
-            self.prev_backup_hash,
-            self.backup_folder,
+            save_path=row[0],
+            last_backup=row[1],
+            prev_backup_hash=row[2],
+            backup_folder=self.backup_folder,
         )
 
     def update(self, old_name, new_name, new_save):
@@ -112,8 +92,8 @@ class Database:
         args = (new_name, new_save, old_name)
         self.cursor.execute(query, args)
         self.database.commit()
-        self.get(new_name)
-        self.total_executions += 1
+        # TODO check if this is needed
+        self.get_game(new_name)
 
     def add(self, game_name, save_path):
         """
@@ -131,7 +111,6 @@ class Database:
         }
         self.cursor.execute(query, args)
         self.database.commit()
-        self.total_executions += 1
 
     def delete_from_db(self, game_name):
         """
@@ -143,11 +122,9 @@ class Database:
         """
         self.cursor.execute(query, {"game_name": game_name})
         self.database.commit()
-        self.total_executions += 1
 
-    def close_database(self):
+    def close(self):
         """
         Closes the database.
         """
         self.database.close()
-        print(f"Database closed after {self.total_executions} excecutions")

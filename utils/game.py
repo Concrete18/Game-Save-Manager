@@ -24,11 +24,13 @@ class Game:
     def __str__(self) -> str:
         return f'Game("{self.name}", "{self.save_path}")'
 
+    def __bool__(self) -> bool:
+        return bool(self.name)
+
     @property
     def filename(self) -> str:
         """
-        Removes illegal characters and shortens `name` so it can become a
-        valid filename.
+        Removes illegal characters and shortens `name` so it can become a valid filename.
         """
         # removes illegal characters
         name = re.sub(
