@@ -22,7 +22,7 @@ class Database:
         """
         self.cursor.execute(query)
 
-    def sorted_games(self):
+    def sorted_games(self) -> list[str]:
         """
         Sorts the game list from the SQLite database based on the last backup and then returns a list.
         """
@@ -31,7 +31,7 @@ class Database:
         games = self.cursor.fetchall()
         return [game for game, _ in games]
 
-    def update_last_backup(self, game_name):
+    def update_last_backup(self, game_name: str) -> None:
         """
         Updates the last_backup time for `game_name` to the current datetime.
         """
@@ -45,7 +45,7 @@ class Database:
         self.cursor.execute(query, args)
         self.database.commit()
 
-    def update_previous_backup_hash(self, game_name, hash):
+    def update_previous_backup_hash(self, game_name: str, hash: str) -> None:
         """
         Updates the last_backup time for `game_name` to the current datetime.
         """
@@ -80,7 +80,7 @@ class Database:
             backup_folder=self.backup_folder,
         )
 
-    def update(self, old_name, new_name, new_save):
+    def update(self, old_name: str, new_name: str, new_save: str) -> tuple[str, str]:
         """
         Updates a game data in the database with `old_name` to `new_name` and `new_save`.
         """
@@ -92,10 +92,9 @@ class Database:
         args = (new_name, new_save, old_name)
         self.cursor.execute(query, args)
         self.database.commit()
-        # TODO check if this is needed
-        self.get_game(new_name)
+        return new_name, new_save
 
-    def add(self, game_name, save_path):
+    def add(self, game_name: str, save_path: str) -> None:
         """
         Adds game to database with `game_name`, `save_path` data.
         """
@@ -112,7 +111,7 @@ class Database:
         self.cursor.execute(query, args)
         self.database.commit()
 
-    def delete_from_db(self, game_name):
+    def delete_from_db(self, game_name: str) -> None:
         """
         Deletes selected game from SQLite Database.
         """
@@ -123,7 +122,7 @@ class Database:
         self.cursor.execute(query, {"game_name": game_name})
         self.database.commit()
 
-    def close(self):
+    def close(self) -> None:
         """
         Closes the database.
         """
