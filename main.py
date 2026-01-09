@@ -85,7 +85,7 @@ class SaveManager:
             msg += "\n"
         self.ActionInfo.config(text=msg)
 
-    def run_full_backup(self):
+    def run_full_backup(self, force: bool = False):
         """
         Backups up the game entered based on SQLite save location data to the
         specified backup folder.
@@ -140,11 +140,15 @@ class SaveManager:
             game_current_hash = get_hash(self.cur_game.save_path)
             # gets last info text so double click backup works
             last_text = self.ActionInfo.cget("text").replace("\n", "")
-            msg = f"{selected_game.name}\nSave has not changed since last backup.\nPress Enter again to force backup."
-            if not selected_game.is_new_hash(game_current_hash) and last_text != msg:
-                self.set_info_text(msg=msg)
-                self.warning_sound()
-                return
+            if not force:
+                msg = f"{selected_game.name}\nSave has not changed since last backup.\nPress Enter again to force backup."
+                if (
+                    not selected_game.is_new_hash(game_current_hash)
+                    and last_text != msg
+                ):
+                    self.set_info_text(msg=msg)
+                    self.warning_sound()
+                    return
             # moves clicked game to the top
             self.game_listbox.delete(tk.ACTIVE)
             self.game_listbox.insert(0, selected_game.name)
@@ -153,9 +157,11 @@ class SaveManager:
             )
             # starts backup function as a new thread
             Thread(target=backup).start()
-            self.database.update_previous_backup_hash(
-                selected_game.name, selected_game.curr_save_hash
-            )
+            if selected_game.name and selected_game.cur_save_hash:
+                self.database.update_previous_backup_hash(
+                    selected_game.name,
+                    selected_game.cur_save_hash,
+                )
             self.database.update_last_backup(selected_game.name)
 
     def tk_window_options(
@@ -187,10 +193,10 @@ class SaveManager:
         """
         response = messagebox.askquestion(
             title=self.TITLE,
-            message=f"Are you sure you want to backup {self.cur_game.name}",
+            message=f"Are you sure you want {self.cur_game.name} again?",
         )
         if response == "yes":
-            self.run_full_backup()
+            self.run_full_backup(force=True)
         else:
             # FIXME arrow keys stop working at this point
             self.game_listbox.activate(0)
@@ -345,7 +351,7 @@ class SaveManager:
 
         self.Restore_Game_Window.mainloop()
 
-    def explore_folder(self, folder_type):
+    def explore_folder(self, folder_type: str) -> None:
         """
         Opens the selected games save location or backup folder in explorer.
 
@@ -376,8 +382,8 @@ class SaveManager:
         """
         Adds game to database using entry inputs.
         """
-        game_name = self.GameNameEntry.get()
-        save_path = self.GameSaveEntry.get().replace("/", "\\")
+        game_name = self.GameNameEntry.get().strip()
+        save_path = self.GameSaveEntry.get().replace("/", "\\").strip()
         self.cur_game = Game(name=game_name, save_path=save_path)
         if len(self.cur_game.filename) == 0:
             msg = f"Game name has no legal characters for a filename"
@@ -489,12 +495,18 @@ class SaveManager:
         game_name = self.GameNameEntry.get()
         save_path = self.GameSaveEntry.get().replace("/", "\\")
         if os.path.exists(save_path):
-            old_backup = self.cur_game.backup_path
-            self.database.update(self.cur_game.name, game_name, save_path)
-            # error when path is changed
-            print(old_backup)
-            print(self.cur_game.backup_path)
-            os.rename(old_backup, self.cur_game.backup_path)
+            old_backup_path = self.cur_game.backup_path
+            new_game_name, new_save_path = self.database.update(
+                self.cur_game.name, game_name, save_path
+            )
+            # TODO swap to more method that simply replaces what is changed
+            # update name in sorted list
+            self.sorted_list = self.database.sorted_games()
+
+            # FIXME error when path is changed
+            print("Old Path", old_backup_path)
+            print("New Path", self.cur_game.backup_path)
+            os.rename(old_backup_path, self.cur_game.backup_path)
             # updates listbox entry for game
             if len(self.game_listbox.curselection()) != 0:
                 index = self.game_listbox.curselection()
@@ -577,21 +589,6 @@ class SaveManager:
         """
         if self.search_entry.get() == self.default_entry_value:
             self.search_entry.delete(0, tk.END)
-
-    def listbox_nav(self, e) -> None:
-        """
-        Allows Up and Down arrow keys to navigate the listbox.
-        """
-        index = self.game_listbox.curselection()[0]
-        if e.keysym == "Up":
-            index += -1
-        if e.keysym == "Down":
-            index += 1
-        if 0 <= index < self.game_listbox.size():
-            self.game_listbox.selection_clear(0, tk.END)
-            self.game_listbox.select_set(index)
-            self.game_listbox.selection_anchor(index)
-            self.game_listbox.activate(index)
 
     def select_listbox_entry(self, update: bool = False):
         """
