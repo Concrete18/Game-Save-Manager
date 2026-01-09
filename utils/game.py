@@ -44,7 +44,7 @@ class Game:
         return os.path.join(self.backup_folder, self.filename)
 
     @property
-    def curr_save_hash(self) -> str | None:
+    def cur_save_hash(self) -> str | None:
         return get_hash(self.save_path)
 
     @property
