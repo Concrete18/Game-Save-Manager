@@ -82,7 +82,7 @@ class Database:
 
     def update(self, old_name: str, new_name: str, new_save: str) -> tuple[str, str]:
         """
-        Updates a game data in the database with `old_name` to `new_name` and `new_save`.
+        Updates a game data in the database with `old_name` to `new_name` and `new_save` and returns new_name and new_save.
         """
         query = """
             UPDATE games
