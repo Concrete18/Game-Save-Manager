@@ -87,7 +87,7 @@ class SaveManager:
 
     def run_full_backup(self, force: bool = False):
         """
-        Backups up the game entered based on SQLite save location data to the
+        Backups up the game entered based on SQLite Save Path data to the
         specified backup folder.
         """
         if not self.cur_game:
@@ -353,7 +353,7 @@ class SaveManager:
 
     def explore_folder(self, folder_type: str) -> None:
         """
-        Opens the selected games save location or backup folder in explorer.
+        Opens the selected games Save Path or backup folder in explorer.
 
         Set `folder_type` to "Game Save" or "Backup" to select what to open in explorer.
         """
@@ -371,7 +371,7 @@ class SaveManager:
         else:
             match folder_type:
                 case "Game Save":
-                    msg = f"Save location for {self.cur_game.name} no longer exists."
+                    msg = f"Save Path for {self.cur_game.name} no longer exists."
                 case "Backup":
                     msg = f"{self.cur_game.name} has not been backed up yet."
                 case _:
@@ -386,7 +386,7 @@ class SaveManager:
         save_path = self.GameSaveEntry.get().replace("/", "\\").strip()
         self.cur_game = Game(name=game_name, save_path=save_path)
         if len(self.cur_game.filename) == 0:
-            msg = f"Game name has no legal characters for a filename"
+            msg = f"Name has no legal characters for a filename"
             messagebox.showwarning(title=self.TITLE, message=msg)
             return
         game = self.database.get_game(game_name)
@@ -404,7 +404,7 @@ class SaveManager:
                 self.game_listbox.insert(0, game_name)
                 self.update_listbox()
             else:
-                msg = f"Save Location for {game_name} does not exist."
+                msg = f"Save Path for {game_name} does not exist."
                 messagebox.showwarning(title=self.TITLE, message=msg)
 
     @staticmethod
@@ -515,7 +515,7 @@ class SaveManager:
             self.game_listbox.delete(tk.ACTIVE)
             self.game_listbox.insert(index, game_name)
         else:
-            msg = "Save Location does not exist."
+            msg = "Save Path does not exist."
             messagebox.showwarning(title=self.TITLE, message=msg)
 
     def toggle_buttons(self, action=""):
@@ -597,6 +597,7 @@ class SaveManager:
         Args:
             update (bool): Whether to update UI fields and show info. Default is False.
         """
+        # FIXME does not clear if an entry is not selected
         if self.game_listbox.size() == 0:
             return
 
@@ -634,7 +635,7 @@ class SaveManager:
             msg = f"{self.cur_game.name} has not been backed up\n\n"
         elif not self.cur_game.save_path_exists():
             print(self.cur_game)
-            msg = f"{self.cur_game.name} Save Location Is Missing\n"
+            msg = f"{self.cur_game.name} Save Path Is Missing\n"
         else:
             time_since = readable_time_since(self.cur_game.last_backup)
             total_backups = (
@@ -708,7 +709,7 @@ class SaveManager:
 
         self.ExploreSaveButton = ttk.Button(
             backup_frame,
-            text="Explore Save Location",
+            text="Explore Save Path",
             state="disabled",
             command=lambda: self.explore_folder("Game Save"),
             width=button_width,
@@ -768,7 +769,7 @@ class SaveManager:
         Add_Game_Frame = tk.LabelFrame(self.root, text="Manage Games")
         Add_Game_Frame.grid(columnspan=4, row=3, padx=15, pady=(5, 17))
 
-        EnterGameLabel = ttk.Label(Add_Game_Frame, text="Game Name")
+        EnterGameLabel = ttk.Label(Add_Game_Frame, text="Name")
         EnterGameLabel.grid(row=0, column=0)
 
         entry_width = 65
@@ -777,7 +778,7 @@ class SaveManager:
         )
         self.GameNameEntry.grid(row=0, column=1, columnspan=3, pady=8, padx=5)
 
-        EnterSaveLabeL = ttk.Label(Add_Game_Frame, text="Save Location")
+        EnterSaveLabeL = ttk.Label(Add_Game_Frame, text="Save Path")
         EnterSaveLabeL.grid(row=1, column=0)
 
         self.GameSaveEntry = ttk.Entry(
