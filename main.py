@@ -141,7 +141,7 @@ class SaveManager:
             # gets last info text so double click backup works
             last_text = self.ActionInfo.cget("text").replace("\n", "")
             if not force:
-                msg = f"{selected_game.name}\nSave has not changed since last backup.\nPress Enter again to force backup."
+                msg = f"{selected_game.name}\nSave has not changed since last backup.\nPress Enter to force backup."
                 if (
                     not selected_game.is_new_hash(game_current_hash)
                     and last_text != msg
@@ -193,7 +193,7 @@ class SaveManager:
         """
         response = messagebox.askquestion(
             title=self.TITLE,
-            message=f"Are you sure you want {self.cur_game.name} again?",
+            message=f"Are you sure you want to backup {self.cur_game.name} again?",
         )
         if response == "yes":
             self.run_full_backup(force=True)
